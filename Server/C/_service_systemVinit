@@ -1,0 +1,56 @@
+#!/bin/sh
+
+#### BEGIN INIT INFO  
+## Short-Description: Spectrom Requests-Based Network Protocol
+#### END INIT INFO
+
+_HOME=/var/tmp/SRBNP/
+_BIN=SRBNP.run
+
+# Start the service FOO
+start() {
+        $_HOME$_BIN &
+        ### Create the lock file ###
+        /bin/touch /var/lock/subsys/$_BIN
+}
+stop() {
+        killproc $_BIN
+        ### Now, delete the lock file ###
+        /bin/rm -f /var/lock/subsys/$_BIN
+}
+status() {
+	if [ -f /var/lock/subsys/$_BIN ]; then
+		if /bin/pgrep -x $_BIN >/dev/null
+		then
+		    echo -n $_BIN "Running\n"
+		    if [ -f $_HOME$_BIN.log ]; then
+			/bin/cat $_HOME$_BIN.log
+		    fi;
+		else
+		    echo -n $_BIN "Crashed\n"
+		fi;
+	else
+		echo -n $_BIN "Stopped\n"
+	fi;
+}
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status
+        ;;
+  restart|reload|condrestart)
+        stop
+        start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+
+exit 0

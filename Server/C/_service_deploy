@@ -1,0 +1,9 @@
+#!/sbin/bash
+if [ -d /run/systemd/system ]; then 
+    echo "Systemd Unsupported for now" 
+else    
+    if [ ! -f /etc/init.d/SRBNP ]; then 
+    /bin/cp _service_systemVinit /etc/init.d/SRBNP;
+    fi;
+    /etc/init.d/SRBNP start
+fi; 
