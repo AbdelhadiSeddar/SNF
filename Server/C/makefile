@@ -5,13 +5,15 @@ all: deploy
 
 deploy:
 	/bin/make clean
-	if [ ! -d "$(BIN_PATH)" ]; then /bin/mkdir $(BIN_PATH); fi
+	if [ ! -d "$(BIN_PATH)" ]; then /bin/mkdir $(BIN_PATH); fi;
 	/bin/cp $(BUILD_PATH)/* $(BIN_PATH)
 	/bin/make main
 	/bin/sh _service_deploy
-
 clean:
 	if [ -f "$(BIN_PATH)/SRBNP.run" ]; then /bin/rm $(BIN_PATH)/SRBNP.run; fi;
 main:
 	if [ ! -d "$(BUILD_PATH)" ]; then /bin/mkdir $(BUILD_PATH); fi;
-	$(COMPILER) *.c */*.c -o $(BUILD_PATH)/SRBNP.run
+	if [ ! -f "$(SQLite_PATH).o" ]; then /bin/make SQLite; fi;
+	$(COMPILER) *.c */*.c */*.o -o $(BUILD_PATH)/SRBNP.run
+SQLite:
+	if [ ! -f "$(SQLite_PATH)" ]; then $(COMPILER) -DSQLITE_DEFAULT_FOREIGN_KEYS=1 -lpthread -ldl -o $(SQLite_PATH).o -c $(SQLite_PATH).c_SOURCE

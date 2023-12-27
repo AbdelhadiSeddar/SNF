@@ -1,9 +1,0 @@
-{
-    "files.associations": {
-        "stdlib.h": "c",
-        "cstdlib": "c",
-        "_imports.h": "c",
-        "string.h": "c",
-        "types.h": "c"
-    }
-}
