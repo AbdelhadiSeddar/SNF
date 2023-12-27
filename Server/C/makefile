@@ -1,11 +1,17 @@
 COMPILER=/bin/clang
-PATH=/var/tmp/SRBNP
-
+BIN_PATH=/var/tmp/SRBNP
+BUILD_PATH=bin
 all: deploy
 
 deploy:
+	/bin/make clean
+	if [ ! -d "$(BIN_PATH)" ]; then /bin/mkdir $(BIN_PATH); fi
+	/bin/cp $(BUILD_PATH)/* $(BIN_PATH)
 	/bin/make main
 	/bin/sh _service_deploy
+
+clean:
+	if [ -f "$(BIN_PATH)/SRBNP.run" ]; then /bin/rm $(BIN_PATH)/SRBNP.run; fi;
 main:
-	if [ ! -d "$(PATH)" ]; then /bin/mkdir $(PATH); fi
-	$(COMPILER) *.c */*.c -o $(PATH)/SRBNP.run
+	if [ ! -d "$(BUILD_PATH)" ]; then /bin/mkdir $(BUILD_PATH); fi;
+	$(COMPILER) *.c */*.c -o $(BUILD_PATH)/SRBNP.run

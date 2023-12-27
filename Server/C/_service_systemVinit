@@ -11,12 +11,12 @@ _BIN=SRBNP.run
 start() {
         $_HOME$_BIN &
         ### Create the lock file ###
-        /bin/touch /var/lock/subsys/$_BIN
+        /bin/touch /var/lock/$_BIN
 }
 stop() {
         killproc $_BIN
         ### Now, delete the lock file ###
-        /bin/rm -f /var/lock/subsys/$_BIN
+        /bin/rm -f /var/lock/$_BIN
 }
 status() {
 	if [ -f /var/lock/subsys/$_BIN ]; then
