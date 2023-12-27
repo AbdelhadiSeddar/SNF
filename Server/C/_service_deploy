@@ -3,5 +3,10 @@ if [ -d /run/systemd/system ]; then
     echo "Systemd Unsupported for now" 
 else    
     /bin/cp _service_systemVinit /etc/init.d/SRBNP;
+    if /bin/pgrep -x SRBNP.run >/dev/null
+		then
+            /etc/init.d/SRBNP stop; \
+            sleep 1
+		fi;
     /etc/init.d/SRBNP start
 fi; 

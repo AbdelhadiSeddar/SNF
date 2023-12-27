@@ -1,4 +1,5 @@
 #include "_Imports.h"
+#include "thpool.h"
 /*
     Must be 3+ 
     - 1 for Thread pool Handler
@@ -137,6 +138,11 @@ void thpool_wait(thpool* pool)
 {
     for(int i = 0; i < pool->max_workers_count ; i++)
         sem_wait(&(pool->thpool_sem));
+}
+
+void thpool_join(thpool* pool)
+{
+    pthread_join(*(pool->thpool_main_worker), NULL);
 }
 void thpool_stop(thpool* pool)
 {

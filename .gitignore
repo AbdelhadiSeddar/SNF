@@ -1,3 +1,4 @@
 *.run
 *.o
 *.json
+*.sqlite3

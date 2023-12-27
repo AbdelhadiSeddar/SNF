@@ -6,7 +6,10 @@ int _MAX_QUEUE = 1000;
 int _SERVER_SOCKET = 0;
 struct sockaddr_in _SERVER_ADDR;
 
-void network_init()
+thpool* Ntwrk;
+void *Network_Worker(void *arg);
+
+void network_init(const char* PATH)
 {
     checkerr((_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
 
@@ -21,9 +24,16 @@ void network_init()
              "Unable to listen in the port");
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
+    printf("Using SQLite %s\n", sqlite3_libversion()); 
+    epoll_inis();
+    local_db_inis(PATH);
+    
+    Ntwrk = inis_thpool(4, Network_Worker, NULL);
+
+    thpool_join(Ntwrk);
 }
 
-void *network_worker(void *arg)
+void *Network_Worker(void *arg)
 {
     for (;;)
     {
@@ -39,7 +49,9 @@ void *network_worker(void *arg)
                 continue;
             else
             {
-                // TODO Handle Existing Connections
+                clt test;
+                test.sock = events[fd].data.fd;
+                local_db_insert_clt(&test);
             }
         }
     }

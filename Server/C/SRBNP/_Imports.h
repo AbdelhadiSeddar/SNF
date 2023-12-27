@@ -8,12 +8,15 @@
 #include <sys/socket.h> 
 #include <sys/types.h> 
 #include <sys/epoll.h>
+#include <uuid/uuid.h>
 
 #pragma region [Non-Standard]
 #include "utility.h"
 #include "network.h"
 #include "thpool.h"
 #include "epoll.h"
+#include "sqlite.h"
+#include "clt.h"
 #pragma endregion
 
 #pragma region [Third-party libraries]

@@ -5,26 +5,25 @@
 #### END INIT INFO
 
 _HOME=/var/tmp/SRBNP/
-_BIN=SRBNP.run
+_BIN=SRBNP
 
-# Start the service FOO
 start() {
-        $_HOME$_BIN &
+        $_HOME$_BIN.run &
         ### Create the lock file ###
         /bin/touch /var/lock/$_BIN
 }
 stop() {
-        killproc $_BIN
-        ### Now, delete the lock file ###
-        /bin/rm -f /var/lock/$_BIN
+        pkill $_BIN &
+        /bin/rm /var/lock/$_BIN
+        echo "$BIN Terminated"
 }
 status() {
-	if [ -f /var/lock/subsys/$_BIN ]; then
-		if /bin/pgrep -x $_BIN >/dev/null
+	if [ -f "/var/lock/$_BIN" ]; then
+		if /bin/pgrep -x $_BIN.run >/dev/null
 		then
 		    echo -n $_BIN "Running\n"
-		    if [ -f $_HOME$_BIN.log ]; then
-			/bin/cat $_HOME$_BIN.log
+		    if [ -f $_HOME$_BIN.run.log ]; then
+			/bin/cat $_HOME$_BIN.run.log
 		    fi;
 		else
 		    echo -n $_BIN "Crashed\n"
@@ -45,6 +44,7 @@ case "$1" in
         ;;
   restart|reload|condrestart)
         stop
+        sleep 1;
         start
         ;;
   *)
