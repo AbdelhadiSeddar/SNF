@@ -7,6 +7,13 @@
 */ 
 int _MAX_NETWORK_THREAD_COUNT = 4; 
 
+void *thpool_work_wrapper(void *arg);
+thpool_work* thpool_pop_work(thpool* pool);
+thpool_worker *thpool_insertnew_worker(thpool *pool);
+void *thpool_handler(void *arg);
+
+
+
 thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg)
 {
     thpool *new = calloc(1, sizeof(thpool));
@@ -14,8 +21,8 @@ thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg)
     pthread_mutex_init(&(new->thpool_workers_MUTEX), NULL);
     pthread_cond_init(&(new->thpool_works_cond), NULL);
     sem_init(&(new->thpool_sem), 0, Max_Threads);
-    (new->thpool_handler) = calloc(1, sizeof(pthread_t));
-    (new->thpool_main_worker) = calloc(1, sizeof(pthread_t));
+    (new->thpool_handler) = malloc(sizeof(pthread_t));
+    (new->thpool_main_worker) = malloc(sizeof(pthread_t));
     (new->thpool_works) = NULL;
     (new->max_workers_count) = Max_Threads;
     (new->stop) = 0;
@@ -23,7 +30,7 @@ thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg)
     pthread_create(
         (new->thpool_handler),
         NULL,
-        thpool_hanlder,
+        thpool_handler,
         new
     );
     if(Main_Worker != NULL)
@@ -33,9 +40,10 @@ thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg)
             Main_Worker,
             arg
         );
+        return new;
 }
 
-void *thpool_hanlder(void *arg)
+void *thpool_handler(void *arg)
 {
     thpool *pool = arg;
     pthread_mutex_lock(&(pool->thpool_works_MUTEX));

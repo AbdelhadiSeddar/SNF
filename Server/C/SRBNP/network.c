@@ -8,8 +8,7 @@ struct sockaddr_in _SERVER_ADDR;
 
 void network_init()
 {
-    checkerr( (_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0))
-    , "Unable to create Socket. ");
+    checkerr((_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
 
     bzero(&_SERVER_ADDR, sizeof(struct sockaddr_in));
 
@@ -17,16 +16,32 @@ void network_init()
     _SERVER_ADDR.sin_port = htons(_PORT);
     _SERVER_ADDR.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    checkerr( bind(_SERVER_SOCKET, (struct sockaddr*)&_SERVER_ADDR, sizeof(_SERVER_ADDR))
-    , "Port is already taken");
-    checkerr(listen(_SERVER_SOCKET, _MAX_QUEUE), 
-    "Unable to listen in the port");
-    
-    printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
+    checkerr(bind(_SERVER_SOCKET, (struct sockaddr *)&_SERVER_ADDR, sizeof(_SERVER_ADDR)), "Port is already taken");
+    checkerr(listen(_SERVER_SOCKET, _MAX_QUEUE),
+             "Unable to listen in the port");
 
+    printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
 }
 
-void *network_worker(void*)
+void *network_worker(void *arg)
 {
+    for (;;)
+    {
+        checkerr(epoll_wait(_EPOLLFD, events, _MAXEVENTS, -1), "Waiting Failed");
 
+        for (int fd = 0; fd < _NFDS; ++fd)
+        {
+            if (events[fd].data.fd == _SERVER_SOCKET)
+            {
+                // TODO Handle new Connections
+            }
+            else if (events[fd].data.fd < _SERVER_SOCKET)
+                continue;
+            else
+            {
+                // TODO Handle Existing Connections
+            }
+        }
+    }
+    return NULL;
 }

@@ -13,6 +13,7 @@
 #include "utility.h"
 #include "network.h"
 #include "thpool.h"
+#include "epoll.h"
 #pragma endregion
 
 #pragma region [Third-party libraries]
