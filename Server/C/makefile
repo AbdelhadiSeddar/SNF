@@ -13,7 +13,9 @@ clean:
 	if [ -f "$(BIN_PATH)/SRBNP.run" ]; then /bin/rm $(BIN_PATH)/SRBNP.run; fi;
 main:
 	if [ ! -d "$(BUILD_PATH)" ]; then /bin/mkdir $(BUILD_PATH); fi;
-	if [ ! -f "$(SQLite_PATH).o" ]; then /bin/make SQLite; fi;
-	$(COMPILER) *.c */*.c */*.o -o $(BUILD_PATH)/SRBNP.run
-SQLite:
-	if [ ! -f "$(SQLite_PATH)" ]; then $(COMPILER) -DSQLITE_DEFAULT_FOREIGN_KEYS=1 -lpthread -ldl -o $(SQLite_PATH).o -c $(SQLite_PATH).c_SOURCE
+	cd SQLite; \
+	/bin/make build
+	$(COMPILER) main.c SRBNP/*.c SRBNP/*/*.c SQLite/*.o -o $(BUILD_PATH)/SRBNP.run
+
+
+	
