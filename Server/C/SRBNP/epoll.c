@@ -12,7 +12,7 @@ void epoll_inis()
 
 int epoll_add(int FD)
 {
-    ev.events = EPOLLIN;
+    ev.events = EPOLLIN | EPOLLERR| EPOLLET;
     ev.data.fd = FD;
     if (epoll_ctl(_EPOLLFD, EPOLL_CTL_ADD, FD, &ev) == -1)
     {
@@ -33,9 +33,10 @@ void epoll_del(int fd, struct epoll_event *ev)
 
 int epoll_getList()
 {
+    _NFDS = -1;
     while( _NFDS == -1 )
     {
-        _NFDS = epoll_wait(_EPOLLFD , events, _MAXEVENTS, -1);
+        _NFDS = epoll_wait(_EPOLLFD , events, _MAXEVENTS, 10);
         if(errno != EINTR)
             return -1;
     }
