@@ -3,18 +3,18 @@
 int _PORT = 9114;
 int _MAX_QUEUE = 1000;
 
-_Atomic uint64_t Total_Data_Rcv  = 0;
-_Atomic uint64_t Total_Data_Snt  = 0;
+_Atomic uint64_t Total_Data_Rcv = 0;
+_Atomic uint64_t Total_Data_Snt = 0;
 
 int _SERVER_SOCKET = 0;
-struct sockaddr_in  _SERVER_ADDR;
-struct sockaddr_in  _CLIENT_ADDR;
-socklen_t           _CLIENT_LEN;
+struct sockaddr_in _SERVER_ADDR;
+struct sockaddr_in _CLIENT_ADDR;
+socklen_t _CLIENT_LEN;
 
-thpool* Ntwrk;
+thpool *Ntwrk;
 void *Network_Worker(void *arg);
 
-void network_init(const char* PATH)
+void network_init(const char *PATH)
 {
     checkerr((_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
 
@@ -29,10 +29,10 @@ void network_init(const char* PATH)
              "Unable to listen in the port");
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
-    printf("Using SQLite %s\n", sqlite3_libversion()); 
+    printf("Using SQLite %s\n", sqlite3_libversion());
     epoll_inis();
     local_db_inis(PATH);
-    
+
     Ntwrk = inis_thpool(4, Network_Worker, NULL);
 
     thpool_join(Ntwrk);
@@ -48,45 +48,49 @@ void *Network_Worker(void *arg)
             if (events[fd].data.fd == _SERVER_SOCKET)
             {
                 clt client;
-                client.sock = accept(_SERVER_SOCKET, (struct sockaddr *) &_CLIENT_ADDR, &_CLIENT_LEN);
+                client.sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
                 setnonblocking(client.sock);
-                local_db_insert_clt(&client);
-                snd(client.sock, client.UUID, 37);
+                clt_handle_new(clt_new(events[fd].data.fd ));
             }
             else if (events[fd].data.fd < _SERVER_SOCKET)
                 continue;
             else
             {
-                
-                // TODO Handle Existing Connections
+                // TODO handle Existing Client Using Requests
             }
         }
     }
     return NULL;
 }
 
-
-int snd(int Socket, const char* Buffer, int _Size)
+int snd(clt *Client, const char *Buffer, int _Size)
 {
     int DataSnt;
-    if(_Size < 0)
+    if (_Size < 0)
     {
         char buff[strlen(Buffer) + 5];
         strcpy(buff, fb_strlen(Buffer));
         strcat(buff, Buffer);
-        DataSnt = send(Socket, buff, strlen(Buffer) +5, 0);
+        DataSnt = send(Client->sock, buff, strlen(Buffer) + 5, 0);
     }
     else
     {
-        DataSnt = send(Socket, Buffer, _Size, 0);
+        DataSnt = send(Client->sock, Buffer, _Size, 0);
     }
-    Total_Data_Snt += DataSnt;
+
+    if (DataSnt == -1)
+        if (errno == EPIPE)
+            clt_disconnect(Client);
+        else
+            return errno;
+    else
+        Total_Data_Snt += DataSnt;
     return DataSnt;
 }
 
-int rcv(int Socket, void* Buffer, int _Size)
+int rcv(clt *Client, void *Buffer, int _Size)
 {
-    int DataRcv =  recv(Socket, Buffer, _Size, 0);
+    int DataRcv = recv(Client->sock, Buffer, _Size, 0);
     Total_Data_Rcv += DataRcv;
     return DataRcv;
 }

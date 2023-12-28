@@ -20,5 +20,6 @@ typedef enum _ACTION_VAR_TYPE
 } VarType;
 extern clt* local_db_fetch_clt(VarType TypeFetch, void* Value);
 extern int local_db_check_clt(VarType TypeFetch, void* Value);
+extern int local_db_update_clt(VarType VarToUpdate, void *NewValue, VarType VarUpdateWith, void *UpdateWithValue);
 
 #endif

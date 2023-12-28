@@ -39,7 +39,7 @@ void local_db_inis(const char *DB_PATH)
 
     if (sqlite3_prepare_v2(db, SQL_Create_Tables, -1, &sqlstt, NULL) != SQLITE_OK)
     {
-        fprintf(stderr, "Cannot Prepare Statement: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Cannot Prepare Statement ( Create Tables ) : %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(EXIT_FAILURE);
     }
@@ -55,7 +55,7 @@ void local_db_insert_clt(clt *client)
 
     if (sqlite3_prepare_v2(db, SQL_Create_Client, -1, &sqlstt, NULL) != SQLITE_OK)
     {
-        fprintf(stderr, "Cannot Prepare Statement: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Cannot Prepare Statement ( Insert Client ) : %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(EXIT_FAILURE);
     }
@@ -75,7 +75,7 @@ clt *local_db_fetch_clt(VarType TypeFetch, void *Value)
 
     if (sqlite3_prepare_v2(db, SQL_Fetch_Client, -1, &sqlstt, NULL) != SQLITE_OK)
     {
-        fprintf(stderr, "Cannot Prepare Statement: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Cannot Prepare Statement ( Fetch Client ) : %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         exit(EXIT_FAILURE);
     }
@@ -97,7 +97,7 @@ clt *local_db_fetch_clt(VarType TypeFetch, void *Value)
     sqlite3_step(sqlstt);
     if (sqlite3_step(sqlstt) == SQLITE_ROW)
     {
-        clt* Client = clt_new(sqlite3_column_int(sqlstt, 1));
+        clt *Client = clt_new(sqlite3_column_int(sqlstt, 1));
         memcpy(Client->UUID, sqlite3_column_text(sqlstt, 0), 37);
         return Client;
     }
@@ -121,11 +121,11 @@ int local_db_check_clt(VarType TypeFetch, void *Value)
     int res;
     sqlite3_stmt *sqlstt;
     if (sqlite3_prepare_v2(db, SQL_Check_CLIENT, -1, &sqlstt, NULL) != SQLITE_OK)
-        {
-            fprintf(stderr, "Cannot Prepare Statement: %s\n", sqlite3_errmsg(db));
-            sqlite3_close(db);
-            exit(EXIT_FAILURE);
-        }
+    {
+        fprintf(stderr, "Cannot Prepare Statement ( Check Client ) : %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(EXIT_FAILURE);
+    }
 
     if (TypeFetch == _ACTION_VAR_UUID)
     {
@@ -145,4 +145,42 @@ int local_db_check_clt(VarType TypeFetch, void *Value)
         return sqlite3_column_int(sqlstt, 0);
 
     return -1;
+}
+#define SQL_Update_Client "UPDATE client SET ?1=?2 where ?3=?4;"
+int local_db_update_clt(VarType VarToUpdate, void *NewValue, VarType VarUpdateWith, void *UpdateWithValue)
+{
+    int res;
+    sqlite3_stmt *sqlstt;
+
+    if (sqlite3_prepare_v2(db, SQL_Update_Client, -1, &sqlstt, NULL) != SQLITE_OK)
+    {
+        fprintf(stderr, "Cannot Prepare Statement ( Update Client ) : %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        exit(EXIT_FAILURE);
+    }
+
+    switch (VarToUpdate)
+    {
+    case _ACTION_VAR_UUID:
+        sqlite3_bind_text(sqlstt, 1, "uuid", -1, NULL);
+        sqlite3_bind_text(sqlstt, 2, (char *)NewValue, -1, NULL);
+        break;
+    case _ACTION_VAR_SOCK:
+        sqlite3_bind_text(sqlstt, 1, "sock", -1, NULL);
+        sqlite3_bind_int(sqlstt, 2, *(int*)NewValue);
+    }
+
+    switch (VarUpdateWith)
+    {
+    case _ACTION_VAR_UUID:
+        sqlite3_bind_text(sqlstt, 3, "uuid", -1, NULL);
+        sqlite3_bind_text(sqlstt, 4, (char *)UpdateWithValue, -1, NULL);
+        break;
+    case _ACTION_VAR_SOCK:
+        sqlite3_bind_text(sqlstt, 3, "sock", -1, NULL);
+        sqlite3_bind_int(sqlstt, 4, *(int*)UpdateWithValue);
+    }
+
+    sqlite3_step(sqlstt);
+    return 0;
 }

@@ -19,6 +19,7 @@
 #include "epoll.h"
 #include "sqlite.h"
 #include "clt.h"
+#include "_BASE_OPCODE.h"
 #pragma endregion
 
 #pragma region [Third-party libraries]
