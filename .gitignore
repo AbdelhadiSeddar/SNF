@@ -2,3 +2,6 @@
 *.o
 *.json
 *.sqlite3
+*.db
+*.prefs
+Client/Java/SRBNP/src/TEST.java
