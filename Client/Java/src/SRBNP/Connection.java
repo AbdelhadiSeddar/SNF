@@ -26,9 +26,7 @@ public class Connection{
 		Server = new Socket(ServerHost , ServerPort);
 		StreamIn = Server.getInputStream();
 		StreamOut = Server.getOutputStream();
-		byte[] Bytes = new byte[37];
-		StreamIn.read(Bytes);
-		System.out.print(new String(Bytes));
+		
 	}
 	
 
