@@ -51,7 +51,7 @@ void local_db_insert_clt(clt *client)
 {
     int res;
     sqlite3_stmt *sqlstt;
-    generate_UUID_NotTaken((client->UUID));
+    generate_UUID_NotTaken((client->UUID)); 
 
     if (sqlite3_prepare_v2(db, SQL_Create_Client, -1, &sqlstt, NULL) != SQLITE_OK)
     {
@@ -146,41 +146,68 @@ int local_db_check_clt(VarType TypeFetch, void *Value)
 
     return -1;
 }
-#define SQL_Update_Client "UPDATE client SET ?1=?2 where ?3=?4;"
+#define SQL_Update_Client_UUID_UUID "UPDATE client SET uuid=?1 WHERE uuid=?2 ;"
+#define SQL_Update_Client_UUID_SOCK "UPDATE client SET uuid=?1 WHERE sock=?2 ;"
+#define SQL_Update_Client_SOCK_UUID "UPDATE client SET sock=?1 WHERE uuid=?2 ;"
+#define SQL_Update_Client_SOCK_SOCK "UPDATE client SET sock=?1 WHERE sock=?2 ;"
 int local_db_update_clt(VarType VarToUpdate, void *NewValue, VarType VarUpdateWith, void *UpdateWithValue)
 {
     int res;
     sqlite3_stmt *sqlstt;
 
-    if (sqlite3_prepare_v2(db, SQL_Update_Client, -1, &sqlstt, NULL) != SQLITE_OK)
-    {
-        fprintf(stderr, "Cannot Prepare Statement ( Update Client ) : %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        exit(EXIT_FAILURE);
-    }
-
     switch (VarToUpdate)
     {
     case _ACTION_VAR_UUID:
-        sqlite3_bind_text(sqlstt, 1, "uuid", -1, NULL);
-        sqlite3_bind_text(sqlstt, 2, (char *)NewValue, -1, NULL);
+        switch (VarUpdateWith)
+        {
+        case _ACTION_VAR_UUID:
+            if (sqlite3_prepare_v2(db, SQL_Update_Client_UUID_UUID, -1, &sqlstt, NULL) != SQLITE_OK)
+            {
+                fprintf(stderr, "Cannot Prepare Statement ( Update Client UUID _ UUID ) : %s\n", sqlite3_errmsg(db));
+                sqlite3_close(db);
+                exit(EXIT_FAILURE);
+            }
+            sqlite3_bind_text(sqlstt, 1, (char *)NewValue, -1, NULL);
+            sqlite3_bind_text(sqlstt, 2, (char *)UpdateWithValue, -1, NULL);
+            break;
+        case _ACTION_VAR_SOCK:
+            if (sqlite3_prepare_v2(db, SQL_Update_Client_UUID_SOCK, -1, &sqlstt, NULL) != SQLITE_OK)
+            {
+                fprintf(stderr, "Cannot Prepare Statement ( Update Client UUID _ SOCK ) : %s\n", sqlite3_errmsg(db));
+                sqlite3_close(db);
+                exit(EXIT_FAILURE);
+            }
+            sqlite3_bind_text(sqlstt, 1, (char *)NewValue, -1, NULL);
+            sqlite3_bind_int(sqlstt, 2, *(int *)UpdateWithValue);
+            break;
+        }
         break;
     case _ACTION_VAR_SOCK:
-        sqlite3_bind_text(sqlstt, 1, "sock", -1, NULL);
-        sqlite3_bind_int(sqlstt, 2, *(int*)NewValue);
-    }
-
-    switch (VarUpdateWith)
-    {
-    case _ACTION_VAR_UUID:
-        sqlite3_bind_text(sqlstt, 3, "uuid", -1, NULL);
-        sqlite3_bind_text(sqlstt, 4, (char *)UpdateWithValue, -1, NULL);
+        switch (VarUpdateWith)
+        {
+        case _ACTION_VAR_UUID:
+            if (sqlite3_prepare_v2(db, SQL_Update_Client_SOCK_UUID, -1, &sqlstt, NULL) != SQLITE_OK)
+            {
+                fprintf(stderr, "Cannot Prepare Statement ( Update Client SOCK _ UUID ) : %s\n", sqlite3_errmsg(db));
+                sqlite3_close(db);
+                exit(EXIT_FAILURE);
+            }
+            sqlite3_bind_int(sqlstt, 1, *(int *)NewValue);
+            sqlite3_bind_text(sqlstt, 2, (char *)UpdateWithValue, -1, NULL);
+            break;
+        case _ACTION_VAR_SOCK:
+            if (sqlite3_prepare_v2(db, SQL_Update_Client_SOCK_SOCK, -1, &sqlstt, NULL) != SQLITE_OK)
+            {
+                fprintf(stderr, "Cannot Prepare Statement ( Update Client SOCK _ SOCK ) : %s\n", sqlite3_errmsg(db));
+                sqlite3_close(db);
+                exit(EXIT_FAILURE);
+            }
+            sqlite3_bind_int(sqlstt, 1, *(int *)NewValue);
+            sqlite3_bind_int(sqlstt, 2, *(int *)UpdateWithValue);
+            break;
+        }
         break;
-    case _ACTION_VAR_SOCK:
-        sqlite3_bind_text(sqlstt, 3, "sock", -1, NULL);
-        sqlite3_bind_int(sqlstt, 4, *(int*)UpdateWithValue);
     }
-
     sqlite3_step(sqlstt);
     return 0;
 }

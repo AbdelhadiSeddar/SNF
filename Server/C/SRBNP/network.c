@@ -47,16 +47,17 @@ void *Network_Worker(void *arg)
         {
             if (events[fd].data.fd == _SERVER_SOCKET)
             {
-                clt client;
-                client.sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
-                setnonblocking(client.sock);
-                clt_handle_new(clt_new(events[fd].data.fd ));
+                int sock;
+                sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
+                setnonblocking(sock);
+                clt_handle_new(clt_new(sock));
             }
             else if (events[fd].data.fd < _SERVER_SOCKET)
                 continue;
             else
             {
-                // TODO handle Existing Client Using Requests
+                clt_handle(clt_new(events[fd].data.fd));
+                //TODO: Start Requests Protocol
             }
         }
     }

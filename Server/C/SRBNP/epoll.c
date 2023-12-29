@@ -12,12 +12,13 @@ void epoll_inis()
 
 int epoll_add(int FD)
 {
-    ev.events = EPOLLIN | EPOLLERR| EPOLLET;
+    ev.events = EPOLLIN | EPOLLERR;
     ev.data.fd = FD;
     if (epoll_ctl(_EPOLLFD, EPOLL_CTL_ADD, FD, &ev) == -1)
     {
         if (errno != EEXIST)
         {
+            printf("Failed Operation on Socket %d\n", FD);
             perror("epoll_ctl: listen_sock");
             exit(EXIT_FAILURE);
         }

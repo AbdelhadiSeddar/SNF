@@ -8,6 +8,12 @@ clt *clt_new(int Sockfd)
     return Client;
 }
 
+void clt_free(clt **Client)
+{
+    free((*Client)->UUID);
+    free((*Client));
+}
+
 clt *clt_get_sockfd(int Sockfd)
 {
     return local_db_fetch_clt(_ACTION_VAR_SOCK, (void*)&Sockfd);
@@ -36,6 +42,26 @@ void clt_handle_new(clt *Client)
     else if(strcmp(Buffer, _OPCODE_CLT_RECONNECT))
         clt_reconnect(Client);
 
+}
+
+void clt_handle(clt *Client)
+{
+    char *Buffer = calloc(4, sizeof(char));
+    rcv(Client, Buffer, 4);
+    if(strcmp(Buffer, _OPCODE_CLT_DISCONNECT))
+        clt_disconnect(Client);
+    else if(strcmp(Buffer, _OPCODE_CLT_UPDATE))
+    {
+        // TODO: Update Client With Appropriate Infos.
+    }
+//    else if(###)
+//    {
+//          // TODO: Handle Custom Requests
+//    }
+    else
+    {
+        // TODO: Respond Invalid
+    }
 }
 
 void clt_connect(clt *Client)
