@@ -9,6 +9,7 @@
 
 #define _OPCODE_CLT_CONFIRM     "005"
 #define _OPCODE_CLT_REJECTED    "006"
+#define _OPCODE_CLT_INVALID     "007"
 
 
 #endif

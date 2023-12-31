@@ -47,7 +47,7 @@ void local_db_inis(const char *DB_PATH)
 }
 
 #define SQL_Create_Client "INSERT INTO client (uuid, sock) VALUES ( ?1 , ?2);"
-void local_db_insert_clt(clt *client)
+void local_db_insert_clt(Clt *client)
 {
     int res;
     sqlite3_stmt *sqlstt;
@@ -66,7 +66,7 @@ void local_db_insert_clt(clt *client)
 }
 
 #define SQL_Fetch_Client "SELECT * FROM client WHERE ?1=?2; "
-clt *local_db_fetch_clt(VarType TypeFetch, void *Value)
+Clt *local_db_fetch_clt(VarType TypeFetch, void *Value)
 {
 
     int res;
@@ -97,7 +97,7 @@ clt *local_db_fetch_clt(VarType TypeFetch, void *Value)
     sqlite3_step(sqlstt);
     if (sqlite3_step(sqlstt) == SQLITE_ROW)
     {
-        clt *Client = clt_new(sqlite3_column_int(sqlstt, 1));
+        Clt *Client = clt_new(sqlite3_column_int(sqlstt, 1));
         memcpy(Client->UUID, sqlite3_column_text(sqlstt, 0), 37);
         return Client;
     }

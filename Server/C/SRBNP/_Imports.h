@@ -20,6 +20,7 @@
 #include "sqlite.h"
 #include "clt.h"
 #include "_BASE_OPCODE.h"
+#include "request.h"
 #pragma endregion
 
 #pragma region [Third-party libraries]

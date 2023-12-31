@@ -50,27 +50,26 @@ void *Network_Worker(void *arg)
                 int sock;
                 sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
                 setnonblocking(sock);
-                clt_handle_new(clt_new(sock));
+                thpool_addwork(Ntwrk, clt_handle_new, (void*)clt_new(sock));
             }
             else if (events[fd].data.fd < _SERVER_SOCKET)
                 continue;
             else
-            {
-                clt_handle(clt_new(events[fd].data.fd));
-                //TODO: Start Requests Protocol
-            }
+                thpool_addwork(Ntwrk, clt_handle, (void*) clt_new(events[fd].data.fd));
+
+            
         }
     }
     return NULL;
 }
 
-int snd(clt *Client, const char *Buffer, int _Size)
+int snd(Clt *Client, const char *Buffer, int _Size)
 {
     int DataSnt;
     if (_Size < 0)
     {
         char buff[strlen(Buffer) + 5];
-        strcpy(buff, fb_strlen(Buffer));
+        strcpy(buff, Fbyte_FROM_str(Buffer));
         strcat(buff, Buffer);
         DataSnt = send(Client->sock, buff, strlen(Buffer) + 5, 0);
     }
@@ -89,7 +88,7 @@ int snd(clt *Client, const char *Buffer, int _Size)
     return DataSnt;
 }
 
-int rcv(clt *Client, void *Buffer, int _Size)
+int rcv(Clt *Client, void *Buffer, int _Size)
 {
     int DataRcv = recv(Client->sock, Buffer, _Size, 0);
     Total_Data_Rcv += DataRcv;

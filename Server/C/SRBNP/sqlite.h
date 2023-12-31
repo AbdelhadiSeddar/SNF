@@ -11,14 +11,14 @@ extern sqlite3* db;
 
 
 extern void local_db_inis();
-extern void local_db_insert_clt(clt* client);
+extern void local_db_insert_clt(Clt* client);
 
 typedef enum _ACTION_VAR_TYPE 
 {
     _ACTION_VAR_UUID,
     _ACTION_VAR_SOCK
 } VarType;
-extern clt* local_db_fetch_clt(VarType TypeFetch, void* Value);
+extern Clt* local_db_fetch_clt(VarType TypeFetch, void* Value);
 extern int local_db_check_clt(VarType TypeFetch, void* Value);
 extern int local_db_update_clt(VarType VarToUpdate, void *NewValue, VarType VarUpdateWith, void *UpdateWithValue);
 

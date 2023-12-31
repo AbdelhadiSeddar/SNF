@@ -1,94 +1,106 @@
 #include "_Imports.h"
 #include "clt.h"
 
-clt *clt_new(int Sockfd)
+Clt *clt_new(int Sockfd)
 {
-    clt *Client = malloc(sizeof(clt));
-    Client ->sock = Sockfd;
+    Clt *Client = malloc(sizeof(Clt));
+    Client->sock = Sockfd;
     return Client;
 }
 
-void clt_free(clt **Client)
+void clt_free(Clt *Client)
 {
-    free((*Client)->UUID);
-    free((*Client));
+    free(Client->UUID);
+    free(Client);
 }
 
-clt *clt_get_sockfd(int Sockfd)
+Clt *clt_get_sockfd(int Sockfd)
 {
-    return local_db_fetch_clt(_ACTION_VAR_SOCK, (void*)&Sockfd);
+    return local_db_fetch_clt(_ACTION_VAR_SOCK, (void *)&Sockfd);
 }
 
-clt *clt_get_uuid(const char *uuid)
+Clt *clt_get_uuid(const char *uuid)
 {
-    return local_db_fetch_clt(_ACTION_VAR_UUID, (void*)uuid);
+    return local_db_fetch_clt(_ACTION_VAR_UUID, (void *)uuid);
 }
 
 int clt_check_sockfd(int Sockfd)
 {
-    return local_db_check_clt(_ACTION_VAR_SOCK, (void*)&Sockfd);
+    return local_db_check_clt(_ACTION_VAR_SOCK, (void *)&Sockfd);
 }
 int clt_check_uuid(const char *uuid)
 {
-    return local_db_check_clt(_ACTION_VAR_UUID, (void*)uuid);
+    return local_db_check_clt(_ACTION_VAR_UUID, (void *)uuid);
 }
 
-void clt_handle_new(clt *Client)
+void *clt_handle_new(void *arg)
 {
+    Clt *Client = (Clt *)arg;
+    checkerr(Client == NULL ? -1 : 0, "Can not handle new client: Null");
     char *Buffer = calloc(4, sizeof(char));
     rcv(Client, Buffer, 4);
-    if(strcmp(Buffer, _OPCODE_CLT_CONNECT))
+    if (!strcmp(Buffer, _OPCODE_CLT_CONNECT))
         clt_connect(Client);
-    else if(strcmp(Buffer, _OPCODE_CLT_RECONNECT))
+    else if (!strcmp(Buffer, _OPCODE_CLT_RECONNECT))
         clt_reconnect(Client);
-
-}
-
-void clt_handle(clt *Client)
-{
-    char *Buffer = calloc(4, sizeof(char));
-    rcv(Client, Buffer, 4);
-    if(strcmp(Buffer, _OPCODE_CLT_DISCONNECT))
-        clt_disconnect(Client);
-    else if(strcmp(Buffer, _OPCODE_CLT_UPDATE))
-    {
-        // TODO: Update Client With Appropriate Infos.
-    }
-//    else if(###)
-//    {
-//          // TODO: Handle Custom Requests
-//    }
     else
-    {
-        // TODO: Respond Invalid
-    }
+        clt_disconnect(Client);
+
+    clt_free(Client);
+    return NULL;
 }
 
-void clt_connect(clt *Client)
+void *clt_handle(void *arg)
+{
+    Clt *Client = (Clt *)arg;
+    rcv(Client, Client->UUID, 37);
+    Rqst *Rqst = request_fetchfrom_clt(Client);
+
+    if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_DISCONNECT))
+        clt_disconnect(Client);
+    else if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_UPDATE))
+    {
+        request_send_clt(Client,
+                         request_gen_response(Rqst,
+                                              _OPCODE_CLT_CONFIRM,
+                                              request_arg_gen(_SRBNP_VERSION)));
+    }
+    //    else if(###)
+    //    {
+    //          // TODO: Handle Custom Requests
+    //    }
+    else
+        request_send_invalid(Client, Rqst);
+    clt_free(Client);
+    request_free(Rqst);
+    return NULL;
+}
+
+void clt_connect(Clt *Client)
 {
     local_db_insert_clt(Client);
-    snd(Client, Client -> UUID, 37);
+    snd(Client, Client->UUID, 37);
     epoll_add(Client->sock);
 }
 
-void clt_reconnect(clt *Client)
+void clt_reconnect(Clt *Client)
 {
     rcv(Client, Client->UUID, 37);
-    if(clt_check_uuid(Client->UUID))
+    if (clt_check_uuid(Client->UUID))
     {
-        clt *tmp = clt_get_uuid(Client->UUID);
-        if(tmp -> sock < _SERVER_SOCKET)
+        Clt *tmp = clt_get_uuid(Client->UUID);
+        if (tmp->sock < _SERVER_SOCKET)
         {
-            local_db_update_clt(_ACTION_VAR_SOCK, (void*)&(Client->sock), _ACTION_VAR_UUID, (void*)(Client->UUID));
+            local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(Client->sock), _ACTION_VAR_UUID, (void *)(Client->UUID));
             return;
         }
     }
     local_db_insert_clt(Client);
 }
 
-void clt_disconnect(clt *Client)
+void clt_disconnect(Clt *Client)
 {
     close(Client->sock);
     int i = -1;
-    local_db_update_clt(_ACTION_VAR_SOCK, (void*)&(i), _ACTION_VAR_UUID, (void*)(Client->UUID));
+    local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(i), _ACTION_VAR_UUID, (void *)(Client->UUID));
 }
