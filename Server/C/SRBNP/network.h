@@ -16,5 +16,6 @@ extern void network_init();
 
 extern int snd(Clt *Client, const char *Buffer, int _Size);
 extern int rcv(Clt* Client, void* Buffer, int _Size);
+extern int network_handle_zombie(Clt *Client);
 
 #endif

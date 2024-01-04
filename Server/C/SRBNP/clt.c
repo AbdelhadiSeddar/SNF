@@ -10,7 +10,6 @@ Clt *clt_new(int Sockfd)
 
 void clt_free(Clt *Client)
 {
-    free(Client->UUID);
     free(Client);
 }
 
@@ -46,6 +45,7 @@ void *clt_handle_new(void *arg)
     else
         clt_disconnect(Client);
 
+    free(Buffer);
     clt_free(Client);
     return NULL;
 }
@@ -53,7 +53,12 @@ void *clt_handle_new(void *arg)
 void *clt_handle(void *arg)
 {
     Clt *Client = (Clt *)arg;
-    rcv(Client, Client->UUID, 37);
+    char UUID[37];
+    if(rcv(Client, UUID, 37) < 37 || strcmp(UUID, Client ->UUID))
+    {
+        clt_disconnect(Client);
+        goto end_clt_handle;
+    }
     Rqst *Rqst = request_fetchfrom_clt(Client);
 
     if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_DISCONNECT))
@@ -71,8 +76,9 @@ void *clt_handle(void *arg)
     //    }
     else
         request_send_invalid(Client, Rqst);
-    clt_free(Client);
     request_free(Rqst);
+    end_clt_handle:;
+    clt_free(Client);
     return NULL;
 }
 
@@ -100,7 +106,8 @@ void clt_reconnect(Clt *Client)
 
 void clt_disconnect(Clt *Client)
 {
+    epoll_del(Client->sock);
     close(Client->sock);
     int i = -1;
-    local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(i), _ACTION_VAR_UUID, (void *)(Client->UUID));
+    local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(i), _ACTION_VAR_SOCK, (void *)&(Client->sock));
 }

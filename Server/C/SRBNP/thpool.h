@@ -35,6 +35,7 @@ struct thpool_t {
 extern thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg);
 
 extern void thpool_addwork(thpool *pool, void *(*func)(), void *arg);
+extern void thpool_work_free(thpool_work *work);
 extern void thpool_join(thpool *pool);
 extern void thpool_stop(thpool *pool);
 extern void thpool_wait(thpool* pool);

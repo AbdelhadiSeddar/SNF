@@ -25,7 +25,7 @@ thpool *inis_thpool(int Max_Threads, void *(*Main_Worker)(), void *arg)
     (new->thpool_handler) = malloc(sizeof(pthread_t));
     (new->thpool_main_worker) = malloc(sizeof(pthread_t));
     (new->thpool_works) = NULL;
-    (new->max_workers_count) = Max_Threads;
+    (new->max_workers_count) = Max_Threads -1 ;
     (new->stop) = 0;
 
     pthread_create(
@@ -106,6 +106,7 @@ void *thpool_work_wrapper(void *arg)
     thpool_work* work = (thpool_work*)arg;
     void * re = (work->func)(work->arg);
     sem_post(&(work->pool->thpool_sem));
+    thpool_work_free(work);
     return re;
 }
 
@@ -132,6 +133,11 @@ void thpool_addwork(thpool *pool, void *(*func)(), void *arg)
         tmp ->next = work;
     }
     pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
+}
+
+void thpool_work_free(thpool_work *work)
+{
+    free(work);
 }
 
 void thpool_wait(thpool* pool)

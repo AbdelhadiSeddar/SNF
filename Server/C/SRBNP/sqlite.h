@@ -4,10 +4,9 @@
 #include "clt.h"
 
 extern char* SQLiteDatabase;
-extern sqlite3* db;
 /// @brief Connects to the local Database
 /// @return SQLITE_OK -> Connected | Else Error 
-#define local_db_connect() sqlite3_open( SQLiteDatabase, &db)
+#define local_db_connect() sqlite3_open_v2( SQLiteDatabase, &db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX , NULL)
 
 
 extern void local_db_inis();

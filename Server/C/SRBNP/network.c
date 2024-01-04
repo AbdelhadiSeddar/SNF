@@ -1,4 +1,5 @@
 #include "_Imports.h"
+#include "network.h"
 
 int _PORT = 9114;
 int _MAX_QUEUE = 1000;
@@ -43,21 +44,19 @@ void *Network_Worker(void *arg)
     for (;;)
     {
         epoll_getList();
+        Clt *Client = NULL; 
         for (int fd = 0; fd < _NFDS; ++fd)
         {
+            int sock;
             if (events[fd].data.fd == _SERVER_SOCKET)
             {
-                int sock;
                 sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
-                setnonblocking(sock);
-                thpool_addwork(Ntwrk, clt_handle_new, (void*)clt_new(sock));
+                thpool_addwork(Ntwrk, clt_handle_new, (void *)clt_new(sock));
             }
             else if (events[fd].data.fd < _SERVER_SOCKET)
                 continue;
-            else
-                thpool_addwork(Ntwrk, clt_handle, (void*) clt_new(events[fd].data.fd));
-
-            
+            else if (network_handle_zombie((Client = clt_get_sockfd(events[fd].data.fd))))
+                thpool_addwork(Ntwrk, clt_handle, (void *)Client);
         }
     }
     return NULL;
@@ -90,7 +89,23 @@ int snd(Clt *Client, const char *Buffer, int _Size)
 
 int rcv(Clt *Client, void *Buffer, int _Size)
 {
+    if (Client == NULL)
+        return -1;
+
     int DataRcv = recv(Client->sock, Buffer, _Size, 0);
-    Total_Data_Rcv += DataRcv;
+    if (DataRcv <= 0)
+        clt_disconnect(Client);
+    else
+        Total_Data_Rcv += DataRcv;
     return DataRcv;
+}
+int network_handle_zombie(Clt *Client)
+{
+    char R[1];
+    if(recv(Client->sock, R, 1, MSG_PEEK) <= 0)
+    {
+        clt_disconnect(Client);
+        return 0;
+    }
+    return 1;
 }

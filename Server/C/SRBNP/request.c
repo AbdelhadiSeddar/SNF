@@ -9,7 +9,7 @@ Rqst *request_fetchfrom_clt(Clt *Client)
     int Size = Fbyte_TO_int(MsgSize);
     if (Size < 0)
     {
-        request_send_invalid(Client, request_gen_wUID(NULLREQUEST));
+        clt_disconnect(Client);
         return NULL;
     }
     char *Request = calloc(Size, sizeof(char));
@@ -103,6 +103,8 @@ int request_get_nargs(Rqst *args)
         return 0;
     int nargs = 1;
     Rqst_arg *arg = args->args;
+    if(arg == NULL)
+        return 0;
     while (arg->next == NULL)
     {
         nargs++;

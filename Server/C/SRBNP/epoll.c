@@ -1,7 +1,7 @@
 #include "_Imports.h"
 
 int _EPOLLFD, _NFDS;
-struct epoll_event ev, events[_MAXEVENTS];
+struct epoll_event events[_MAXEVENTS];
 void epoll_inis()
 {
     if (_SERVER_SOCKET <= 0)
@@ -12,7 +12,8 @@ void epoll_inis()
 
 int epoll_add(int FD)
 {
-    ev.events = EPOLLIN | EPOLLERR;
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
     ev.data.fd = FD;
     if (epoll_ctl(_EPOLLFD, EPOLL_CTL_ADD, FD, &ev) == -1)
     {
@@ -27,9 +28,12 @@ int epoll_add(int FD)
     return 0;
 }
 
-void epoll_del(int fd, struct epoll_event *ev)
+void epoll_del(int fd)
 {
-    epoll_ctl(_EPOLLFD, EPOLL_CTL_DEL, fd, ev);
+    struct epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = fd;
+    epoll_ctl(_EPOLLFD, EPOLL_CTL_DEL, fd, &ev);
 }
 
 int epoll_getList()
