@@ -73,15 +73,13 @@ Rqst *request_gen_wUID(const char UID[16])
 
 void request_free(Rqst *Request)
 {
-    request_arg_free(Request->args);
+    request_args_free(Request->args);
     free(Request);
 }
 
 Rqst *request_gen_response(Rqst *Original, char OPCODE[4], Rqst_arg *Args)
 {
-    Rqst *re = request_gen();
-    memcpy(re->UID, NULLREQUEST, 16);
-    memcpy(re->RespondToUID, Original->UID, 16);
+    Rqst *re = request_gen_wUID(Original->UID);
     memcpy(re->OPCODE, OPCODE, 4);
     re->args = Args;
     return re;

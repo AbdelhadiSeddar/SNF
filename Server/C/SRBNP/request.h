@@ -10,7 +10,6 @@ typedef struct Request_args_t Rqst_arg;
 struct Request_t
 {
     char UID[16];
-    char RespondToUID[16];
     char OPCODE[4];
     Rqst_arg *args;
 };
