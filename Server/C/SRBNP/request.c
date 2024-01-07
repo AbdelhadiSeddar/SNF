@@ -14,7 +14,6 @@ Rqst *request_fetchfrom_clt(Clt *Client)
     }
     char *Request = calloc(Size, sizeof(char));
     rcv(Client, Request, Size);
-
     strncpy(re->UID, Request, 16);
     re->UID[15] = '\0';
     char *tmp = calloc(Size - strlen(re->UID), sizeof(char));
@@ -66,8 +65,7 @@ Rqst *request_gen()
 Rqst *request_gen_wUID(const char UID[16])
 {
     Rqst *re = request_gen();
-    memcpy(re->RespondToUID, UID, 16);
-
+    memcpy(re->UID, UID, 16);
     return re;
 }
 
