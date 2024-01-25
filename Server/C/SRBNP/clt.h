@@ -1,12 +1,17 @@
 #ifndef clt_h
 #define clt_h
+#include <pthread.h>
 
 #define NULLREQUEST "000000000000000"
 typedef struct Client_t Clt;
 
 struct Client_t
 {
+    //  Mutex used to avoid Race Condition.
+    pthread_mutex_t mutex;
+    //  Saves the  36 ( +1 Null character ) character wide Unique User IDentifier. Used to defined the connected Client
     char UUID[37];
+    //  Saves the socket id
     int sock;
 };
 

@@ -4,13 +4,15 @@
 Clt *clt_new(int Sockfd)
 {
     Clt *Client = malloc(sizeof(Clt));
+    pthread_mutex_init(&(Client->mutex), NULL);
     Client->sock = Sockfd;
     return Client;
 }
 
 void clt_free(Clt *Client)
 {
-    free(Client);
+    if (Client != NULL)
+        free(Client);
 }
 
 Clt *clt_get_sockfd(int Sockfd)
@@ -54,8 +56,12 @@ void *clt_handle(void *arg)
 {
     Clt *Client = (Clt *)arg;
     char UUID[37];
-    if(rcv(Client, UUID, 37) < 37 || strcmp(UUID, Client ->UUID))
+    pthread_mutex_lock(&(Client->mutex));
+    epoll_del((Client->sock));
+    int i = 0;
+    if ((i = rcv(Client, UUID, 37)) < 37 || strcmp(UUID, Client->UUID))
     {
+        pthread_mutex_unlock(&(Client->mutex));
         clt_disconnect(Client);
         goto end_clt_handle;
     }
@@ -63,12 +69,12 @@ void *clt_handle(void *arg)
 
     if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_DISCONNECT))
         clt_disconnect(Client);
-    else if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_UPDATE))
+    else if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_SRBNP_VER))
     {
         request_send_clt(Client,
-                         request_gen_response(Rqst,
-                                              _OPCODE_CLT_CONFIRM,
-                                              request_arg_gen(_SRBNP_VERSION)));
+        request_gen_response(Rqst,
+                            _OPCODE_CLT_CONFIRM,
+                            request_arg_gen(_SRBNP_VER)));
     }
     //    else if(###)
     //    {
@@ -76,8 +82,10 @@ void *clt_handle(void *arg)
     //    }
     else
         request_send_invalid(Client, Rqst);
+    pthread_mutex_unlock(&(Client->mutex));
+    epoll_add((Client->sock));
     request_free(Rqst);
-    end_clt_handle:;
+end_clt_handle:;
     clt_free(Client);
     return NULL;
 }
@@ -106,8 +114,10 @@ void clt_reconnect(Clt *Client)
 
 void clt_disconnect(Clt *Client)
 {
+    pthread_mutex_lock(&(Client->mutex));
     epoll_del(Client->sock);
     close(Client->sock);
     int i = -1;
     local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(i), _ACTION_VAR_SOCK, (void *)&(Client->sock));
+    pthread_mutex_unlock(&(Client->mutex));
 }

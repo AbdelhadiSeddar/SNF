@@ -1,11 +1,11 @@
 #include "_Imports.h"
-#include "request.h"
 
 Rqst *request_fetchfrom_clt(Clt *Client)
 {
     Rqst *re = request_gen();
     char MsgSize[5];
     rcv(Client, MsgSize, 5);
+    printf("Received Content : %s\n", MsgSize);
     int Size = Fbyte_TO_int(MsgSize);
     if (Size < 0)
     {
@@ -14,8 +14,9 @@ Rqst *request_fetchfrom_clt(Clt *Client)
     }
     char *Request = calloc(Size, sizeof(char));
     rcv(Client, Request, Size);
-    strncpy(re->UID, Request, 16);
-    re->UID[15] = '\0';
+    printf("Received %d Bytes With Content : %s\n", Size, Request);
+    strncpy(re->UID, Request, strlen(NULLREQUEST));
+    re->UID[strlen(NULLREQUEST)] = '\0';
     char *tmp = calloc(Size - strlen(re->UID), sizeof(char));
     memcpy(tmp, Request + strlen(re->UID), Size -= strlen(re->UID));
     free(Request);
@@ -32,7 +33,7 @@ Rqst *request_fetchfrom_clt(Clt *Client)
 
     while (Size > 0)
     {
-        int chr = (int)(strchr(Request, UNIT_SCEPARATOR[0]) - Request);
+        int chr = (int)(strchrnul(Request, UNIT_SCEPARATOR[0]) - Request);
         char *tmpRqst = calloc(chr, sizeof(char));
         strncpy(tmpRqst, Request, chr);
         tmpRqst[chr] = '\0';
@@ -47,7 +48,7 @@ Rqst *request_fetchfrom_clt(Clt *Client)
             Current = new;
         }
         char *tmp = calloc(Size - chr - 1, sizeof(char));
-        memcpy(tmp, Request + chr + 1, Size -= chr - 1);
+        memcpy(tmp, Request + chr + 1, Size -= chr + 1);
         free(Request);
         Request = tmp;
     }
@@ -71,6 +72,8 @@ Rqst *request_gen_wUID(const char UID[16])
 
 void request_free(Rqst *Request)
 {
+    if(Request == NULL)
+        return;
     request_args_free(Request->args);
     free(Request);
 }
@@ -130,13 +133,13 @@ void request_args_free(Rqst_arg *arg)
     if (arg == NULL)
         return;
     Rqst_arg *current = arg;
-    Rqst_arg *next;
-    do
+    Rqst_arg *next = current ->next;
+    while (next != NULL)
     {
         next = current->next;
         request_arg_free(current);
         current = next;
-    } while (next != NULL);
+    };
     arg = NULL;
 }
 

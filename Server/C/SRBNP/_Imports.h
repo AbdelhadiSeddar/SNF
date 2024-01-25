@@ -1,3 +1,14 @@
+#define _SRBNP_VER 0000
+#define _GNU_SOURCE
+
+#if __STDC_VERSION__ < 201112L || __STD_NO_ATOMICS__
+#error "Atomics Not Supported!"
+#else
+#define HAS_ATOMICS
+#endif
+
+
+#pragma region [Standard]
 #include <stdio.h> 
 #include <errno.h>
 #include <netdb.h> 
@@ -11,6 +22,7 @@
 #include <sys/types.h> 
 #include <sys/epoll.h>
 #include <uuid/uuid.h>
+#pragma endregion
 
 #pragma region [Non-Standard]
 #include "utility.h"
@@ -27,3 +39,4 @@
 ///     SQLite Will only be used for Saving Temporary Clients info / Logs
 #include "../SQLite/sqlite3.h"
 #pragma endregion
+

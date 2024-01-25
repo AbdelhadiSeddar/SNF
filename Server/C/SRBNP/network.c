@@ -34,7 +34,7 @@ void network_init(const char *PATH)
     epoll_inis();
     local_db_inis(PATH);
 
-    Ntwrk = inis_thpool(4, Network_Worker, NULL);
+    inis_thpool(&Ntwrk, 4, Network_Worker, NULL);
 
     thpool_join(Ntwrk);
 }
@@ -44,9 +44,10 @@ void *Network_Worker(void *arg)
     for (;;)
     {
         epoll_getList();
-        Clt *Client = NULL; 
+        Clt *Client = NULL;
         for (int fd = 0; fd < _NFDS; ++fd)
         {
+            printf("Handling %d\n", events[fd].data.fd);
             int sock;
             if (events[fd].data.fd == _SERVER_SOCKET)
             {
@@ -56,7 +57,16 @@ void *Network_Worker(void *arg)
             else if (events[fd].data.fd < _SERVER_SOCKET)
                 continue;
             else if (network_handle_zombie((Client = clt_get_sockfd(events[fd].data.fd))))
+            {
                 thpool_addwork(Ntwrk, clt_handle, (void *)Client);
+            }
+        }
+
+        if (_NFDS > 0)
+        {
+
+            printf("Dd %d\n", Ntwrk->thpool_n_works);
+            thpool_wait(Ntwrk);
         }
     }
     return NULL;
@@ -65,6 +75,8 @@ void *Network_Worker(void *arg)
 int snd(Clt *Client, const char *Buffer, int _Size)
 {
     int DataSnt;
+
+    pthread_mutex_lock(&(Client->mutex));
     if (_Size < 0)
     {
         char buff[strlen(Buffer) + 5];
@@ -79,33 +91,72 @@ int snd(Clt *Client, const char *Buffer, int _Size)
 
     if (DataSnt == -1)
         if (errno == EPIPE)
+        {
+            if (pthread_mutex_trylock(&(Client->mutex)) < 0)
+            {
+                if (errno != EBUSY)
+                {
+                    perror("missuse of client mutex");
+                    exit(0);
+                }
+            }
+            pthread_mutex_unlock(&(Client->mutex));
             clt_disconnect(Client);
+        }
         else
-            return errno;
+        {
+            pthread_mutex_unlock(&(Client->mutex));
+            return -1;
+        }
     else
         Total_Data_Snt += DataSnt;
+    pthread_mutex_unlock(&(Client->mutex));
     return DataSnt;
 }
 
-int rcv(Clt *Client, void *Buffer, int _Size)
+int rcv_(Clt *Client, void *Buffer, int _Size, int _Flags)
 {
     if (Client == NULL)
         return -1;
 
-    int DataRcv = recv(Client->sock, Buffer, _Size, 0);
-    if (DataRcv <= 0)
-        clt_disconnect(Client);
+    int DataRcv = recv(Client->sock, Buffer, _Size, _Flags);
+    if (DataRcv <= _Size)
+        if (errno == EPIPE)
+        {
+            if (pthread_mutex_trylock(&(Client->mutex)) < 0)
+            {
+                if (errno != EBUSY)
+                {
+                    perror("missuse of client mutex");
+                    pthread_exit(0);
+                }
+            }
+            pthread_mutex_unlock(&(Client->mutex));
+            clt_disconnect(Client);
+        }
+        else
+        {
+            return -1;
+        }
     else
         Total_Data_Rcv += DataRcv;
     return DataRcv;
 }
 int network_handle_zombie(Clt *Client)
 {
-    char R[1];
-    if(recv(Client->sock, R, 1, MSG_PEEK) <= 0)
+    if (pthread_mutex_trylock(&(Client->mutex)) < 0)
     {
-        clt_disconnect(Client);
-        return 0;
+        return -1;
     }
+    char R[1];
+    if (Client == NULL)
+        return 0;
+
+    if (rcv_PEEK(Client, R, 0) < 0)
+    {
+        pthread_mutex_unlock(&(Client->mutex));
+        return -1;
+    }
+    pthread_mutex_unlock(&(Client->mutex));
     return 1;
 }
