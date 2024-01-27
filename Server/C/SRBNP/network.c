@@ -30,7 +30,6 @@ void network_init(const char *PATH)
              "Unable to listen in the port");
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
-    printf("Using SQLite %s\n", sqlite3_libversion());
     epoll_inis();
     local_db_inis(PATH);
 
@@ -145,9 +144,8 @@ int rcv_(Clt *Client, void *Buffer, int _Size, int _Flags)
 int network_handle_zombie(Clt *Client)
 {
     if (pthread_mutex_trylock(&(Client->mutex)) < 0)
-    {
         return -1;
-    }
+
     char R[1];
     if (Client == NULL)
         return 0;

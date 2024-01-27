@@ -1,8 +1,7 @@
 C=c11
 COMPILER=clang --std=$C
-flags=-lpthread -luuid -DSQLITE_DEFAULT_FOREIGN_KEYS=1 -DTHREADSAFE=1
+flags=-lpthread -luuid -lm
 
-SQLite_PATH=SQLite/sqlite3.o
 
 BIN_PATH=/var/tmp/SRBNP
 BUILD_PATH=bin
@@ -21,16 +20,13 @@ clean:
 	if [ -f "$(BIN_PATH)/SRBNP.run" ]; then rm $(BIN_PATH)/SRBNP.run; fi;
 main:
 	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	if [ ! -f "$(SQLite_PATH)" ]; then cd SQLite; make build; fi;
-	$(COMPILER) main.c SRBNP/*.c SQLite/*.o -o $(BUILD_PATH)/SRBNP.run $(flags)
+	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags)
 
 adrsan:
 	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	if [ ! -f "$(SQLite_PATH)" ]; then cd SQLite; make build; fi;
-	$(COMPILER) main.c SRBNP/*.c SQLite/*.o -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=address
+	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=address
 thrdsan:
 	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	if [ ! -f "$(SQLite_PATH)" ]; then cd SQLite; make build; fi;
-	$(COMPILER) main.c SRBNP/*.c SQLite/*.o -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=thread
+	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=thread
 
 

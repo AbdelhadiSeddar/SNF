@@ -14,6 +14,7 @@
 #include <netdb.h> 
 #include <netinet/in.h> 
 #include <semaphore.h>
+#include <math.h>
 #include <stdlib.h> 
 #include <string.h> 
 #include <unistd.h>
@@ -32,7 +33,13 @@
 #include "sqlite.h"
 #include "clt.h"
 #include "_BASE_OPCODE.h"
+#include "clt.h"
+#include "epoll.h"
+#include "hashtable.h"
+#include "network.h"
 #include "request.h"
+#include "thpool.h"
+#include "utility.h"
 #pragma endregion
 
 #pragma region [Third-party libraries]
