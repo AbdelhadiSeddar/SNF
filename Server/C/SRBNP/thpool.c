@@ -63,7 +63,7 @@ void thpool_remove_worker(thpool *pool, thpool_worker *worker)
                 tmp->next = worker->next;
                 goto end_thpool_remove_worker;
             }
-            tmp = worker ->next;
+            tmp = worker->next;
         }
     }
 end_thpool_remove_worker:;
@@ -80,17 +80,17 @@ void thpool_work_free(thpool_work *work)
 /// @brief Pops a work from the "works" Pile
 /// @param pool  The Thread pool to be operated on.
 /// @return Poped Work
-thpool_work* thpool_pop_work(thpool* pool, thpool_worker* worker)
+thpool_work *thpool_pop_work(thpool *pool, thpool_worker *worker)
 {
-    thpool_work* work = pool->thpool_works;
+    thpool_work *work = pool->thpool_works;
     pool->thpool_n_works--;
-    pool -> thpool_works = pool -> thpool_works ->next;
+    pool->thpool_works = pool->thpool_works->next;
     work->worker = worker;
     return work;
 }
 /// @brief Serves as a Wrapper to the "work"
 /// @param arg Must be of Type [ thpool_work * ]
-/// @return 
+/// @return
 void *thpool_work_wrapper(void *arg)
 {
     thpool_work *work = (thpool_work *)arg;
@@ -113,10 +113,10 @@ void *thpool_handler(void *arg)
             pthread_cond_wait(&(pool->thpool_works_cond), &(pool->thpool_works_MUTEX));
         thpool_worker *worker = thpool_insertnew_worker(pool);
         if (worker != NULL)
-            pthread_create( 
-                (worker->worker), 
-                NULL, 
-                thpool_work_wrapper, 
+            pthread_create(
+                (worker->worker),
+                NULL,
+                thpool_work_wrapper,
                 thpool_pop_work(pool, worker));
         pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
     }
@@ -131,7 +131,7 @@ void *thpool_handler(void *arg)
 }
 int inis_thpool(thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), void *arg)
 {
-    if (ThreadPool == NULL ||   Max_Threads > (Main_Worker == NULL ? 2 : 3))
+    if (ThreadPool == NULL || Max_Threads < (Main_Worker == NULL ? 2 : 3))
         return -1;
     thpool *new = calloc(1, sizeof(thpool));
     pthread_mutex_init(&(new->thpool_works_MUTEX), NULL);
@@ -163,7 +163,7 @@ int inis_thpool(thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), vo
             Main_Worker,
             arg);
     }
-    return 1;
+    return 0;
 }
 void thpool_addwork(thpool *pool, void *(*func)(), void *arg)
 {
@@ -201,9 +201,9 @@ void thpool_wait(thpool *pool)
 }
 void thpool_join(thpool *pool)
 {
-    if(pool == NULL || pool->thpool_main_worker == NULL )
+    if (pool == NULL || pool->thpool_handler == NULL)
         return;
-    pthread_join(*(pool->thpool_main_worker), NULL);
+    pthread_join(*(pool->thpool_handler), NULL);
 }
 void thpool_stop(thpool *pool)
 {

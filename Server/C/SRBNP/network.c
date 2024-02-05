@@ -15,7 +15,7 @@ socklen_t _CLIENT_LEN;
 thpool *Ntwrk;
 void *Network_Worker(void *arg);
 
-void network_init(const char *PATH)
+void network_init()
 {
     checkerr((_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
 
@@ -31,9 +31,13 @@ void network_init(const char *PATH)
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
     epoll_inis();
-    local_db_inis(PATH);
+    clt_inis(100);
 
-    inis_thpool(&Ntwrk, 4, Network_Worker, NULL);
+    if(inis_thpool(&Ntwrk, 4, Network_Worker, NULL) < 0)
+    {
+        fprintf(stderr, "Unable to initiate network thread pool\n Thpool = %d", &Ntwrk);
+        return;
+    }
 
     thpool_join(Ntwrk);
 }
@@ -43,27 +47,25 @@ void *Network_Worker(void *arg)
     for (;;)
     {
         epoll_getList();
-        Clt *Client = NULL;
         for (int fd = 0; fd < _NFDS; ++fd)
         {
-            printf("Handling %d\n", events[fd].data.fd);
-            int sock;
-            if (events[fd].data.fd == _SERVER_SOCKET)
+            printf("Handling Socket %d\n", events[fd].data.fd);
+            int sock = events[fd].data.fd;
+            if (sock == _SERVER_SOCKET)
             {
                 sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
                 thpool_addwork(Ntwrk, clt_handle_new, (void *)clt_new(sock));
             }
-            else if (events[fd].data.fd < _SERVER_SOCKET)
+            else if (sock < _SERVER_SOCKET)
                 continue;
-            else if (network_handle_zombie((Client = clt_get_sockfd(events[fd].data.fd))))
+            else if (network_handle_zombie(sock))
             {
-                thpool_addwork(Ntwrk, clt_handle, (void *)Client);
+                thpool_addwork(Ntwrk, clt_handle, (void *)clt_new(sock));
             }
         }
 
         if (_NFDS > 0)
         {
-
             printf("Dd %d\n", Ntwrk->thpool_n_works);
             thpool_wait(Ntwrk);
         }
@@ -141,20 +143,14 @@ int rcv_(Clt *Client, void *Buffer, int _Size, int _Flags)
         Total_Data_Rcv += DataRcv;
     return DataRcv;
 }
-int network_handle_zombie(Clt *Client)
+int network_handle_zombie(int sock)
 {
-    if (pthread_mutex_trylock(&(Client->mutex)) < 0)
-        return -1;
-
     char R[1];
-    if (Client == NULL)
-        return 0;
-
-    if (rcv_PEEK(Client, R, 0) < 0)
+    Clt *tmp = clt_new(sock);
+    if (rcv_PEEK(tmp, R, 0) < 0)
     {
-        pthread_mutex_unlock(&(Client->mutex));
         return -1;
     }
-    pthread_mutex_unlock(&(Client->mutex));
+    clt_free(tmp);
     return 1;
 }

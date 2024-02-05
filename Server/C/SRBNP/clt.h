@@ -15,6 +15,8 @@ struct Client_t
     int sock;
 };
 
+void clt_inis(int ht_min_Size);
+
 extern Clt *clt_new(int Sockfd);
 extern void clt_free(Clt *Client);
 extern Clt *clt_get_sockfd(int Sockfd);

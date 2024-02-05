@@ -1,11 +1,18 @@
 #include "_Imports.h"
 #include "clt.h"
 
+SRBNP_ht *SRBNP_Clt_ht;
+void clt_inis(int ht_min_Size)
+{
+    SRBNP_Clt_ht = SRBNP_HashTable_Inis(ht_min_Size);
+}
+
 Clt *clt_new(int Sockfd)
 {
     Clt *Client = malloc(sizeof(Clt));
     pthread_mutex_init(&(Client->mutex), NULL);
     Client->sock = Sockfd;
+    strcpy(Client->UUID, "00000000-0000-0000-0000-000000000000");
     return Client;
 }
 
@@ -15,27 +22,11 @@ void clt_free(Clt *Client)
         free(Client);
 }
 
-Clt *clt_get_sockfd(int Sockfd)
-{
-    return local_db_fetch_clt(_ACTION_VAR_SOCK, (void *)&Sockfd);
-}
-
-Clt *clt_get_uuid(const char *uuid)
-{
-    return local_db_fetch_clt(_ACTION_VAR_UUID, (void *)uuid);
-}
-
-int clt_check_sockfd(int Sockfd)
-{
-    return local_db_check_clt(_ACTION_VAR_SOCK, (void *)&Sockfd);
-}
-int clt_check_uuid(const char *uuid)
-{
-    return local_db_check_clt(_ACTION_VAR_UUID, (void *)uuid);
-}
-
 void *clt_handle_new(void *arg)
 {
+    if (SRBNP_Clt_ht == NULL)
+        return NULL;
+
     Clt *Client = (Clt *)arg;
     checkerr(Client == NULL ? -1 : 0, "Can not handle new client: Null");
     char *Buffer = calloc(4, sizeof(char));
@@ -55,35 +46,34 @@ void *clt_handle_new(void *arg)
 void *clt_handle(void *arg)
 {
     Clt *Client = (Clt *)arg;
-    char UUID[37];
-    pthread_mutex_lock(&(Client->mutex));
-    epoll_del((Client->sock));
+    Clt *Original;
     int i = 0;
-    if ((i = rcv(Client, UUID, 37)) < 37 || strcmp(UUID, Client->UUID))
+    epoll_del(Client->sock);
+    if ((i = rcv(Client, Client->UUID, 37)) < 37 || (Original = SRBNP_HashTable_lookup(SRBNP_Clt_ht, Client->UUID)->Content) == NULL || Original->sock != Client->sock)
     {
-        pthread_mutex_unlock(&(Client->mutex));
         clt_disconnect(Client);
         goto end_clt_handle;
     }
+    pthread_mutex_lock(&(Original->mutex));
     Rqst *Rqst = request_fetchfrom_clt(Client);
 
     if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_DISCONNECT))
-        clt_disconnect(Client);
+        clt_disconnect(Original);
     else if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_SRBNP_VER))
     {
         request_send_clt(Client,
-        request_gen_response(Rqst,
-                            _OPCODE_CLT_CONFIRM,
-                            request_arg_gen(_SRBNP_VER)));
+                         request_gen_response(Rqst,
+                                              _OPCODE_CLT_CONFIRM,
+                                              request_arg_gen(_SRBNP_VER)));
     }
     //    else if(###)
     //    {
     //          // TODO: Handle Custom Requests
     //    }
     else
-        request_send_invalid(Client, Rqst);
-    pthread_mutex_unlock(&(Client->mutex));
-    epoll_add((Client->sock));
+        request_send_invalid(Original, Rqst);
+    pthread_mutex_unlock(&(Original->mutex));
+    epoll_add(Original->sock);
     request_free(Rqst);
 end_clt_handle:;
     clt_free(Client);
@@ -92,7 +82,11 @@ end_clt_handle:;
 
 void clt_connect(Clt *Client)
 {
-    local_db_insert_clt(Client);
+    uuid_t GUID;
+    uuid_generate_time_safe(GUID);
+    uuid_unparse_upper(GUID, Client->UUID);
+    printf("SRBNP Client GUID for Client %d : %s\n", Client->sock, Client->UUID);
+    SRBNP_HashTable_insert(SRBNP_Clt_ht, Client->UUID, Client);
     snd(Client, Client->UUID, 37);
     epoll_add(Client->sock);
 }
@@ -100,16 +94,18 @@ void clt_connect(Clt *Client)
 void clt_reconnect(Clt *Client)
 {
     rcv(Client, Client->UUID, 37);
-    if (clt_check_uuid(Client->UUID))
+    Clt *Original = SRBNP_HashTable_lookup(SRBNP_Clt_ht, Client->UUID)->Content;
+    if (Original != NULL)
     {
-        Clt *tmp = clt_get_uuid(Client->UUID);
-        if (tmp->sock < _SERVER_SOCKET)
+        if (Client->sock < _SERVER_SOCKET)
         {
-            local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(Client->sock), _ACTION_VAR_UUID, (void *)(Client->UUID));
+            Original->sock = -1;
             return;
         }
+        epoll_add(Client->sock);
     }
-    local_db_insert_clt(Client);
+    else
+        request_send_invalid(Client, NULL);
 }
 
 void clt_disconnect(Clt *Client)
@@ -117,7 +113,6 @@ void clt_disconnect(Clt *Client)
     pthread_mutex_lock(&(Client->mutex));
     epoll_del(Client->sock);
     close(Client->sock);
-    int i = -1;
-    local_db_update_clt(_ACTION_VAR_SOCK, (void *)&(i), _ACTION_VAR_SOCK, (void *)&(Client->sock));
+    Client->sock = -1;
     pthread_mutex_unlock(&(Client->mutex));
 }

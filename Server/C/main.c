@@ -1,6 +1,6 @@
-#include "SRBNP/_Imports.h"
+#include "SRBNP.h"
 
 int main(int argc, char** args)
 {
-    network_init(args[0]);
+    network_init();
 }

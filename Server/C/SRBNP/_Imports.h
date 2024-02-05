@@ -1,13 +1,6 @@
 #define _SRBNP_VER 0000
 #define _GNU_SOURCE
 
-#if __STDC_VERSION__ < 201112L || __STD_NO_ATOMICS__
-#error "Atomics Not Supported!"
-#else
-#define HAS_ATOMICS
-#endif
-
-
 #pragma region [Standard]
 #include <stdio.h> 
 #include <errno.h>
