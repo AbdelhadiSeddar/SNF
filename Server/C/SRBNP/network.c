@@ -4,7 +4,7 @@
 int _PORT = 9114;
 int _MAX_QUEUE = 1000;
 
-_Atomic uint64_t Total_Data_Rcv = 0;
+_Atomic uint64_t SRBNP_Total_Data_Rcv = 0;
 _Atomic uint64_t Total_Data_Snt = 0;
 
 int _SERVER_SOCKET = 0;
@@ -30,50 +30,50 @@ void network_init()
              "Unable to listen in the port");
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, _SERVER_SOCKET);
-    epoll_inis();
-    clt_inis(100);
+    srbnp_epoll_inis();
+    srbnp_clt_inis(100);
 
-    if(inis_thpool(&Ntwrk, 4, Network_Worker, NULL) < 0)
+    if(srbnp_thpool_inis(&Ntwrk, 4, Network_Worker, NULL) < 0)
     {
         fprintf(stderr, "Unable to initiate network thread pool\n Thpool = %d", &Ntwrk);
         return;
     }
 
-    thpool_join(Ntwrk);
+    srbnp_thpool_join(Ntwrk);
 }
 
 void *Network_Worker(void *arg)
 {
     for (;;)
     {
-        epoll_getList();
-        for (int fd = 0; fd < _NFDS; ++fd)
+        srbnp_epoll_getList();
+        for (int fd = 0; fd < SRBNP_NFDS; ++fd)
         {
-            printf("Handling Socket %d\n", events[fd].data.fd);
-            int sock = events[fd].data.fd;
+            printf("Handling Socket %d\n", SRBNP_EPOLL_EVENTS[fd].data.fd);
+            int sock = SRBNP_EPOLL_EVENTS[fd].data.fd;
             if (sock == _SERVER_SOCKET)
             {
                 sock = accept(_SERVER_SOCKET, (struct sockaddr *)&_CLIENT_ADDR, &_CLIENT_LEN);
-                thpool_addwork(Ntwrk, clt_handle_new, (void *)clt_new(sock));
+                srbnp_thpool_addwork(Ntwrk, srbnp_clt_handle_new, (void *)srbnp_clt_new(sock));
             }
             else if (sock < _SERVER_SOCKET)
                 continue;
-            else if (network_handle_zombie(sock))
+            else if (srbnp_handle_zombie(sock))
             {
-                thpool_addwork(Ntwrk, clt_handle, (void *)clt_new(sock));
+                srbnp_thpool_addwork(Ntwrk, srbnp_clt_handle, (void *)srbnp_clt_new(sock));
             }
         }
 
-        if (_NFDS > 0)
+        if (SRBNP_NFDS > 0)
         {
             printf("Dd %d\n", Ntwrk->thpool_n_works);
-            thpool_wait(Ntwrk);
+            srbnp_thpool_wait(Ntwrk);
         }
     }
     return NULL;
 }
 
-int snd(Clt *Client, const char *Buffer, int _Size)
+int srbnp_snd(SRBNP_CLT *Client, const char *Buffer, int _Size)
 {
     int DataSnt;
 
@@ -81,7 +81,7 @@ int snd(Clt *Client, const char *Buffer, int _Size)
     if (_Size < 0)
     {
         char buff[strlen(Buffer) + 5];
-        strcpy(buff, Fbyte_FROM_str(Buffer));
+        strcpy(buff, srbnp_Fbyte_FROM_str(Buffer));
         strcat(buff, Buffer);
         DataSnt = send(Client->sock, buff, strlen(Buffer) + 5, 0);
     }
@@ -102,7 +102,7 @@ int snd(Clt *Client, const char *Buffer, int _Size)
                 }
             }
             pthread_mutex_unlock(&(Client->mutex));
-            clt_disconnect(Client);
+            srbnp_clt_disconnect(Client);
         }
         else
         {
@@ -115,7 +115,7 @@ int snd(Clt *Client, const char *Buffer, int _Size)
     return DataSnt;
 }
 
-int rcv_(Clt *Client, void *Buffer, int _Size, int _Flags)
+int srbnp_rcv_(SRBNP_CLT *Client, void *Buffer, int _Size, int _Flags)
 {
     if (Client == NULL)
         return -1;
@@ -133,24 +133,24 @@ int rcv_(Clt *Client, void *Buffer, int _Size, int _Flags)
                 }
             }
             pthread_mutex_unlock(&(Client->mutex));
-            clt_disconnect(Client);
+            srbnp_clt_disconnect(Client);
         }
         else
         {
             return -1;
         }
     else
-        Total_Data_Rcv += DataRcv;
+        SRBNP_Total_Data_Rcv += DataRcv;
     return DataRcv;
 }
-int network_handle_zombie(int sock)
+int srbnp_handle_zombie(int sock)
 {
     char R[1];
-    Clt *tmp = clt_new(sock);
-    if (rcv_PEEK(tmp, R, 0) < 0)
+    SRBNP_CLT *tmp = srbnp_clt_new(sock);
+    if (srbnp_rcv_PEEK(tmp, R, 0) < 0)
     {
         return -1;
     }
-    clt_free(tmp);
+    srbnp_clt_free(tmp);
     return 1;
 }

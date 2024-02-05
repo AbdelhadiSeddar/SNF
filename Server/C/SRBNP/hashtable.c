@@ -3,7 +3,7 @@
 
 #define hash(Key) hashlittle(Key, strlen(Key), 0x592c0d1e)
 
-SRBNP_ht *SRBNP_HashTable_Inis(int MaxItems)
+SRBNP_ht *srbnp_hashtable_inis(int MaxItems)
 {
     SRBNP_ht *re;
     if (MaxItems < 1 || (re = calloc(1, sizeof(SRBNP_ht))) == NULL)
@@ -20,7 +20,7 @@ SRBNP_ht *SRBNP_HashTable_Inis(int MaxItems)
     return re;
 }
 
-int SRBNP_HashTable_insert(SRBNP_ht *HashTable, const char *Key, void *Content)
+int srbnp_hashtable_insert(SRBNP_ht *HashTable, const char *Key, void *Content)
 {
     if (HashTable == NULL || Key == NULL || Content == NULL)
         return -1;
@@ -46,7 +46,7 @@ int SRBNP_HashTable_insert(SRBNP_ht *HashTable, const char *Key, void *Content)
     return 0;
 }
 
-SRBNP_ht_item *SRBNP_HashTable_lookup(SRBNP_ht *HashTable, const char *Key)
+SRBNP_ht_item *srbnp_hashtable_lookup(SRBNP_ht *HashTable, const char *Key)
 {
     if (HashTable == NULL || Key == NULL)
         return NULL;
@@ -62,7 +62,7 @@ SRBNP_ht_item *SRBNP_HashTable_lookup(SRBNP_ht *HashTable, const char *Key)
     return tmp;
 }
 
-SRBNP_ht_item *SRBNP_HashTable_delete(SRBNP_ht *HashTable, const char *Key)
+SRBNP_ht_item *srbnp_hashtable_delete(SRBNP_ht *HashTable, const char *Key)
 {
     if (HashTable == NULL || Key == NULL)
         return NULL;

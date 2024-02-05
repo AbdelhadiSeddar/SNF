@@ -1,14 +1,14 @@
 #ifndef epoll_h
 #define epoll_h
 
-#define _MAXEVENTS 4096
+#define SRBNP_MAXEVENTS 4096
 
-extern struct epoll_event events[_MAXEVENTS];
-extern int _NFDS, _EPOLLFD;
+extern struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];
+extern int SRBNP_NFDS, SRBNP_EPOLLFD;
 
-extern void epoll_inis();
-extern int epoll_add(int FD);
-extern void epoll_del(int fd);
-extern int epoll_getList();
+extern void srbnp_epoll_inis();
+extern int srbnp_epoll_add(int FD);
+extern void srbnp_epoll_del(int fd);
+extern int srbnp_epoll_getList();
 
 #endif

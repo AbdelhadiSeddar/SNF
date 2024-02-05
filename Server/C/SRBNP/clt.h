@@ -2,10 +2,9 @@
 #define clt_h
 #include <pthread.h>
 
-#define NULLREQUEST "000000000000000"
-typedef struct Client_t Clt;
+typedef struct SRBNP_Client_t SRBNP_CLT;
 
-struct Client_t
+struct SRBNP_Client_t
 {
     //  Mutex used to avoid Race Condition.
     pthread_mutex_t mutex;
@@ -15,21 +14,21 @@ struct Client_t
     int sock;
 };
 
-void clt_inis(int ht_min_Size);
+void srbnp_clt_inis(int ht_min_Size);
 
-extern Clt *clt_new(int Sockfd);
-extern void clt_free(Clt *Client);
-extern Clt *clt_get_sockfd(int Sockfd);
-extern Clt *clt_get_uuid(const char *uuid);
+extern SRBNP_CLT *srbnp_clt_new(int Sockfd);
+extern void srbnp_clt_free(SRBNP_CLT *Client);
+extern SRBNP_CLT *srbnp_clt_get_sockfd(int Sockfd);
+extern SRBNP_CLT *srbnp_clt_get_uuid(const char *uuid);
 
-extern int clt_check_sockfd(int Sockfd);
-extern int clt_check_uuid(const char *uuid);
+extern int srbnp_clt_check_sockfd(int Sockfd);
+extern int srbnp_clt_check_uuid(const char *uuid);
 
-extern void *clt_handle_new(void *arg);
-extern void *clt_handle(void *arg);
+extern void *srbnp_clt_handle_new(void *arg);
+extern void *srbnp_clt_handle(void *arg);
 
-extern void clt_connect(Clt *Client);
-extern void clt_reconnect(Clt *Client);
-extern void clt_disconnect(Clt *Client);
+extern void srbnp_clt_connect(SRBNP_CLT *Client);
+extern void srbnp_clt_reconnect(SRBNP_CLT *Client);
+extern void srbnp_clt_disconnect(SRBNP_CLT *Client);
 
 #endif

@@ -11,12 +11,12 @@ void checkerr(int Result, const char *ErrorOut)
 }
 
 
-char* Fbyte_FROM_str(const char* String)
+char* srbnp_Fbyte_FROM_str(const char* String)
 {
     int Strlen = strlen(String);
-    return Fbyte_FROM_int(Strlen);
+    return srbnp_Fbyte_FROM_int(Strlen);
 }
-char *Fbyte_FROM_int(int Size) 
+char *srbnp_Fbyte_FROM_int(int Size) 
 {
     char *re = malloc(5*sizeof(char));
     for(int i = 0 ; i < 4 ; i++)
@@ -29,7 +29,7 @@ char *Fbyte_FROM_int(int Size)
         return "0000\0";
     return re;
 }
-int Fbyte_TO_int(const char Fbyte[5])
+int srbnp_Fbyte_TO_int(const char Fbyte[5])
 {
     int re =0;
     for(int i = 0 ; i < 4 ; i++)
@@ -42,7 +42,7 @@ int Fbyte_TO_int(const char Fbyte[5])
     }
     return re;
 }
-int setnonblocking(int _sock)
+int srbnp_setnonblocking(int _sock)
 {
     int result;
     int flags;

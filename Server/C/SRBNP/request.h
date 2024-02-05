@@ -4,38 +4,39 @@
 
 #define NULLREQUEST "000000000000000"
 
-typedef struct Request_t Rqst;
-typedef struct Request_args_t Rqst_arg;
+typedef struct SRBNP_Request_t SRBNP_RQST;
+typedef struct SRBNP_Request_args_t SRBNP_RQST_ARG;
 
-struct Request_t
+struct SRBNP_Request_t
 {
     char UID[16];
     char OPCODE[4];
-    Rqst_arg *args;
+    SRBNP_RQST_ARG *args;
 };
 
-struct Request_args_t
+struct SRBNP_Request_args_t
 {
     char *arg;
-    Rqst_arg *next;
+    SRBNP_RQST_ARG *next;
 };
 
-extern Rqst *request_fetchfrom_clt(Clt *Client);
+extern SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client);
 
-extern Rqst *request_gen();
-extern Rqst *request_gen_wUID(const char UID[16]);
-extern void request_free(Rqst *Request);
-extern Rqst *request_gen_response(Rqst *Original, char OPCODE[4], Rqst_arg *Args);
-extern Rqst *request_gen_server_OPCODE(char OPCODE[4]);
-extern Rqst *request_gen_invalid(Rqst *Original);
-extern int request_get_nargs(Rqst *args);
+extern void srbnp_request_free(SRBNP_RQST *Request);
+extern SRBNP_RQST *srbnp_request_gen();
+extern SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16]);
+extern SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, char OPCODE[4], SRBNP_RQST_ARG *Args);
+extern SRBNP_RQST *srbnp_request_gen_server_OPCODE(char OPCODE[4]);
+extern SRBNP_RQST *srbnp_request_gen_invalid(SRBNP_RQST *Original);
+extern int srbnp_request_get_nargs(SRBNP_RQST *args);
 
-extern Rqst_arg *request_arg_gen(const char* arg);
-extern void request_arg_free(Rqst_arg *arg);
-extern void request_args_free(Rqst_arg *arg);
-extern void request_arg_insert(Rqst *Request, Rqst_arg *arg); // Only use on first time. unless you dont care about execution time
+extern SRBNP_RQST_ARG *srbnp_request_arg_gen(const char* arg);
+extern void srbnp_request_arg_free(SRBNP_RQST_ARG *arg);
+extern void srbnp_request_args_free(SRBNP_RQST_ARG *arg);
+// Only use on first time. unless you dont care about execution time
+extern void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg); 
 
-extern void request_send_clt(Clt *Client, Rqst *Request);
-extern void request_send_invalid(Clt *Client, Rqst *Original);
+extern void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request);
+extern void srbnp_request_send_invalid(SRBNP_CLT *Client, SRBNP_RQST *Original);
 
 #endif

@@ -1,19 +1,19 @@
 #include "_Imports.h"
 
-Rqst *request_fetchfrom_clt(Clt *Client)
+SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
 {
-    Rqst *re = request_gen();
+    SRBNP_RQST *re = srbnp_request_gen();
     char MsgSize[5];
-    rcv(Client, MsgSize, 5);
+    srbnp_rcv(Client, MsgSize, 5);
     printf("Received Content : %s\n", MsgSize);
-    int Size = Fbyte_TO_int(MsgSize);
+    int Size = srbnp_Fbyte_TO_int(MsgSize);
     if (Size < 0)
     {
-        clt_disconnect(Client);
+        srbnp_clt_disconnect(Client);
         return NULL;
     }
     char *Request = calloc(Size, sizeof(char));
-    rcv(Client, Request, Size);
+    srbnp_rcv(Client, Request, Size);
     printf("Received %d Bytes With Content : %s\n", Size, Request);
     strncpy(re->UID, Request, strlen(NULLREQUEST));
     re->UID[strlen(NULLREQUEST)] = '\0';
@@ -28,8 +28,8 @@ Rqst *request_fetchfrom_clt(Clt *Client)
     free(Request);
     Request = tmp;
 
-    Rqst_arg *Top_rqst = NULL;
-    Rqst_arg *Current = NULL;
+    SRBNP_RQST_ARG *Top_rqst = NULL;
+    SRBNP_RQST_ARG *Current = NULL;
 
     while (Size > 0)
     {
@@ -37,7 +37,7 @@ Rqst *request_fetchfrom_clt(Clt *Client)
         char *tmpRqst = calloc(chr, sizeof(char));
         strncpy(tmpRqst, Request, chr);
         tmpRqst[chr] = '\0';
-        Rqst_arg *new = request_arg_gen(tmpRqst);
+        SRBNP_RQST_ARG *new = srbnp_request_arg_gen(tmpRqst);
         if (Top_rqst == NULL)
             Top_rqst = new;
         if (Current == NULL)
@@ -52,56 +52,56 @@ Rqst *request_fetchfrom_clt(Clt *Client)
         free(Request);
         Request = tmp;
     }
-    request_arg_insert(re, Top_rqst);
+    srbnp_request_arg_insert(re, Top_rqst);
     return re;
 }
 
-Rqst *request_gen()
+SRBNP_RQST *srbnp_request_gen()
 {
-    Rqst *re = malloc(sizeof(Rqst));
+    SRBNP_RQST *re = malloc(sizeof(SRBNP_RQST));
     re->args = NULL;
     return re;
 }
 
-Rqst *request_gen_wUID(const char UID[16])
+SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16])
 {
-    Rqst *re = request_gen();
+    SRBNP_RQST *re = srbnp_request_gen();
     memcpy(re->UID, UID, 16);
     return re;
 }
 
-void request_free(Rqst *Request)
+void srbnp_request_free(SRBNP_RQST *Request)
 {
     if(Request == NULL)
         return;
-    request_args_free(Request->args);
+    srbnp_request_args_free(Request->args);
     free(Request);
 }
 
-Rqst *request_gen_response(Rqst *Original, char OPCODE[4], Rqst_arg *Args)
+SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, char OPCODE[4], SRBNP_RQST_ARG *Args)
 {
-    Rqst *re = request_gen_wUID(Original->UID);
+    SRBNP_RQST *re = srbnp_request_gen_wUID(Original->UID);
     memcpy(re->OPCODE, OPCODE, 4);
     re->args = Args;
     return re;
 }
 
-Rqst *request_gen_server_OPCODE(char OPCODE[4])
+SRBNP_RQST *srbnp_request_gen_server_OPCODE(char OPCODE[4])
 {
-    return request_gen_response(request_gen_wUID(NULLREQUEST), OPCODE, NULL);
+    return srbnp_request_gen_response(srbnp_request_gen_wUID(NULLREQUEST), OPCODE, NULL);
 }
 
-Rqst *request_gen_invalid(Rqst *Original)
+SRBNP_RQST *srbnp_request_gen_invalid(SRBNP_RQST *Original)
 {
-    return request_gen_response(Original, _OPCODE_CLT_INVALID, NULL);
+    return srbnp_request_gen_response(Original, _OPCODE_CLT_INVALID, NULL);
 }
 
-int request_get_nargs(Rqst *args)
+int srbnp_request_get_nargs(SRBNP_RQST *args)
 {
     if (args == NULL)
         return 0;
     int nargs = 1;
-    Rqst_arg *arg = args->args;
+    SRBNP_RQST_ARG *arg = args->args;
     if(arg == NULL)
         return 0;
     while (arg->next == NULL)
@@ -112,15 +112,15 @@ int request_get_nargs(Rqst *args)
     return nargs;
 }
 
-Rqst_arg *request_arg_gen(const char *arg)
+SRBNP_RQST_ARG *srbnp_request_arg_gen(const char *arg)
 {
-    Rqst_arg *Arg = calloc(1, sizeof(Rqst_arg));
+    SRBNP_RQST_ARG *Arg = calloc(1, sizeof(SRBNP_RQST_ARG));
     Arg->arg = calloc(strlen(arg) + 1, sizeof(char));
     strcpy(Arg->arg, arg);
     return Arg;
 }
 
-void request_arg_free(Rqst_arg *arg)
+void srbnp_request_arg_free(SRBNP_RQST_ARG *arg)
 {
     if (arg == NULL)
         return;
@@ -128,22 +128,22 @@ void request_arg_free(Rqst_arg *arg)
     free(arg);
 }
 
-void request_args_free(Rqst_arg *arg)
+void srbnp_request_args_free(SRBNP_RQST_ARG *arg)
 {
     if (arg == NULL)
         return;
-    Rqst_arg *current = arg;
-    Rqst_arg *next = current ->next;
+    SRBNP_RQST_ARG *current = arg;
+    SRBNP_RQST_ARG *next = current ->next;
     while (next != NULL)
     {
         next = current->next;
-        request_arg_free(current);
+        srbnp_request_arg_free(current);
         current = next;
     };
     arg = NULL;
 }
 
-void request_arg_insert(Rqst *Request, Rqst_arg *arg)
+void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg)
 {
     if (Request->args == NULL)
     {
@@ -151,26 +151,26 @@ void request_arg_insert(Rqst *Request, Rqst_arg *arg)
     }
     else
     {
-        Rqst_arg *last = Request->args;
+        SRBNP_RQST_ARG *last = Request->args;
         while (last->next != NULL)
             last = last->next;
         last->next = arg;
     }
 }
 
-void request_send_clt(Clt *Client, Rqst *Request)
+void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request)
 {
-    int nargs = request_get_nargs(Request);
+    int nargs = srbnp_request_get_nargs(Request);
     int len = strlen(Request->UID) + nargs * sizeof(char);
-    for (Rqst_arg *arg = (Request->args); arg != NULL; arg = arg->next)
+    for (SRBNP_RQST_ARG *arg = (Request->args); arg != NULL; arg = arg->next)
         len += strlen(arg->arg);
     char *content = calloc(len, sizeof(char));
     sprintf(content, "%s%s%s",
-            Fbyte_FROM_int(len),
+            srbnp_Fbyte_FROM_int(len),
             Request->UID,
             UNIT_SCEPARATOR);
     int i = 0;
-    for (Rqst_arg *arg = (Request->args); arg != NULL; arg = arg->next)
+    for (SRBNP_RQST_ARG *arg = (Request->args); arg != NULL; arg = arg->next)
     {
         if (i == 0)
             i = !i;
@@ -178,10 +178,10 @@ void request_send_clt(Clt *Client, Rqst *Request)
             strcat(content, UNIT_SCEPARATOR);
         strcat(content, arg->arg);
     }
-    snd(Client, content, len);
+    srbnp_snd(Client, content, len);
 }
 
-void request_send_invalid(Clt *Client, Rqst *Original)
+void srbnp_request_send_invalid(SRBNP_CLT *Client, SRBNP_RQST *Original)
 {
-    request_send_clt(Client, request_gen_invalid(Original));
+    srbnp_request_send_clt(Client, srbnp_request_gen_invalid(Original));
 }

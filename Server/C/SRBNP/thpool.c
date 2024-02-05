@@ -17,14 +17,14 @@ void thpool_Check_nowork(thpool *pool)
 /// @brief Inserts a new Worker into the Thead Pool's workers pile
 /// @param pool The Thead Pool to be operated on.
 /// @return returns the inserted worker.
-thpool_worker *thpool_insertnew_worker(thpool *pool)
+SRBNP_thpool_worker *thpool_insertnew_worker(thpool *pool)
 {
     if (pool == NULL)
         return NULL;
-    thpool_worker *worker = calloc(1, sizeof(thpool_worker));
+    SRBNP_thpool_worker *worker = calloc(1, sizeof(SRBNP_thpool_worker));
     worker->worker = calloc(1, sizeof(pthread_t));
     pthread_mutex_lock(&(pool->thpool_workers_MUTEX));
-    thpool_worker *tmp = pool->thpool_workers;
+    SRBNP_thpool_worker *tmp = pool->thpool_workers;
     if (tmp == NULL)
     {
         pool->thpool_workers = worker;
@@ -43,12 +43,12 @@ thpool_worker *thpool_insertnew_worker(thpool *pool)
 /// @brief Removes a worker from the Thead Pool's workers pile.
 /// @param pool The Thead Pool to be operated on.
 /// @param worker  The Worker to be removed.
-void thpool_remove_worker(thpool *pool, thpool_worker *worker)
+void thpool_remove_worker(thpool *pool, SRBNP_thpool_worker *worker)
 {
     if (pool == NULL || worker == NULL)
         return;
     pthread_mutex_lock(&(pool->thpool_workers_MUTEX));
-    thpool_worker *tmp = pool->thpool_workers;
+    SRBNP_thpool_worker *tmp = pool->thpool_workers;
     if (tmp != NULL)
     {
         if (tmp == worker)
@@ -73,27 +73,27 @@ end_thpool_remove_worker:;
 }
 /// @brief Frees a worker
 /// @param work  The Worker to be freed
-void thpool_work_free(thpool_work *work)
+void thpool_work_free(SRBNP_thpool_work *work)
 {
     free(work);
 }
 /// @brief Pops a work from the "works" Pile
 /// @param pool  The Thread pool to be operated on.
 /// @return Poped Work
-thpool_work *thpool_pop_work(thpool *pool, thpool_worker *worker)
+SRBNP_thpool_work *thpool_pop_work(thpool *pool, SRBNP_thpool_worker *worker)
 {
-    thpool_work *work = pool->thpool_works;
+    SRBNP_thpool_work *work = pool->thpool_works;
     pool->thpool_n_works--;
     pool->thpool_works = pool->thpool_works->next;
     work->worker = worker;
     return work;
 }
 /// @brief Serves as a Wrapper to the "work"
-/// @param arg Must be of Type [ thpool_work * ]
+/// @param arg Must be of Type [ SRBNP_thpool_work * ]
 /// @return
 void *thpool_work_wrapper(void *arg)
 {
-    thpool_work *work = (thpool_work *)arg;
+    SRBNP_thpool_work *work = (SRBNP_thpool_work *)arg;
     void *re = (work->func)(work->arg);
     thpool_remove_worker(work->pool, work->worker);
     thpool_Check_nowork(work->pool);
@@ -111,7 +111,7 @@ void *thpool_handler(void *arg)
         pthread_mutex_lock(&(pool->thpool_works_MUTEX));
         if (!(pool->thpool_n_works))
             pthread_cond_wait(&(pool->thpool_works_cond), &(pool->thpool_works_MUTEX));
-        thpool_worker *worker = thpool_insertnew_worker(pool);
+        SRBNP_thpool_worker *worker = thpool_insertnew_worker(pool);
         if (worker != NULL)
             pthread_create(
                 (worker->worker),
@@ -120,7 +120,7 @@ void *thpool_handler(void *arg)
                 thpool_pop_work(pool, worker));
         pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
     }
-    thpool_wait(pool);
+    srbnp_thpool_wait(pool);
     pthread_mutex_destroy(&(pool->thpool_works_MUTEX));
 
     pthread_mutex_destroy(&(pool->thpool_workers_MUTEX));
@@ -129,7 +129,7 @@ void *thpool_handler(void *arg)
     bzero(pool, sizeof(thpool));
     return NULL;
 }
-int inis_thpool(thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), void *arg)
+int srbnp_thpool_inis(thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), void *arg)
 {
     if (ThreadPool == NULL || Max_Threads < (Main_Worker == NULL ? 2 : 3))
         return -1;
@@ -165,15 +165,15 @@ int inis_thpool(thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), vo
     }
     return 0;
 }
-void thpool_addwork(thpool *pool, void *(*func)(), void *arg)
+void srbnp_thpool_addwork(thpool *pool, void *(*func)(), void *arg)
 {
-    thpool_work *work = calloc(1, sizeof(thpool_work));
+    SRBNP_thpool_work *work = calloc(1, sizeof(SRBNP_thpool_work));
     work->arg = arg;
     work->func = func;
     work->pool = pool;
 
     pthread_mutex_lock(&(pool->thpool_works_MUTEX));
-    thpool_work *tmp = pool->thpool_works;
+    SRBNP_thpool_work *tmp = pool->thpool_works;
     if (tmp == NULL)
     {
         pool->thpool_works = work;
@@ -190,7 +190,7 @@ void thpool_addwork(thpool *pool, void *(*func)(), void *arg)
     pthread_cond_broadcast(&(pool->thpool_works_cond));
     pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
 }
-void thpool_wait(thpool *pool)
+void srbnp_thpool_wait(thpool *pool)
 {
     pthread_mutex_lock(&(pool->thpool_noworks_MUTEX));
     if ((pool->thpool_n_works))
@@ -199,15 +199,15 @@ void thpool_wait(thpool *pool)
             &(pool->thpool_noworks_MUTEX));
     pthread_mutex_unlock(&(pool->thpool_noworks_MUTEX));
 }
-void thpool_join(thpool *pool)
+void srbnp_thpool_join(thpool *pool)
 {
     if (pool == NULL || pool->thpool_handler == NULL)
         return;
     pthread_join(*(pool->thpool_handler), NULL);
 }
-void thpool_stop(thpool *pool)
+void srbnp_thpool_stop(thpool *pool)
 {
     pool->stop = 1;
-    thpool_wait(pool);
-    thpool_join(pool);
+    srbnp_thpool_wait(pool);
+    srbnp_thpool_join(pool);
 }
