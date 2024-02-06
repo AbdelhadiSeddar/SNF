@@ -5,47 +5,75 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import SRBNP._BASE_OPCODE;
 
-public class Connection{
-	private static String 	ServerHost = "127.0.0.1";
-	private static int		ServerPort = 9114;
-	
-	private ClientInfo 		Client;
-	private Socket			Server;
-	private InputStream 	StreamIn;
-	private OutputStream	StreamOut;
-	
-	public Connection()   throws UnknownHostException, IOException
-	{
-		this.Connect();	
+import SRBNP.Exceptions.*;
+
+public class Connection {
+	private static Connection Current;
+	private static String ServerHost = "127.0.0.1";
+	private static int ServerPort = 9114;
+
+	private ClientInfo Client;
+	private Socket Server;
+	private InputStream StreamIn;
+	private OutputStream StreamOut;
+
+	public Connection() throws UnknownHostException, IOException, InvalidCStringException, InterruptedException {
+		Current = this;
+		this.Connect(null);
 	}
-	
-	public void Connect()  throws UnknownHostException, IOException
-	{
+
+	public void Connect(ResponseListener OnConnect)
+			throws UnknownHostException, IOException, InvalidCStringException, InterruptedException {
 		Client = new ClientInfo();
-		Server = new Socket(ServerHost , ServerPort);
+		Server = new Socket(ServerHost, ServerPort);
 		StreamIn = Server.getInputStream();
 		StreamOut = Server.getOutputStream();
-		
-		Send_BASE_OPCODE(_BASE_OPCODE.CLT_CONNECT);
-		byte[] Str = StreamIn.readNBytes(37);
-		System.out.println(new String(Str));
-
-		Send_BASE_OPCODE(_BASE_OPCODE.CLT_DISCONNECT);
-		Server.close();
+		RequestsHandler.Intialize();
+		RequestsHandler.setStreams(StreamIn, StreamOut);
+		Send(_BASE_OPCODE.CONNECT);
+		Client.setUuid(new CString(Connection.getCurrent().StreamIn.readNBytes(37)));
 	}
-	
-	public void Send_BASE_OPCODE(byte[] _OPCODE) throws IOException
-	{
-		if(StreamOut == null && !_BASE_OPCODE.isValid_OPCODE(_OPCODE))
-			return;
-		
+
+	public void Connect(String URL, int Port, ResponseListener OnConnect)
+			throws UnknownHostException, InvalidCStringException, IOException, InterruptedException {
+		ServerHost = URL;
+		ServerPort = Port;
+		Connect(OnConnect);
+	}
+
+	public void Connect(String URL, int Port)
+			throws UnknownHostException, InvalidCStringException, IOException, InterruptedException {
+		Connect(URL, Port, null);
+	}
+
+	public void getVersion(ResponseListener OnResponse) {
+		RequestsHandler.addRequest(new Request(_BASE_OPCODE.VERSION, OnResponse));
+	}
+
+	public void Stop() {
+		RequestsHandler.StopHandlers();
+	}
+
+	public void Join() throws InterruptedException {
+		RequestsHandler.JoinHandlers();
+	}
+
+	public void Send(byte[] _OPCODE) throws IOException {
+
 		StreamOut.write(_OPCODE, 0, _BASE_OPCODE._LENGTH);
 	}
-	
 
-	
-	
+	public void Send(Request Rqst) {
+
+	}
+
+	public ClientInfo getClient() {
+		return Client;
+	}
+
+	public static Connection getCurrent() {
+		return Current;
+	}
 
 }

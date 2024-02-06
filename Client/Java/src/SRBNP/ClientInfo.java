@@ -15,5 +15,8 @@ class ClientInfo {
 	public void setUuid(String uuid) {
 		this.uuid = UUID.fromString(uuid);
 	}
+	public void setUuid(CString uuid) {
+		this.setUuid(uuid.toString());
+	}
 	
 }
