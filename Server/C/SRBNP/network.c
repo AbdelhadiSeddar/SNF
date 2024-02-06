@@ -49,7 +49,6 @@ void *Network_Worker(void *arg)
         srbnp_epoll_getList();
         for (int fd = 0; fd < SRBNP_NFDS; ++fd)
         {
-            printf("Handling Socket %d\n", SRBNP_EPOLL_EVENTS[fd].data.fd);
             int sock = SRBNP_EPOLL_EVENTS[fd].data.fd;
             if (sock == _SERVER_SOCKET)
             {

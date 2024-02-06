@@ -85,7 +85,6 @@ void srbnp_clt_connect(SRBNP_CLT *Client)
     uuid_t GUID;
     uuid_generate_time_safe(GUID);
     uuid_unparse_upper(GUID, Client->UUID);
-    printf("SRBNP Client GUID for Client %d : %s\n", Client->sock, Client->UUID);
     srbnp_hashtable_insert(SRBNP_Clt_ht, Client->UUID, Client);
     srbnp_snd(Client, Client->UUID, 37);
     srbnp_epoll_add(Client->sock);
