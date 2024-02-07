@@ -1,4 +1,4 @@
-#include "_Imports.h"
+#include <SRBNP/epoll.h>
 
 int SRBNP_EPOLLFD, SRBNP_NFDS;
 struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];

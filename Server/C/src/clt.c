@@ -1,5 +1,4 @@
-#include "_Imports.h"
-#include "clt.h"
+#include <SRBNP/clt.h>
 
 SRBNP_ht *SRBNP_Clt_ht;
 void srbnp_clt_inis(int ht_min_Size)

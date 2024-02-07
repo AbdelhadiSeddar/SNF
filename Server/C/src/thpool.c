@@ -1,4 +1,4 @@
-#include "_Imports.h"
+#include <SRBNP/thpool.h>
 
 /// @brief Broadcasts thpool_noworks_cond if there is no appending "works" and no currently working "workers"
 /// @param pool The Thread pool to be operated on.

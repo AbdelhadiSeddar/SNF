@@ -1,6 +1,9 @@
 #ifndef epoll_h
 #define epoll_h
 
+#include <SRBNP/SRBNP.h>
+#include <SRBNP/network.h>
+
 #define SRBNP_MAXEVENTS 4096
 
 extern struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];

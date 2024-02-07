@@ -1,5 +1,5 @@
 /*
-#   Thread Pool By Abdelhadi Seddar
+#   Thread Pools By Abdelhadi Seddar
 #   This implemantation of a Threadpool is by no means perfect 
 #   nor optimized, because I made it based of a graph depicting
 #   how a threadpool works, without seeing any documentation about it,
@@ -8,8 +8,8 @@
 */
 #ifndef thpool_h
 #define thpool_h
-#include <pthread.h>
-#include <semaphore.h>
+
+#include <SRBNP/SRBNP.h>
 
 typedef struct SRBNP_ThreadPool_work_t SRBNP_thpool_work;
 typedef struct SRBNP_ThreadPool_worker_t SRBNP_thpool_worker;

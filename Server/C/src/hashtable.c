@@ -1,5 +1,4 @@
-#include "_Imports.h"
-#include "locate3.h"
+#include <SRBNP/hashtable.h>
 
 #define hash(Key) hashlittle(Key, strlen(Key), 0x592c0d1e)
 

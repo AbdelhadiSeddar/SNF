@@ -1,32 +1,41 @@
-C=c11
-COMPILER=clang --std=$C
-flags=-lpthread -luuid -lm
+PROJECT = SRBNP
+lib_name = srbnp
 
+CC := c11
+COMPILER := clang --std=$(CC)
 
-BIN_PATH=/var/tmp/SRBNP
-BUILD_PATH=bin
-all: deploy
+C_FLAGS := 
+C_LIB := -lm -luuid -lpthread
 
-deployprepare:
+CURRENT_PATH = $(shell pwd)/
 
-deploy:
-	make clean;
-	if [ ! -d "$(BIN_PATH)" ]; then mkdir $(BIN_PATH); fi;
-	make main;
-	cp $(BUILD_PATH)/* $(BIN_PATH)
-	bash _service_deploy.sh
+OBJ_PATH := $(CURRENT_PATH)obj/
+LIB_PATH := $(CURRENT_PATH)lib/
+SRC_PATH := $(CURRENT_PATH)src/
+INC_PATH := $(CURRENT_PATH)include/
+
+C_FILES := $(wildcard $(SRC_PATH)*.c)
+H_FILES := $(wildcard $(SRC_PATH)*.h)
+O_FILES := $(patsubst %.c,%.o,$(C_FILES))
+
+prebuild: clean 
+	@cp $(H_FILES) $(INC_PATH)$(PROJECT)
+
+%.o: %.c
+	@gcc -o $@ -c $< -I$(INC_PATH) 
+
+objbuild: prebuild $(O_FILES)  
+	@mv $(O_FILES) $(OBJ_PATH)
+	
+build: objbuild
+	@ar cr $(LIB_PATH)lib$(lib_name).a $(OBJ_PATH)*.o
 
 clean:
-	if [ -f "$(BIN_PATH)/SRBNP.run" ]; then rm $(BIN_PATH)/SRBNP.run; fi;
-main:
-	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags)
+	@rm -rf $(OBJ_PATH) $(INC_PATH)$(PROJECT) $(INC_PATH) $(LIB_PATH)
+	@mkdir $(OBJ_PATH) $(INC_PATH) $(INC_PATH)$(PROJECT) $(LIB_PATH)
 
-adrsan:
-	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=address
-thrdsan:
-	if [ ! -d "$(BUILD_PATH)" ]; then mkdir $(BUILD_PATH); fi;
-	$(COMPILER) main.c SRBNP/*.c -o $(BUILD_PATH)/SRBNP.run $(flags) -g -fsanitize=thread
+all: test
 
-
+test: build
+	@clang main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
+	@./a.out

@@ -1,5 +1,6 @@
-#include "_Imports.h"
-#include "network.h"
+#include <SRBNP/network.h>
+
+thpool *Ntwrk;
 
 int _PORT = 9114;
 int _MAX_QUEUE = 1000;
@@ -12,7 +13,6 @@ struct sockaddr_in _SERVER_ADDR;
 struct sockaddr_in _CLIENT_ADDR;
 socklen_t _CLIENT_LEN;
 
-thpool *Ntwrk;
 void *Network_Worker(void *arg);
 
 void network_init()

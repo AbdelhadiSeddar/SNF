@@ -1,6 +1,8 @@
 #ifndef REQUEST_H
 #define REQUEST_H
-#include "clt.h"
+
+#include <SRBNP/SRBNP.h>
+#include <SRBNP/clt.h>
 
 #define NULLREQUEST "000000000000000"
 

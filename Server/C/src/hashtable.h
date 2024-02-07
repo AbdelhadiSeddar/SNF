@@ -1,6 +1,13 @@
 #ifndef hashtable_h
 #define hashtable_h
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
 #include <pthread.h>
+#include <math.h>
+
+#include <SRBNP/locate3.h>
 
 typedef struct SRBNP_ht_item_t SRBNP_ht_item;
 typedef struct SRBNP_ht_t SRBNP_ht;

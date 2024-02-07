@@ -1,5 +1,6 @@
 #ifndef _BASE_OPCODE_H
 #define _BASE_OPCODE_H
+#define _SRBNP_VER 0000
 
 #define _OPCODE_CLT_CONNECT     "000"
 #define _OPCODE_CLT_RECONNECT   "001"

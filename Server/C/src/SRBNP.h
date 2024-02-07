@@ -1,4 +1,6 @@
-#define _SRBNP_VER 0000
+#ifndef SRBNP_H
+#define SRBNP_H
+
 #define _GNU_SOURCE
 
 #pragma region [Standard]
@@ -22,15 +24,4 @@
 #include <math.h>
 #pragma endregion
 
-#pragma region [SRBNP Library]
-#include "_BASE_OPCODE.h"
-#include "clt.h"
-#include "epoll.h"
-#include "hashtable.h"
-#include "network.h"
-#include "request.h"
-#include "thpool.h"
-#include "utility.h"
-#pragma endregion
-
-
+#endif

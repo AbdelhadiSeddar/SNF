@@ -1,7 +1,13 @@
 #ifndef clt_h
 #define clt_h
-#include <pthread.h>
 
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <uuid/uuid.h>
+#include <SRBNP/SRBNP.h>
 typedef struct SRBNP_Client_t SRBNP_CLT;
 
 struct SRBNP_Client_t
@@ -31,4 +37,10 @@ extern void srbnp_clt_connect(SRBNP_CLT *Client);
 extern void srbnp_clt_reconnect(SRBNP_CLT *Client);
 extern void srbnp_clt_disconnect(SRBNP_CLT *Client);
 
+#include <SRBNP/_BASE_OPCODE.h>
+#include <SRBNP/hashtable.h>
+#include <SRBNP/request.h>
+#include <SRBNP/epoll.h>
+#include <SRBNP/utility.h>
+#include <SRBNP/network.h>
 #endif
