@@ -1,8 +1,9 @@
-*.run
+Server/C/include/*.h
+Server/C/include/SRBNP/*.h
+*.a
 *.o
 *.json
-*.sqlite3
-*.db
+
 *.prefs
-Client/Java/SRBNP/src/TEST.java
+
 *.jar
