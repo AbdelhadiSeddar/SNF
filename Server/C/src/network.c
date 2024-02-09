@@ -35,7 +35,7 @@ void network_init()
 
     if(srbnp_thpool_inis(&Ntwrk, 4, Network_Worker, NULL) < 0)
     {
-        fprintf(stderr, "Unable to initiate network thread pool\n Thpool = %d", &Ntwrk);
+        fprintf(stderr, "Unable to initiate network thread pool");
         return;
     }
 

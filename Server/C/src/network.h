@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <strings.h>
 
 #include <SRBNP/SRBNP.h>
 #include <SRBNP/clt.h>
