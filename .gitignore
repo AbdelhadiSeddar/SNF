@@ -2,6 +2,7 @@ Server/C/include/*.h
 Server/C/include/SRBNP/*.h
 *.a
 *.o
+*.out
 *.json
 
 *.prefs
