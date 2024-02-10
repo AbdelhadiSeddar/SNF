@@ -7,7 +7,7 @@ STD_INC_PATH = /usr/include
 CC := c11
 COMPILER := clang --std=$(CC)
 
-C_FLAGS := 
+C_FLAGS := -g
 C_LIB := -lm -luuid -lpthread
 
 CURRENT_PATH = $(shell pwd)/
@@ -77,9 +77,14 @@ install: build cleanlib
 	echo "##	Done! link library with -l$(lib_name)"
 	echo "##		Note: must also link [ $(C_LIB) ]"
 
-test: build
+buildtest: build
 	clang main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
+
+test: buildtest
 	./a.out
+
+testgdb: buildtest
+	gdb a.out
 
 testinstall : install
 	clang main.c -l$(lib_name) $(C_FLAGS) $(C_LIB) -no-pie
