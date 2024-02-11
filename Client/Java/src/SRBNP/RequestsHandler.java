@@ -9,128 +9,126 @@ import java.util.concurrent.Semaphore;
 
 import SRBNP.Exceptions.*;
 
-class RequestsHandler {	
+public class RequestsHandler {
+	private static RequestsHandler RH;
 	private static Semaphore Sem = new Semaphore(0);
-	private static Boolean KeepRunning = true;	
+	private static Boolean KeepRunning = true;
 	private static StreamOutHandler OutsHandler;
 	private static StreamInHandler InsHandler;
-	private static OutputStream	StreamOut;
-	private static InputStream 	StreamIn;
-	
+	private static OutputStream StreamOut;
+	private static InputStream StreamIn;
+
 	private class StreamOutHandler extends Thread {
-		
+
 		@Override
 		public void run() {
-			
-			while(KeepRunning)
-			{
+
+			while (KeepRunning) {
 				try {
 					Sem.acquire();
+					if (!KeepRunning)
+						return;
 					Request R;
-					synchronized(QueuedRequests)
-					{
+					synchronized (QueuedRequests) {
 						R = QueuedRequests.remove();
-					}		
-					Send(R);
-					synchronized(UnrespondedRequests)
-					{
-						UnrespondedRequests.add(R);
 					}
-					return;
+					Send(R);
+					if (R.hasResponseHandler())
+						synchronized (UnrespondedRequests) {
+							UnrespondedRequests.add(R);
+						}
 				} catch (InterruptedException | IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			
+
 		}
 	}
+
 	private class StreamInHandler extends Thread {
-		
+
 		@Override
 		public void run() {
 			return;
 		}
 	}
-	
-	protected static Queue<Request> QueuedRequests
-		= new LinkedList<Request>();
 
-	protected static LinkedList<Request> UnrespondedRequests
-		= new LinkedList<Request>();
-	
-	public static void Intialize()
-	{
-		(InsHandler = (new RequestsHandler()).new StreamInHandler()).start();
-		(OutsHandler = (new RequestsHandler()).new StreamOutHandler()).start();
+	protected static Queue<Request> QueuedRequests = new LinkedList<Request>();
+
+	protected static LinkedList<Request> UnrespondedRequests = new LinkedList<Request>();
+
+	public static void Initialize() {
+		RH = new RequestsHandler();
+
+		InsHandler = RH.new StreamInHandler();
+		OutsHandler = RH.new StreamOutHandler();
+		
+		StartHandlers();
 	}
-	public static boolean isInitialized()
-	{
-		if(InsHandler == null || OutsHandler == null)
+
+	public static boolean isInitialized() {
+		if (RH == null || InsHandler == null || OutsHandler == null)
 			return false;
-		if(StreamIn == null || StreamOut == null)
+		if (RH == null || StreamIn == null || StreamOut == null)
 			return false;
 		return true;
 	}
-	
-	public static void setStreams(InputStream In, OutputStream Out)
-	{
+
+	public static void setStreams(InputStream In, OutputStream Out) {
 		StreamIn = In;
 		StreamOut = Out;
 	}
-	
-	public static void addRequest(Request Rqst) throws RequestsHandlerNotInitializedException
-	{
-		if(!isInitialized())
+
+	public static void addRequest(Request Rqst) throws RequestsHandlerNotInitializedException {
+		if (!isInitialized())
 			throw new RequestsHandlerNotInitializedException();
-		
-		synchronized (QueuedRequests) 
-		{
+
+		synchronized (QueuedRequests) {
 			QueuedRequests.add(Rqst);
 			Sem.release();
 		}
 	}
-	
-	
-	private static void Send(Request r) throws IOException
-	{
-		String toSend = new String();
-		toSend += r.getUID();
-		toSend += r.getOPCODE();
-		for(String arg :r.getArguments())
-		{
-			toSend += arg;
-			toSend += Utility.UNIT_SEPARATOR;
+
+	public static void Send(Request r) throws IOException {
+		byte[] CUID = CString.FromString(Connection.getClientInfo().getUuid().toString()).getBytes();
+		byte[] UUID = CString.FromString(r.getUID().toString()).getBytes();
+		byte[] OPCODE = r.getOPCODE();
+		String Arg = "";
+		for (String arg : r.getArguments()) {
+			Arg += arg;
+			Arg += Utility.UNIT_SEPARATOR;
 		}
-		
-		byte[] UUID 
-			= CString.FromString(
-					Connection
-					.getCurrent()
-					.getClient()
-					.getUuid()
-					.toString()
-					)
-			.toString()
-			.getBytes();
-		byte[] fb = Utility.getFbyte(toSend);
-		
+		CString toCSend = CString.FromString(Arg);
+
+		byte[] fb = Utility.IntToBytes(toCSend.length() == 0 ? 0 : toCSend.nlength());
+
+		System.out.println(OPCODE.length);
+
+		StreamOut.write(CUID);
 		StreamOut.write(UUID);
+		StreamOut.write(OPCODE);
 		StreamOut.write(fb);
-		StreamOut.write(toSend.getBytes());
-		
+		if (toCSend.length() > 0)
+			StreamOut.write(toCSend.getBytes());
+
 	}
-	
-	
-	public static void JoinHandlers() throws InterruptedException
-	{
+
+	public static void StartHandlers() {
+		if (!InsHandler.isAlive())
+			InsHandler.start();
+		if (!OutsHandler.isAlive())
+			OutsHandler.start();
+	}
+
+	public static void JoinHandlers() throws InterruptedException {
 		InsHandler.join();
 		OutsHandler.join();
 	}
+
 	public static void StopHandlers() {
 		KeepRunning = false;
-		
+		Sem.release();
 	}
-	
-	
+
 }

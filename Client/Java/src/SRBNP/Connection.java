@@ -18,9 +18,9 @@ public class Connection {
 	private InputStream StreamIn;
 	private OutputStream StreamOut;
 
-	public Connection() throws UnknownHostException, IOException, InvalidCStringException, InterruptedException {
+	public Connection() 
+			throws UnknownHostException, IOException, InvalidCStringException, InterruptedException {
 		Current = this;
-		this.Connect(null);
 	}
 
 	public void Connect(ResponseListener OnConnect)
@@ -32,7 +32,7 @@ public class Connection {
 		RequestsHandler.Intialize();
 		RequestsHandler.setStreams(StreamIn, StreamOut);
 		Send(_BASE_OPCODE.CONNECT);
-		Client.setUuid(new CString(Connection.getCurrent().StreamIn.readNBytes(37)));
+		Client.setUuid(new CString(Connection.get().StreamIn.readNBytes(37)));
 	}
 
 	public void Connect(String URL, int Port, ResponseListener OnConnect)
@@ -65,14 +65,14 @@ public class Connection {
 	}
 
 	public void Send(Request Rqst) {
-
+		RequestsHandler.addRequest(Rqst);
 	}
 
-	public ClientInfo getClient() {
-		return Client;
+	public static ClientInfo getClientInfo() {
+		return get().Client;
 	}
 
-	public static Connection getCurrent() {
+	public static Connection get() {
 		return Current;
 	}
 
