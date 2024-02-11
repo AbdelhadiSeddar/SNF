@@ -1,49 +1,51 @@
 package SRBNP;
 
+import java.nio.charset.StandardCharsets;
+
 import SRBNP.Exceptions.*;
 
 public class CString {
 	String Content;
 	
-	
-	public static CString FromString(String str)
-	{
-		try {
-			return new CString(str);
-		} 
-		catch (InvalidCStringException e)
-		{
-			return new CString(str + '\0');
-		}
+	static char NullChr = Character.MIN_VALUE;
+
+	public static CString FromString(String str) {
+		return new CString(str + NullChr);
 	}
-	
-	CString(String str) throws InvalidCStringException
-	{
-		if(str.length() < 1 || str.lastIndexOf('\0') == -1 || str.lastIndexOf('\0') != str.length() - 1)
+
+	public CString(String str) throws InvalidCStringException {
+		if (str.length() < 1 || str.lastIndexOf(NullChr) == -1 || str.lastIndexOf(NullChr) != str.length() - 1)
 			throw new InvalidCStringException(str);
-		else		
+		else
 			Content = str;
 	}
-	
+
 	public CString(byte[] nBytes) throws InvalidCStringException {
 		this(new String(nBytes));
 	}
-	
+
 	/*
 	 * Returns the length
-	 * */
-	public int length()
-	{
+	 */
+	public int length() {
 		return Content.length() - 1;
 	}
-	
-	public int nlength()
-	{
+	/*
+	 * returns the lenght including the nullcharacter
+	 */
+	public int nlength() {
 		return Content.length();
 	}
+
+	public String toString() {
+		return Content.substring(0, Content.length() - 1);
+	}
 	
-	public String toString()
-	{
-		return Content.substring(0, Content.length() -1);
+	public char[] toCharArray() {
+		return Content.toCharArray();
+	}
+
+	public byte[] getBytes() {
+		return Content.getBytes(StandardCharsets.US_ASCII);
 	}
 }

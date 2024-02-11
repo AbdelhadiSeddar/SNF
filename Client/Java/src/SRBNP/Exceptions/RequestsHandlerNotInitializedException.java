@@ -9,6 +9,6 @@ public class RequestsHandlerNotInitializedException extends RuntimeException
 
 	public RequestsHandlerNotInitializedException()
 	{
-		super("Ruquests Handler is not Initialized.");
+		super("Ruquests Handler is not Initialized. Did you connect?");
 	}
 }

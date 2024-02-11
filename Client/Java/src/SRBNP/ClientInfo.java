@@ -2,7 +2,7 @@ package SRBNP;
 
 import java.util.UUID;
 
-class ClientInfo {
+public class ClientInfo {
 	private UUID uuid;
 
 	public UUID getUuid() {
