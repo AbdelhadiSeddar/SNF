@@ -3,8 +3,10 @@
 
 #include <SRBNP/SRBNP.h>
 #include <SRBNP/clt.h>
+#include <SRBNP/utility.h>
 
 #define NULLREQUEST "000000000000000"
+#define SRBNP_REQUEST_MAXSIZE 4096
 
 typedef struct SRBNP_Request_t SRBNP_RQST;
 typedef struct SRBNP_Request_args_t SRBNP_RQST_ARG;

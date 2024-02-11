@@ -3,34 +3,42 @@
 SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
 {
     SRBNP_RQST *re = srbnp_request_gen();
-    char MsgSize[5];
-    srbnp_rcv(Client, MsgSize, 5);
-    printf("Received Content : %s\n", MsgSize);
-    int Size = srbnp_Fbyte_TO_int(MsgSize);
-    if (Size < 0)
-    {
-        srbnp_clt_disconnect(Client);
-        return NULL;
-    }
-    char *Request = calloc(Size, sizeof(char));
-    srbnp_rcv(Client, Request, Size);
-    printf("Received %d Bytes With Content : %s\n", Size, Request);
-    strncpy(re->UID, Request, strlen(NULLREQUEST));
-    re->UID[strlen(NULLREQUEST)] = '\0';
-    char *tmp = calloc(Size - strlen(re->UID), sizeof(char));
-    memcpy(tmp, Request + strlen(re->UID), Size -= strlen(re->UID));
-    free(Request);
-    Request = tmp;
+    char *Request;
 
-    strncpy(re->OPCODE, Request, 4);
-    tmp = calloc(Size - strlen(re->OPCODE), sizeof(char));
-    memcpy(tmp, Request + strlen(re->OPCODE), Size -= strlen(re->OPCODE));
-    free(Request);
-    Request = tmp;
+    /**
+     * Fetching Request UID
+     */
+    srbnp_rcv(Client, re->UID, strnlen(NULLREQUEST, 16));
+
+    /**
+     * Fetching OPCODE
+     */
+    srbnp_rcv(Client, re->UID, strnlen(_OPCODE_CLT_CONNECT, 4));
+
+    /**
+     * Fetching Arguments Length & handling according to it
+     */
+    char MsgSize[4];
+    srbnp_rcv(Client, MsgSize, 4);
+    uint32_t Size = srbnp_bytes_to_int32(MsgSize, 4);
+
+    if (Size < 0)
+        return NULL;
+    else if (Size > SRBNP_REQUEST_MAXSIZE)
+        return NULL;
 
     SRBNP_RQST_ARG *Top_rqst = NULL;
+    if (Size == 0)
+        goto end_request_fetchfrom_clt;
     SRBNP_RQST_ARG *Current = NULL;
-
+    /**
+     * Fetching Arguments
+     */
+    Request = calloc(Size, sizeof(char));
+    srbnp_rcv(Client, Request, Size);
+    /**
+     * Sceparating Arguments
+    */
     while (Size > 0)
     {
         int chr = (int)(strchrnul(Request, UNIT_SCEPARATOR[0]) - Request);
@@ -52,6 +60,7 @@ SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
         free(Request);
         Request = tmp;
     }
+end_request_fetchfrom_clt:;
     srbnp_request_arg_insert(re, Top_rqst);
     return re;
 }
@@ -72,7 +81,7 @@ SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16])
 
 void srbnp_request_free(SRBNP_RQST *Request)
 {
-    if(Request == NULL)
+    if (Request == NULL)
         return;
     srbnp_request_args_free(Request->args);
     free(Request);
@@ -102,7 +111,7 @@ int srbnp_request_get_nargs(SRBNP_RQST *args)
         return 0;
     int nargs = 1;
     SRBNP_RQST_ARG *arg = args->args;
-    if(arg == NULL)
+    if (arg == NULL)
         return 0;
     while (arg->next == NULL)
     {
@@ -133,7 +142,7 @@ void srbnp_request_args_free(SRBNP_RQST_ARG *arg)
     if (arg == NULL)
         return;
     SRBNP_RQST_ARG *current = arg;
-    SRBNP_RQST_ARG *next = current ->next;
+    SRBNP_RQST_ARG *next = current->next;
     while (next != NULL)
     {
         next = current->next;
@@ -161,12 +170,12 @@ void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg)
 void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request)
 {
     int nargs = srbnp_request_get_nargs(Request);
-    int len = strlen(Request->UID) + nargs * sizeof(char);
+    uint32_t len = strlen(Request->UID) + nargs * sizeof(char);
     for (SRBNP_RQST_ARG *arg = (Request->args); arg != NULL; arg = arg->next)
         len += strlen(arg->arg);
     char *content = calloc(len, sizeof(char));
     sprintf(content, "%s%s%s",
-            srbnp_Fbyte_FROM_int(len),
+            srbnp_int32_to_bytes(len, 4),
             Request->UID,
             UNIT_SCEPARATOR);
     int i = 0;

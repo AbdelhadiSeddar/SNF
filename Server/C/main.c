@@ -5,5 +5,6 @@
 
 int main(int argc, char** args)
 {
-    network_init();
+    srbnp_network_init();
+    srbnp_network_join();   
 }

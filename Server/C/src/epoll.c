@@ -4,10 +4,10 @@ int SRBNP_EPOLLFD, SRBNP_NFDS;
 struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];
 void srbnp_epoll_inis()
 {
-    if (_SERVER_SOCKET <= 0)
+    if (SRBNP_SERVER_SOCKET <= 0)
         return;
     SRBNP_EPOLLFD = epoll_create1(0);
-    srbnp_epoll_add(_SERVER_SOCKET);
+    srbnp_epoll_add(SRBNP_SERVER_SOCKET);
 }
 
 int srbnp_epoll_add(int FD)

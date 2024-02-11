@@ -1,44 +1,42 @@
 #include <SRBNP/utility.h>
 
-
 void checkerr(int Result, const char *ErrorOut)
 {
-    if(Result < 0)
+    if (Result < 0)
     {
         perror(ErrorOut);
         exit(EXIT_FAILURE);
     }
 }
-
-
-char* srbnp_Fbyte_FROM_str(const char* String)
+uint32_t srbnp_bytes_to_uint32(const char *bytes, int nBytes)
 {
-    int Strlen = strlen(String);
-    return srbnp_Fbyte_FROM_int(Strlen);
-}
-char *srbnp_Fbyte_FROM_int(int Size) 
-{
-    char *re = malloc(5*sizeof(char));
-    for(int i = 0 ; i < 4 ; i++)
+    if (bytes == NULL || nBytes < 0)
+        return -1;
+    uint32_t re = 0;
+    for (int i = 0; i < nBytes; i++)
     {
-        re[3 - i] = Size % 10 + 48;
-        Size /= 10;
+        re += (bytes[nBytes - i - 1] << (8 * i));
     }
-    re[4] = '\0';
-    if(Size > 0)
-        return "0000\0";
     return re;
 }
-int srbnp_Fbyte_TO_int(const char Fbyte[5])
+char *srbnp_strlen_to_bytes(const char *Str, int nBytes)
 {
-    int re =0;
-    for(int i = 0 ; i < 4 ; i++)
+    if (Str == NULL || nBytes < 0)
+        return NULL;
+    int len = 0;
+    if ((len = strnlen(Str, 0)))
+        return srbnp_int32_to_bytes(len, nBytes);
+    else
+        return NULL;
+}
+char *srbnp_uint32_to_bytes(uint32_t i32, int nBytes)
+{
+    if (nBytes < 0)
+        return NULL;
+    char *re = calloc(sizeof(char), nBytes);
+    for (int i = 0; i < nBytes; i++)
     {
-        if(Fbyte[3 - i] < 48 || Fbyte[3 - i] > 57)
-            return -1;
-
-        re = Fbyte[3 - i] - 48;
-        re *= 10;
+        re[nBytes - i - 1] = (i32 >> 8 * i) & 0xFF;
     }
     return re;
 }
@@ -51,11 +49,11 @@ int srbnp_setnonblocking(int _sock)
 
     if (flags == -1)
     {
-        return -1;  // error
+        return -1; // error
     }
 
     flags |= O_NONBLOCK;
 
-    result = fcntl(_sock , F_SETFL , flags);
+    result = fcntl(_sock, F_SETFL, flags);
     return result;
 }
