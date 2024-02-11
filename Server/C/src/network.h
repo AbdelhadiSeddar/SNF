@@ -31,6 +31,7 @@ extern _Atomic uint64_t SRBNP_Total_Data_Snt;
 
 extern int SRBNP_SERVER_SOCKET;
 extern void srbnp_network_init();
+extern void srbnp_network_join();
 
 
 extern int srbnp_snd(SRBNP_CLT *Client, const char *Buffer, int _Size);
