@@ -78,7 +78,7 @@ install: build cleanlib
 	echo "##		Note: must also link [ $(C_LIB) ]"
 
 buildtest: build
-	clang main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
+	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
 
 test: buildtest
 	./a.out
@@ -87,5 +87,5 @@ testgdb: buildtest
 	gdb a.out
 
 testinstall : install
-	clang main.c -l$(lib_name) $(C_FLAGS) $(C_LIB) -no-pie
+	$(COMPILER) main.c -l$(lib_name) $(C_FLAGS) $(C_LIB) -no-pie
 	./a.out
