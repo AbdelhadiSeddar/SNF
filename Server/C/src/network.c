@@ -83,7 +83,7 @@ int srbnp_snd(SRBNP_CLT *Client, const char *Buffer, int _Size)
     if (_Size < 0)
     {
         char buff[strlen(Buffer) + 4];
-        memcpy(buff, srbnp_int32_to_bytes(strlen(Buffer), 4), 4);
+        memcpy(buff, srbnp_uint32_to_bytes(strlen(Buffer), 4), 4);
         strcat(buff, Buffer);
         DataSnt = send(Client->sock, buff, strlen(Buffer) + 5, 0);
     }

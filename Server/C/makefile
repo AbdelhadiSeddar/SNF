@@ -16,6 +16,7 @@ OBJ_PATH := $(CURRENT_PATH)obj/
 LIB_PATH := $(CURRENT_PATH)lib/
 SRC_PATH := $(CURRENT_PATH)src/
 INC_PATH := $(CURRENT_PATH)include/
+TST_PATH := $(CURRENT_PATH)tests/
 
 C_FILES := $(wildcard $(SRC_PATH)*.c)
 H_FILES := $(wildcard $(SRC_PATH)*.h)
@@ -23,6 +24,7 @@ O_FILES := $(patsubst %.c,%.o,$(C_FILES))
 
 .SILENT:
 
+all: build
 
 %.h:
 	echo "#include <$(PROJECT)/$@>" >> $(INC_PATH)$(PROJECT).h
@@ -32,7 +34,7 @@ headers: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
 	cp $(H_FILES) $(INC_PATH)$(PROJECT)
 
 %.o: %.c
-	$(COMPILER) -o $@ -c $< -I$(INC_PATH)  $(C_FLAGS)
+	$(COMPILER) -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
 
 objbuild: headers $(O_FILES)  
 	echo "##	Building Objects"
@@ -46,7 +48,7 @@ build: objbuild
 clean:
 	echo "##	Cleaning paths"
 	rm -rf $(OBJ_PATH) $(INC_PATH)$(PROJECT) $(INC_PATH) $(LIB_PATH)
-	rm -f $(INC_PATH)$(PROJECT).h a.out
+	rm -f *.out *.o
 
 cleanlib:
 	echo "##	Cleaning standard library and include paths from $(PROJECT)"
@@ -60,8 +62,6 @@ prepare:
 	touch $(INC_PATH)$(PROJECT).h
 	echo "##	Preparing $(PROJECT).h"
 	echo "// Main Source file" > $(INC_PATH)$(PROJECT).h
-
-all: build
 
 install: build cleanlib
 	sudo rm -rf $(STD_INC_PATH)/$(PROJECT)
@@ -89,3 +89,9 @@ testgdb: buildtest
 testinstall : install
 	$(COMPILER) main.c -l$(lib_name) $(C_FLAGS) $(C_LIB) -no-pie
 	./a.out
+
+t_%: build
+	$(COMPILER) $(TST_PATH)$(patsubst t_%,%, $@).c \
+	-L$(LIB_PATH) -I$(INC_PATH) -l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
+	-o $(TST_PATH)$@.out
+	$(TST_PATH)$@.out

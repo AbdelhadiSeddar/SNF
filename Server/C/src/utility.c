@@ -25,7 +25,7 @@ char *srbnp_strlen_to_bytes(const char *Str, int nBytes)
         return NULL;
     int len = 0;
     if ((len = strnlen(Str, 0)))
-        return srbnp_int32_to_bytes(len, nBytes);
+        return srbnp_uint32_to_bytes(len, nBytes);
     else
         return NULL;
 }

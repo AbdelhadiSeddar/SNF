@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <uuid/uuid.h>
 #include <SRBNP/SRBNP.h>
+#include <SRBNP/opcode.h>
 typedef struct SRBNP_Client_t SRBNP_CLT;
 
 struct SRBNP_Client_t
@@ -37,7 +38,6 @@ extern void srbnp_clt_connect(SRBNP_CLT *Client);
 extern void srbnp_clt_reconnect(SRBNP_CLT *Client);
 extern void srbnp_clt_disconnect(SRBNP_CLT *Client);
 
-#include <SRBNP/_BASE_OPCODE.h>
 #include <SRBNP/hashtable.h>
 #include <SRBNP/request.h>
 #include <SRBNP/epoll.h>

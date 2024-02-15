@@ -1,6 +1,7 @@
 #include <SRBNP/request.h>
 
-SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
+SRBNP_RQST *srbnp_request_fetchfrom_clt(
+    SRBNP_CLT *Client)
 {
     SRBNP_RQST *re = srbnp_request_gen();
     char *Request;
@@ -13,14 +14,14 @@ SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
     /**
      * Fetching OPCODE
      */
-    srbnp_rcv(Client, re->UID, strnlen(_OPCODE_CLT_CONNECT, 4));
+    srbnp_rcv(Client, re->OPCODE->opcode, 4);
 
     /**
      * Fetching Arguments Length & handling according to it
      */
     char MsgSize[4];
     srbnp_rcv(Client, MsgSize, 4);
-    uint32_t Size = srbnp_bytes_to_int32(MsgSize, 4);
+    uint32_t Size = srbnp_bytes_to_uint32(MsgSize, 4);
 
     if (Size < 0)
         return NULL;
@@ -38,7 +39,7 @@ SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client)
     srbnp_rcv(Client, Request, Size);
     /**
      * Sceparating Arguments
-    */
+     */
     while (Size > 0)
     {
         int chr = (int)(strchrnul(Request, UNIT_SCEPARATOR[0]) - Request);
@@ -67,19 +68,22 @@ end_request_fetchfrom_clt:;
 
 SRBNP_RQST *srbnp_request_gen()
 {
-    SRBNP_RQST *re = malloc(sizeof(SRBNP_RQST));
+    SRBNP_RQST *re = calloc(1, sizeof(SRBNP_RQST));
     re->args = NULL;
+    re->OPCODE = calloc(1, sizeof(SRBNP_opcode));
     return re;
 }
 
-SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16])
+SRBNP_RQST *srbnp_request_gen_wUID(
+    const char UID[16])
 {
     SRBNP_RQST *re = srbnp_request_gen();
     memcpy(re->UID, UID, 16);
     return re;
 }
 
-void srbnp_request_free(SRBNP_RQST *Request)
+void srbnp_request_free(
+    SRBNP_RQST *Request)
 {
     if (Request == NULL)
         return;
@@ -87,25 +91,36 @@ void srbnp_request_free(SRBNP_RQST *Request)
     free(Request);
 }
 
-SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, char OPCODE[4], SRBNP_RQST_ARG *Args)
+SRBNP_RQST *srbnp_request_gen_response(
+    SRBNP_RQST *Original,
+    SRBNP_opcode *OPCODE,
+    SRBNP_RQST_ARG *Args)
 {
     SRBNP_RQST *re = srbnp_request_gen_wUID(Original->UID);
-    memcpy(re->OPCODE, OPCODE, 4);
+    re->OPCODE = OPCODE;
     re->args = Args;
     return re;
 }
 
-SRBNP_RQST *srbnp_request_gen_server_OPCODE(char OPCODE[4])
+SRBNP_RQST *srbnp_request_gen_server_OPCODE(
+    SRBNP_opcode *OPCODE)
 {
     return srbnp_request_gen_response(srbnp_request_gen_wUID(NULLREQUEST), OPCODE, NULL);
 }
 
-SRBNP_RQST *srbnp_request_gen_invalid(SRBNP_RQST *Original)
+SRBNP_RQST *srbnp_request_gen_invalid(
+    SRBNP_RQST *Original)
 {
-    return srbnp_request_gen_response(Original, _OPCODE_CLT_INVALID, NULL);
+    return srbnp_request_gen_response(
+        Original, 
+        srbnp_opcode_get_invalid(
+            SRBNP_OPCODE_BASE_DET_UNDETAILED
+        ), 
+        NULL);
 }
 
-int srbnp_request_get_nargs(SRBNP_RQST *args)
+int srbnp_request_get_nargs(
+    SRBNP_RQST *args)
 {
     if (args == NULL)
         return 0;
@@ -121,7 +136,8 @@ int srbnp_request_get_nargs(SRBNP_RQST *args)
     return nargs;
 }
 
-SRBNP_RQST_ARG *srbnp_request_arg_gen(const char *arg)
+SRBNP_RQST_ARG *srbnp_request_arg_gen(
+    const char *arg)
 {
     SRBNP_RQST_ARG *Arg = calloc(1, sizeof(SRBNP_RQST_ARG));
     Arg->arg = calloc(strlen(arg) + 1, sizeof(char));
@@ -129,7 +145,8 @@ SRBNP_RQST_ARG *srbnp_request_arg_gen(const char *arg)
     return Arg;
 }
 
-void srbnp_request_arg_free(SRBNP_RQST_ARG *arg)
+void srbnp_request_arg_free(
+    SRBNP_RQST_ARG *arg)
 {
     if (arg == NULL)
         return;
@@ -137,7 +154,8 @@ void srbnp_request_arg_free(SRBNP_RQST_ARG *arg)
     free(arg);
 }
 
-void srbnp_request_args_free(SRBNP_RQST_ARG *arg)
+void srbnp_request_args_free(
+    SRBNP_RQST_ARG *arg)
 {
     if (arg == NULL)
         return;
@@ -152,7 +170,9 @@ void srbnp_request_args_free(SRBNP_RQST_ARG *arg)
     arg = NULL;
 }
 
-void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg)
+void srbnp_request_arg_insert(
+    SRBNP_RQST *Request,
+    SRBNP_RQST_ARG *arg)
 {
     if (Request->args == NULL)
     {
@@ -167,7 +187,9 @@ void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg)
     }
 }
 
-void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request)
+void srbnp_request_send_clt(
+    SRBNP_CLT *Client,
+    SRBNP_RQST *Request)
 {
     int nargs = srbnp_request_get_nargs(Request);
     uint32_t len = strlen(Request->UID) + nargs * sizeof(char);
@@ -175,7 +197,7 @@ void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request)
         len += strlen(arg->arg);
     char *content = calloc(len, sizeof(char));
     sprintf(content, "%s%s%s",
-            srbnp_int32_to_bytes(len, 4),
+            srbnp_uint32_to_bytes(len, 4),
             Request->UID,
             UNIT_SCEPARATOR);
     int i = 0;
@@ -190,7 +212,9 @@ void srbnp_request_send_clt(SRBNP_CLT *Client, SRBNP_RQST *Request)
     srbnp_snd(Client, content, len);
 }
 
-void srbnp_request_send_invalid(SRBNP_CLT *Client, SRBNP_RQST *Original)
+void srbnp_request_send_invalid(
+    SRBNP_CLT *Client,
+    SRBNP_RQST *Original)
 {
     srbnp_request_send_clt(Client, srbnp_request_gen_invalid(Original));
 }

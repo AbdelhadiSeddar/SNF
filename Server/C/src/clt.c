@@ -28,18 +28,25 @@ void *srbnp_clt_handle_new(void *arg)
 
     SRBNP_CLT *Client = (SRBNP_CLT *)arg;
     checkerr(Client == NULL ? -1 : 0, "Can not handle new client: Null");
-    char *Buffer = calloc(4, sizeof(char));
-    srbnp_rcv(Client, Buffer, 4);
-    if (!strcmp(Buffer, _OPCODE_CLT_CONNECT))
+    SRBNP_opcode *op = calloc(1, sizeof(SRBNP_opcode));
+    srbnp_rcv(Client, (char*)(uint8_t*)op->opcode, 4);
+    if (srbnp_opcode_compare(
+            op,
+            srbnp_opcode_get_base(
+                SRBNP_OPCODE_BASE_CMD_CONNECT,
+                0x00)) >= 0)
         srbnp_clt_connect(Client);
-    else if (!strcmp(Buffer, _OPCODE_CLT_RECONNECT))
+    else if (srbnp_opcode_compare(
+                 op,
+                 srbnp_opcode_get_base(
+                     SRBNP_OPCODE_BASE_CMD_RECONNECT,
+                     0x00)) >= 0)
         srbnp_clt_reconnect(Client);
     else
         srbnp_clt_disconnect(Client);
 
     srbnp_epoll_add(SRBNP_SERVER_SOCKET);
 
-    free(Buffer);
     srbnp_clt_free(Client);
     return NULL;
 }
@@ -60,23 +67,31 @@ void *srbnp_clt_handle(void *arg)
 
     if (Rqst != NULL)
     {
-        printf("Reauest : %s\n", Rqst->OPCODE);
-        if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_DISCONNECT))
+        printf("Request : %x\n", Rqst->OPCODE->strct->Command);
+        if (srbnp_opcode_compare(
+                Rqst->OPCODE,
+                srbnp_opcode_get_base(
+                    SRBNP_OPCODE_BASE_CMD_DISCONNECT,
+                    0x00)) >= 0)
             srbnp_clt_disconnect(Original);
-        else if (!strcmp(Rqst->OPCODE, _OPCODE_CLT_SRBNP_VER))
+        else if (srbnp_opcode_compare(
+                     Rqst->OPCODE,
+                     srbnp_opcode_get_base(
+                         SRBNP_OPCODE_BASE_CMD_CONNECT,
+                         0x00)) >= 0)
         {
-            srbnp_request_send_clt(Client,
-                                   srbnp_request_gen_response(Rqst,
-                                                              _OPCODE_CLT_CONFIRM,
-                                                              srbnp_request_arg_gen(_SRBNP_VER)));
+            // srbnp_request_send_clt(Client,
+            //                        srbnp_request_gen_response(Rqst,
+            //                                                   _OPCODE_CLT_CONFIRM,
+            //                                                   srbnp_request_arg_gen(_SRBNP_VER)));
         }
         //    else if(###)
         //    {
         //          // TODO: Handle Custom Requests
         //    }
         else
-	//            srbnp_request_send_invalid(Original, Rqst);
-		printf("Invalid Request Handle");
+            //            srbnp_request_send_invalid(Original, Rqst);
+            printf("Invalid Request Handle");
     }
     else
         printf("Invalid request\n");

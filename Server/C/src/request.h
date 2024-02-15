@@ -4,6 +4,7 @@
 #include <SRBNP/SRBNP.h>
 #include <SRBNP/clt.h>
 #include <SRBNP/utility.h>
+#include <SRBNP/opcode.h>
 
 #define NULLREQUEST "000000000000000"
 #define SRBNP_REQUEST_MAXSIZE 4096
@@ -14,7 +15,7 @@ typedef struct SRBNP_Request_args_t SRBNP_RQST_ARG;
 struct SRBNP_Request_t
 {
     char UID[16];
-    char OPCODE[4];
+    SRBNP_opcode *OPCODE;
     SRBNP_RQST_ARG *args;
 };
 
@@ -29,8 +30,8 @@ extern SRBNP_RQST *srbnp_request_fetchfrom_clt(SRBNP_CLT *Client);
 extern void srbnp_request_free(SRBNP_RQST *Request);
 extern SRBNP_RQST *srbnp_request_gen();
 extern SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16]);
-extern SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, char OPCODE[4], SRBNP_RQST_ARG *Args);
-extern SRBNP_RQST *srbnp_request_gen_server_OPCODE(char OPCODE[4]);
+extern SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, SRBNP_opcode *OPCODE, SRBNP_RQST_ARG *Args);
+extern SRBNP_RQST *srbnp_request_gen_server_OPCODE(SRBNP_opcode *OPCODE);
 extern SRBNP_RQST *srbnp_request_gen_invalid(SRBNP_RQST *Original);
 extern int srbnp_request_get_nargs(SRBNP_RQST *args);
 
