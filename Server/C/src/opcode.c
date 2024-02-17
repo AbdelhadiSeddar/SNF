@@ -125,8 +125,11 @@ int srbnp_opcode_define_sub_category(
     strcpy(item->Definition, Definition);
 
     if (SRBNP_opcode_LL == NULL)
-        return -1;
+        return -2;
     SRBNP_opcode_LL_item *sub = srbnp_opcode_get_category(Category);
+    if (sub == NULL)
+        return -2;
+
     item->parent = sub;
     if (sub->sub == NULL)
         sub->sub = item;
@@ -167,8 +170,10 @@ int srbnp_opcode_define_command(
     strcpy(item->Definition, Definition);
 
     if (SRBNP_opcode_LL == NULL)
-        return -1;
+        return -2;
     SRBNP_opcode_LL_item *sub = srbnp_opcode_get_sub_category(Category, SubCategory);
+    if (sub == NULL)
+        return -2;
     item->parent = sub;
     if (sub->sub == NULL)
         sub->sub = item;
@@ -259,12 +264,23 @@ SRBNP_opcode *srbnp_opcode_get(
             SRBNP_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE);
 
     SRBNP_opcode *re = calloc(1, sizeof(SRBNP_opcode));
-    re->strct->Category = Category;
-    re->strct->SubCategory = SubCategory;
-    re->strct->Command = Command;
-    re->strct->Detail = Detail;
+    re->strct.Category = Category;
+    re->strct.SubCategory = SubCategory;
+    re->strct.Command = Command;
+    re->strct.Detail = Detail;
 
     return re;
+}
+SRBNP_opcode *srbnp_opcode_getu(
+    SRBNP_opcode_mmbr_t Category,
+    SRBNP_opcode_mmbr_t SubCategory,
+    SRBNP_opcode_mmbr_t Command)
+{
+    return srbnp_opcode_get(
+        Category,
+        SubCategory,
+        Command,
+        SRBNP_OPCODE_BASE_DET_UNDETAILED);
 }
 
 int srbnp_opcode_compare(SRBNP_opcode *op1, SRBNP_opcode *op2)
@@ -280,10 +296,10 @@ int srbnp_opcode_compare(SRBNP_opcode *op1, SRBNP_opcode *op2)
     for (int i = 0; i < 3; i++)
     {
         if (op1->opcode[i] != op2->opcode[i])
-            return -1;
+            return -2;
     }
     int chk;
-    if (!(chk = op1->strct->Detail - op2->strct->Detail))
+    if (!(chk = op1->strct.Detail - op2->strct.Detail))
         return 0;
     else if (chk > 0)
         return 1;
@@ -324,6 +340,13 @@ SRBNP_opcode *srbnp_opcode_get_base(
         Detail);
 }
 
+SRBNP_opcode *srbnp_opcode_getu_base(SRBNP_opcode_mmbr_t Command)
+{
+    return srbnp_opcode_get_base(
+        Command,
+        SRBNP_OPCODE_BASE_DET_UNDETAILED);
+}
+
 SRBNP_opcode *srbnp_opcode_get_invalid(
     SRBNP_opcode_mmbr_t Detail)
 {
@@ -332,4 +355,10 @@ SRBNP_opcode *srbnp_opcode_get_invalid(
         SRBNP_OPCODE_BASE_SUBCAT,
         SRBNP_OPCODE_BASE_CMD_INVALID,
         Detail);
+}
+
+SRBNP_opcode *srbnp_opcode_getu_invalid()
+{
+    return srbnp_opcode_get_invalid(
+        SRBNP_OPCODE_BASE_DET_UNDETAILED);
 }

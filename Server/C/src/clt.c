@@ -67,7 +67,7 @@ void *srbnp_clt_handle(void *arg)
 
     if (Rqst != NULL)
     {
-        printf("Request : %x\n", Rqst->OPCODE->strct->Command);
+        printf("Request : %x\n", Rqst->OPCODE->strct.Command);
         if (srbnp_opcode_compare(
                 Rqst->OPCODE,
                 srbnp_opcode_get_base(

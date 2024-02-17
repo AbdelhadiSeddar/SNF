@@ -48,5 +48,13 @@ int main()
     srbnp_opcode_define_command(0x01, 0x01, 0x6D, "Command Test 2-5");
 
     print_opcodes();
+
+    SRBNP_opcode* op = srbnp_opcode_getu_invalid();
+    printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
+    free(op);
+     op = srbnp_opcode_get_invalid(SRBNP_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL);
+    printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
+    free(op);
+
     return 0;
 }
