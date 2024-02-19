@@ -1,4 +1,4 @@
-#include <SRBNP/opcode.h>
+#include <SRBNP.h>
 
 void print_opcodes()
 {
@@ -15,6 +15,12 @@ void print_opcodes()
             while (cmd != NULL)
             {
                 printf("\t) Command Code [%x] : %s\n", cmd->OPmmbr, cmd->Definition);
+                SRBNP_opcode_LL_item *det = cmd->sub;
+                while(det != NULL)
+                {
+                    printf("\t  - Detail Code [%x] : %s\n", det->OPmmbr, det->Definition);
+                    det = det->next;
+                }
                 cmd = cmd->next;
             }
             subcat = subcat->next;
@@ -23,6 +29,22 @@ void print_opcodes()
     }
     
     printf("####### END\n");
+}
+
+void print_detail(SRBNP_opcode_LL_item* op_ll)
+{
+    if(op_ll == NULL)
+    {
+        printf("Invalid's Detail wasnt found");
+    }
+    else
+    {
+        printf("Command [ %x ] : %s \n\tDetail [ %x ]: %s\n", 
+            op_ll->parent->OPmmbr, 
+            op_ll->parent->Definition,
+            op_ll->OPmmbr,
+            op_ll->Definition);
+    }
 }
 
 int main()
@@ -55,6 +77,15 @@ int main()
      op = srbnp_opcode_get_invalid(SRBNP_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL);
     printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
     free(op);
+
+    print_detail(srbnp_opcode_get_base_detail(
+        SRBNP_OPCODE_BASE_CMD_INVALID,
+        SRBNP_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE
+    ));
+    print_detail(srbnp_opcode_get_base_detail(
+        SRBNP_OPCODE_BASE_CMD_INVALID,
+        SRBNP_OPCODE_BASE_DET_UNDETAILED
+    ));
 
     return 0;
 }

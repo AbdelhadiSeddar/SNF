@@ -61,12 +61,25 @@ extern int srbnp_opcode_define_sub_category(
 /// @param SubCategory OPcode's Sub-Category
 /// @param Code Opcode command's value
 /// @param Definition String Definition for The command
-/// @return  0 On Success || 1 if Sub-Category Already Exists || -1 On calloc fail || -2 if Sub-Category was not found or opcode's data structure is empty ( Possibly SRBNP OPcode was not initialized )
+/// @return  0 On Success || 1 if Command Already Exists || -1 On calloc fail || -2 if Command was not found or opcode's data structure is empty ( Possibly SRBNP OPcode was not initialized )
 extern int srbnp_opcode_define_command(
     SRBNP_opcode_mmbr_t Category,
     SRBNP_opcode_mmbr_t SubCategory,
     SRBNP_opcode_mmbr_t Code,
     const char *Definition);
+/// @brief Defines an opcode category
+/// @param Category OPcode's Category
+/// @param SubCategory OPcode's Sub-Category
+/// @param Code Opcode command's value
+/// @param Definition String Definition for The command
+/// @return  0 On Success || 1 if Command Already Exists || -1 On calloc fail || -2 if Command was not found or opcode's data structure is empty ( Possibly SRBNP OPcode was not initialized )
+extern int srbnp_opcode_define_detail(
+    SRBNP_opcode_mmbr_t Category,
+    SRBNP_opcode_mmbr_t SubCategory,
+    SRBNP_opcode_mmbr_t Command,
+    SRBNP_opcode_mmbr_t Code,
+    const char *Definition);
+
 /// @brief Fetches the opcode Category from the opcode's data structure. 
 /// @param Category Category to be fetched.
 /// @return Pointer to Category || NULL if Category wasn't found
@@ -88,6 +101,25 @@ extern SRBNP_opcode_LL_item *srbnp_opcode_get_command(
     SRBNP_opcode_mmbr_t Category,
     SRBNP_opcode_mmbr_t SubCategory,
     SRBNP_opcode_mmbr_t Command);
+    /// @brief Fetches the opcode Command from the opcode's data structure. 
+/// @param Category Parent Category
+/// @param SubCategory Parent Sub-Category
+/// @param Command Command to be fetched.
+/// @return Pointer to Command || NULL if Command wasn't found 
+extern SRBNP_opcode_LL_item *srbnp_opcode_get_command(
+    SRBNP_opcode_mmbr_t Category,
+    SRBNP_opcode_mmbr_t SubCategory,
+    SRBNP_opcode_mmbr_t Command);
+/// @param Category Parent Category
+/// @param SubCategory Parent Sub-Category
+/// @param Command Parent Command
+/// @param Detail Detail to be fetched.
+/// @return Pointer to Command detail || NULL if Command Detail wasn't found 
+extern SRBNP_opcode_LL_item *srbnp_opcode_get_detail(
+    SRBNP_opcode_mmbr_t Category,
+    SRBNP_opcode_mmbr_t SubCategory,
+    SRBNP_opcode_mmbr_t Command,
+    SRBNP_opcode_mmbr_t Detail);
 /// @brief Fetches a fully structured OPcode
 /// @param Category Parent Category.
 /// @param SubCategory Parent Sub-Category
@@ -162,7 +194,13 @@ extern SRBNP_opcode_LL_item *srbnp_opcode_get_base_sub_category();
 /// @return Pointer to Command || NULL if Command wasn't found
 extern SRBNP_opcode_LL_item *srbnp_opcode_get_base_command(
     SRBNP_opcode_mmbr_t Command);
-/// @brief Fetches a fully structured OPcode witha base "Command"
+/// @brief Fetches a base opcode Command from the opcode's data structure. 
+/// @param Command Parent Command
+/// @return Pointer to Command detail || NULL if Command Detail wasn't found 
+extern SRBNP_opcode_LL_item *srbnp_opcode_get_base_detail(
+    SRBNP_opcode_mmbr_t Command,
+    SRBNP_opcode_mmbr_t Detail);
+/// @brief Fetches a fully structured OPcode with a base "Command"
 /// @return OPcode || NULL if command not found
 extern SRBNP_opcode *srbnp_opcode_get_base(
     SRBNP_opcode_mmbr_t Command,

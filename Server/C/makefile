@@ -90,8 +90,8 @@ testinstall : install
 	$(COMPILER) main.c -l$(lib_name) $(C_FLAGS) $(C_LIB) -no-pie
 	./a.out
 
-t_%: build
+t_%: install
 	$(COMPILER) $(TST_PATH)$(patsubst t_%,%, $@).c \
-	-L$(LIB_PATH) -I$(INC_PATH) -l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
+	-l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
 	-o $(TST_PATH)$@.out
 	$(TST_PATH)$@.out
