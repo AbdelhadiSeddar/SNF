@@ -2,7 +2,7 @@
 
 int SRBNP_EPOLLFD, SRBNP_NFDS;
 struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];
-void srbnp_epoll_inis()
+void srbnp_epoll_init()
 {
     if (SRBNP_SERVER_SOCKET <= 0)
         return;

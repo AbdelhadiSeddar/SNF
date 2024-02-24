@@ -36,10 +36,10 @@ headers: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
 %.o: %.c
 	$(COMPILER) -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
 
-objbuild: headers $(O_FILES)  
+objbuild: headers $(O_FILES)
 	echo "##	Building Objects"
 	mv $(O_FILES) $(OBJ_PATH)
-	
+
 build: objbuild
 	echo "##	Building Library"
 	ar cr $(LIB_PATH)lib$(lib_name).a $(OBJ_PATH)*.o
@@ -48,7 +48,7 @@ build: objbuild
 clean:
 	echo "##	Cleaning paths"
 	rm -rf $(OBJ_PATH) $(INC_PATH)$(PROJECT) $(INC_PATH) $(LIB_PATH)
-	rm -f *.out *.o
+	rm -f $(TST_PATH)*.out *.o
 
 cleanlib:
 	echo "##	Cleaning standard library and include paths from $(PROJECT)"
@@ -67,7 +67,7 @@ install: build cleanlib
 	sudo rm -rf $(STD_INC_PATH)/$(PROJECT)
 	sudo mkdir $(STD_INC_PATH)/$(PROJECT)
 	echo "##	Installing headerfiles"
-	sudo mv $(INC_PATH)$(PROJECT)/*.h $(STD_INC_PATH)/$(PROJECT) 
+	sudo mv $(INC_PATH)$(PROJECT)/*.h $(STD_INC_PATH)/$(PROJECT)
 	sudo mv $(INC_PATH)$(PROJECT).h $(STD_INC_PATH)
 	echo "##	Haderfiles installed at $(STD_INC_PATH)/ :"
 	ls -l $(STD_INC_PATH)/$(PROJECT)
@@ -78,6 +78,7 @@ install: build cleanlib
 	echo "##		Note: must also link [ $(C_LIB) ]"
 
 buildtest: build
+	echo "##	Building test main"
 	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
 
 test: buildtest

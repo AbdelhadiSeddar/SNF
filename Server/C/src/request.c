@@ -7,14 +7,14 @@ SRBNP_RQST *srbnp_request_fetchfrom_clt(
     char *Request;
 
     /**
-     * Fetching Request UID
-     */
-    srbnp_rcv(Client, re->UID, strnlen(NULLREQUEST, 16));
-
-    /**
      * Fetching OPCODE
      */
     srbnp_rcv(Client, re->OPCODE->opcode, 4);
+
+    /**
+     * Fetching Request UID
+     */
+    srbnp_rcv(Client, re->UID, strlen(NULLREQUEST) + 1);
 
     /**
      * Fetching Arguments Length & handling according to it
@@ -112,10 +112,9 @@ SRBNP_RQST *srbnp_request_gen_invalid(
     SRBNP_RQST *Original)
 {
     return srbnp_request_gen_response(
-        Original, 
+        Original,
         srbnp_opcode_get_invalid(
-            SRBNP_OPCODE_BASE_DET_UNDETAILED
-        ), 
+            SRBNP_OPCODE_BASE_DET_UNDETAILED),
         NULL);
 }
 

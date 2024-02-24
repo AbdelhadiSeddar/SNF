@@ -144,7 +144,7 @@ extern SRBNP_opcode *srbnp_opcode_getu(
 /// @brief Compares between two opcodes.
 /// @param op1 
 /// @param op2 
-/// @return -2 Given opcodes are different || -1 if either opcodes are NULL || 0 when opcodes are equal || 1 Opcodes have equal command. but op1 has bigger Detail || 2 Opcodes have equal command. but op1 has bigger Detail
+/// @return -2 Given opcodes are different || -1 if either opcodes are NULL || 0 when opcodes are equal || 1 Opcodes have equal command. but op1 has bigger Detail || 2 Opcodes have equal command. but op2 has bigger Detail
 extern int srbnp_opcode_compare(
     SRBNP_opcode *op1,
     SRBNP_opcode *op2);
@@ -163,7 +163,7 @@ extern int srbnp_opcode_compare(
 #define SRBNP_OPCODE_BASE_CMD_RECONNECT (SRBNP_opcode_mmbr_t)0x01
 //  When client attemps to disconnect.
 #define SRBNP_OPCODE_BASE_CMD_DISCONNECT (SRBNP_opcode_mmbr_t)0x02
-//  When client requests SRBNP version.
+//  When client requests SRBNP version of the Server.
 #define SRBNP_OPCODE_BASE_CMD_SRBNP_VER (SRBNP_opcode_mmbr_t)0x03
 //  When client was forced to disconnect ( Kicked ).
 #define SRBNP_OPCODE_BASE_CMD_KICK (SRBNP_opcode_mmbr_t)0x04

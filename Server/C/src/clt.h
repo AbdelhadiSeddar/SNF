@@ -21,7 +21,7 @@ struct SRBNP_Client_t
     int sock;
 };
 
-void srbnp_clt_inis(int ht_min_Size);
+void srbnp_clt_init(int ht_min_Size);
 
 extern SRBNP_CLT *srbnp_clt_new(int Sockfd);
 extern void srbnp_clt_free(SRBNP_CLT *Client);

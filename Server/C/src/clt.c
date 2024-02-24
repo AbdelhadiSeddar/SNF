@@ -1,7 +1,7 @@
 #include <SRBNP/clt.h>
 
 SRBNP_ht *SRBNP_Clt_ht;
-void srbnp_clt_inis(int ht_min_Size)
+void srbnp_clt_init(int ht_min_Size)
 {
     SRBNP_Clt_ht = srbnp_hashtable_inis(ht_min_Size);
 }
@@ -77,7 +77,7 @@ void *srbnp_clt_handle(void *arg)
         else if (srbnp_opcode_compare(
                      Rqst->OPCODE,
                      srbnp_opcode_get_base(
-                         SRBNP_OPCODE_BASE_CMD_CONNECT,
+                         SRBNP_OPCODE_BASE_CMD_SRBNP_VER,
                          0x00)) >= 0)
         {
             // srbnp_request_send_clt(Client,
@@ -91,7 +91,7 @@ void *srbnp_clt_handle(void *arg)
         //    }
         else
             //            srbnp_request_send_invalid(Original, Rqst);
-            printf("Invalid Request Handle");
+            printf("Invalid Request Handle\n");
     }
     else
         printf("Invalid request\n");

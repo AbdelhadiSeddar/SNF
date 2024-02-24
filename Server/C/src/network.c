@@ -31,8 +31,9 @@ void srbnp_network_init()
              "Unable to listen in the port");
 
     printf("Server is now listening on PORT %d on FD %d \n", _PORT, SRBNP_SERVER_SOCKET);
-    srbnp_epoll_inis();
-    srbnp_clt_inis(100);
+    srbnp_epoll_init();
+    srbnp_clt_init(100);
+    srbnp_opcode_init();
 
     if (srbnp_thpool_inis(&Ntwrk, 4, Network_Worker, NULL) < 0)
     {

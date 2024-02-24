@@ -40,7 +40,7 @@ int srbnp_opcode_define_base()
             SRBNP_OPCODE_BASE_CAT,
             SRBNP_OPCODE_BASE_SUBCAT,
             SRBNP_OPCODE_BASE_CMD_SRBNP_VER,
-            "Used when client is requesting Server version") < 0)
+            "When client requests SRBNP version of the Server.") < 0)
         return -1;
     if (srbnp_opcode_define_command(
             SRBNP_OPCODE_BASE_CAT,

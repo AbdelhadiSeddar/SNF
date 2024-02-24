@@ -1,7 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#define _SRBNP_VER 0000
+#define _SRBNP_VER "0.0.1-alpha"
 
 #include <stdlib.h>
 #include <stdio.h>
