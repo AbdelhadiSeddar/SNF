@@ -1,4 +1,4 @@
-package SRBNP;
+package SRBNP.Requests;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,10 +7,14 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
+import SRBNP.CString;
+import SRBNP.Connection;
+import SRBNP.Request;
+import SRBNP.Utility;
 import SRBNP.Exceptions.*;
 
-public class RequestsHandler {
-	private static RequestsHandler RH;
+public class Handler {
+	private static Handler RH;
 	private static Semaphore Sem = new Semaphore(0);
 	private static Boolean KeepRunning = true;
 	private static StreamOutHandler OutsHandler;
@@ -33,12 +37,11 @@ public class RequestsHandler {
 						R = QueuedRequests.remove();
 					}
 					Send(R);
-					if (R.hasResponseHandler())
+					if (R.AwaitsResponse())
 						synchronized (UnrespondedRequests) {
 							UnrespondedRequests.add(R);
 						}
 				} catch (InterruptedException | IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -59,7 +62,7 @@ public class RequestsHandler {
 	protected static LinkedList<Request> UnrespondedRequests = new LinkedList<Request>();
 
 	public static void Initialize() {
-		RH = new RequestsHandler();
+		RH = new Handler();
 
 		InsHandler = RH.new StreamInHandler();
 		OutsHandler = RH.new StreamOutHandler();
@@ -92,7 +95,7 @@ public class RequestsHandler {
 
 	public static void Send(Request r) throws IOException {
 		byte[] CUID = CString.FromString(Connection.getClientInfo().getUuid().toString()).getBytes();
-		byte[] UUID = CString.FromString(r.getUID().toString()).getBytes();
+		byte[] RUID = r.getUID();
 		byte[] OPCODE = r.getOPCODE();
 		String Arg = "";
 		for (String arg : r.getArguments()) {
@@ -102,13 +105,11 @@ public class RequestsHandler {
 		CString toCSend = CString.FromString(Arg);
 
 		byte[] fb = Utility.IntToBytes(toCSend.length() == 0 ? 0 : toCSend.nlength());
-
-		System.out.println(OPCODE.length);
-
+		
 		StreamOut.write(CUID);
-		StreamOut.write(UUID);
-		StreamOut.write(OPCODE);
-		StreamOut.write(fb);
+		write(OPCODE);
+		write(RUID);
+		write(fb);
 		if (toCSend.length() > 0)
 			StreamOut.write(toCSend.getBytes());
 
@@ -121,6 +122,15 @@ public class RequestsHandler {
 			OutsHandler.start();
 	}
 
+	private static void write(byte[] Content) throws IOException
+	{
+		if(StreamOut == null)
+			throw new RequestsHandlerNotInitializedException();
+		for(byte b : Content)
+		{
+			StreamOut.write(b);
+		}
+	}
 	public static void JoinHandlers() throws InterruptedException {
 		InsHandler.join();
 		OutsHandler.join();

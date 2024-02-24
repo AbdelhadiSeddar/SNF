@@ -13,14 +13,14 @@ public class CString {
 		return new CString(str + NullChr);
 	}
 
-	public CString(String str) throws InvalidCStringException {
+	public CString(String str) throws CStringInvalidException {
 		if (str.length() < 1 || str.lastIndexOf(NullChr) == -1 || str.lastIndexOf(NullChr) != str.length() - 1)
-			throw new InvalidCStringException(str);
+			throw new CStringInvalidException(str);
 		else
 			Content = str;
 	}
 
-	public CString(byte[] nBytes) throws InvalidCStringException {
+	public CString(byte[] nBytes) throws CStringInvalidException {
 		this(new String(nBytes));
 	}
 

@@ -2,70 +2,73 @@ package SRBNP;
 
 import java.util.LinkedList;
 
-public class Request {
-	public final static int _UID_LENGTH = 15;
-	private static int _TOTAL__GENERATED_REQUESTS = 9457099;
+import SRBNP.Requests.Listener;
 
-	private boolean IS_RESPONSE = true;
-	private char[] UID = "000000000000000".toCharArray();
-	private byte[] OPCODE;
+public class Request {
+	public final static int _UID_LENGTH = 16;
+	private static int _TOTAL__GENERATED_REQUESTS = 0;
+
+
+	public static byte[] generateUID() {
+		byte[] UID = new byte[_UID_LENGTH];
+		int gen = (++_TOTAL__GENERATED_REQUESTS);
+		for (int i = 0; i < _UID_LENGTH -1; i++) {
+			UID[i] = (byte) ((gen != 0 ? (((gen % 64) + 33) * (i == 0 ? 1 : i)) : '0') & (byte)0xFF);
+			gen /= 64;
+		}
+		UID[_UID_LENGTH -1 ] = 0x00;
+		return UID;
+	}
+
+	private boolean IS_RESPONSE;
+	private byte[] UID;
+	private OPcode OPCODE;
 	private LinkedList<String> Arguments = new LinkedList<String>();
 
-	private ResponseListener Response = null;
+	private Listener Response = null;
 
-	public Request(boolean isResponse, byte[] OPCODE, ResponseListener OnResponse) {
-		this.OPCODE = _BASE_OPCODE.isValid_BaseOPCODE(OPCODE) ? OPCODE.clone() : _BASE_OPCODE.VERSION;
+	public Request(boolean isResponse, OPcode OPCODE, Listener OnResponse) {
+		this.OPCODE = OPCODE;
 		this.IS_RESPONSE = isResponse;
 		if (!IS_RESPONSE)
 			UID = generateUID();
 		this.Response = OnResponse;
 	}
 
-	public Request(boolean isResponse, byte[] OPCODE) {
+	public Request(boolean isResponse, OPcode OPCODE) {
 		this(isResponse, OPCODE, null);
 	}
 
-	public Request(byte[] OPCODE, ResponseListener OnResponse) {
+	public Request(OPcode OPCODE, Listener OnResponse) {
 		this(false, OPCODE, OnResponse);
 	}
 
-	public Request(byte[] OPCODE) {
+	public Request(OPcode OPCODE) {
 		this(false, OPCODE, null);
 	}
 
-	public Request(byte[] OPCODE, String[] Args, ResponseListener OnResponse) {
+	public Request(OPcode OPCODE, String[] Args, Listener OnResponse) {
 		this(OPCODE, OnResponse);
 		for (String arg : Args)
 			Arguments.add(arg);
 	}
 
-	public Request(byte[] OPCODE, String[] Args) {
+	public Request(OPcode OPCODE, String[] Args) {
 		this(OPCODE, Args, null);
 	}
 
 	public void add(String Argument) {
 		Arguments.add(Argument);
 	}
-
-	public char[] generateUID() {
-		UID = new char[_UID_LENGTH];
-		int gen = (++_TOTAL__GENERATED_REQUESTS);
-		for (int i = 0; i < _UID_LENGTH; i++) {
-			UID[i] = gen != 0 ? (char) (((gen % 64) + 33) * (i == 0 ? 1 : i)) : '0';
-			gen /= 64;
-		}
-		return UID;
-	}
-
-	public char[] getUID() {
+	public byte[] getUID() {
 		return UID;
 	}
 
 	public byte[] getOPCODE() {
-		return OPCODE;
+		return OPCODE.get();
 	}
 
-	public boolean hasResponseHandler() {
+	public boolean AwaitsResponse() {
 		return Response == null ? false : true;
 	}
 
@@ -81,7 +84,7 @@ public class Request {
 		return re;
 	}
 
-	public ResponseListener getResponse() {
+	public Listener getResponse() {
 		return Response;
 	}
 
