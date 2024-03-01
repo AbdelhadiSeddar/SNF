@@ -48,7 +48,7 @@ build: objbuild
 clean:
 	echo "##	Cleaning paths"
 	rm -rf $(OBJ_PATH) $(INC_PATH)$(PROJECT) $(INC_PATH) $(LIB_PATH)
-	rm -f $(TST_PATH)*.out *.o
+	rm -f $(TST_PATH)*.out $(SRC_PATH)*.o
 
 cleanlib:
 	echo "##	Cleaning standard library and include paths from $(PROJECT)"

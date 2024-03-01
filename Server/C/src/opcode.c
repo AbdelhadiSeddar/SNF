@@ -1,5 +1,4 @@
 #include <SRBNP/opcode.h>
-#include "opcode.h"
 
 SRBNP_opcode_LL_item *SRBNP_opcode_LL = NULL;
 int SRBNP_opcode_base_isinit = 0;

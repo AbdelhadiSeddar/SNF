@@ -38,7 +38,7 @@ SRBNP_RQST *srbnp_request_fetchfrom_clt(
     Request = calloc(Size, sizeof(char));
     srbnp_rcv(Client, Request, Size);
     /**
-     * Sceparating Arguments
+     * Separating Arguments
      */
     while (Size > 0)
     {
@@ -190,25 +190,52 @@ void srbnp_request_send_clt(
     SRBNP_CLT *Client,
     SRBNP_RQST *Request)
 {
-    int nargs = srbnp_request_get_nargs(Request);
-    uint32_t len = strlen(Request->UID) + nargs * sizeof(char);
-    for (SRBNP_RQST_ARG *arg = (Request->args); arg != NULL; arg = arg->next)
-        len += strlen(arg->arg);
-    char *content = calloc(len, sizeof(char));
-    sprintf(content, "%s%s%s",
-            srbnp_uint32_to_bytes(len, 4),
-            Request->UID,
-            UNIT_SCEPARATOR);
-    int i = 0;
-    for (SRBNP_RQST_ARG *arg = (Request->args); arg != NULL; arg = arg->next)
+    /**
+     * Preparing Sending:
+     * Getting Arguments Size
+     */
+    uint32_t Size = 0;
+    SRBNP_RQST_ARG *args = Request->args;
+    while (args)
     {
-        if (i == 0)
-            i = !i;
-        else
-            strcat(content, UNIT_SCEPARATOR);
-        strcat(content, arg->arg);
+        Size += strlen(args->arg);
+        args = args->next;
+        if (args != NULL)
+        {
+            Size++;
+        }
     }
-    srbnp_snd(Client, content, len);
+    char *MsgSize;
+    MsgSize = srbnp_uint32_to_bytes(Size, 4);
+    /**
+     *  Sending OPCODE
+     */
+    srbnp_snd(Client, (char *)(Request->OPCODE->opcode), 4);
+    /**
+     * Sending Request UID
+     */
+    srbnp_snd(Client, Request->UID, strlen(NULLREQUEST) + 1);
+    /**
+     * Sending Arguments Length
+     */
+    srbnp_snd(Client, MsgSize, 4);
+    free(MsgSize);
+    /**
+     * Sending Arguments
+     */
+    if (Size > 0)
+    {
+        args = Request->args;
+        while (args)
+        {
+            srbnp_snd(Client, args->arg, strlen(args->arg));
+            args = args->next;
+            if (args)
+                srbnp_snd(Client, UNIT_SCEPARATOR, 1);
+        }
+    }
+    srbnp_request_free(Request);
+    return;
 }
 
 void srbnp_request_send_invalid(

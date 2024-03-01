@@ -29,7 +29,7 @@ void *srbnp_clt_handle_new(void *arg)
     SRBNP_CLT *Client = (SRBNP_CLT *)arg;
     checkerr(Client == NULL ? -1 : 0, "Can not handle new client: Null");
     SRBNP_opcode *op = calloc(1, sizeof(SRBNP_opcode));
-    srbnp_rcv(Client, (char*)(uint8_t*)op->opcode, 4);
+    srbnp_rcv(Client, (char *)(uint8_t *)op->opcode, 4);
     if (srbnp_opcode_compare(
             op,
             srbnp_opcode_get_base(
@@ -80,21 +80,20 @@ void *srbnp_clt_handle(void *arg)
                          SRBNP_OPCODE_BASE_CMD_SRBNP_VER,
                          0x00)) >= 0)
         {
-            // srbnp_request_send_clt(Client,
-            //                        srbnp_request_gen_response(Rqst,
-            //                                                   _OPCODE_CLT_CONFIRM,
-            //                                                   srbnp_request_arg_gen(_SRBNP_VER)));
+            srbnp_request_send_clt(Client,
+                                   srbnp_request_gen_response(Rqst,
+                                                              srbnp_opcode_getu_base(SRBNP_OPCODE_BASE_CMD_CONFIRM),
+                                                              srbnp_request_arg_gen(_SRBNP_VER)));
         }
         //    else if(###)
         //    {
         //          // TODO: Handle Custom Requests
         //    }
         else
-            //            srbnp_request_send_invalid(Original, Rqst);
-            printf("Invalid Request Handle\n");
+            srbnp_request_send_invalid(Client, Rqst);
     }
     else
-        printf("Invalid request\n");
+        srbnp_request_send_invalid(Client, Rqst);
     pthread_mutex_unlock(&(Original->mutex));
     srbnp_epoll_add(Original->sock);
     srbnp_request_free(Rqst);
@@ -109,7 +108,7 @@ void srbnp_clt_connect(SRBNP_CLT *Client)
     uuid_generate_time_safe(GUID);
     uuid_unparse_lower(GUID, Client->UUID);
     srbnp_hashtable_insert(SRBNP_Clt_ht, Client->UUID, Client);
-    srbnp_snd(Client, Client->UUID, 37);
+    srbnp_snd(Client, Client->UUID, 36);
     srbnp_epoll_add(Client->sock);
 
     printf("Client %s Connected (%d)\n", Client->UUID, Client->sock);

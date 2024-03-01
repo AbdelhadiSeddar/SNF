@@ -1,5 +1,4 @@
 #include <SRBNP/network.h>
-#include "network.h"
 
 thpool *Ntwrk;
 
