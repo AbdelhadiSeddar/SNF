@@ -13,4 +13,14 @@ public class Utility {
 
 		return b.array();
 	}
+	
+	public final static int BytesToInt(byte[] bytes)
+	{
+		int re = 0;
+		for (int i = 0; i < bytes.length; i++)
+	    {
+	        re += (bytes[bytes.length - i - 1] << (8 * i));
+	    }
+		return re;
+	}
 }

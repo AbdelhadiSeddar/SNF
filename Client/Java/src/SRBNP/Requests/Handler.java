@@ -9,9 +9,11 @@ import java.util.concurrent.Semaphore;
 
 import SRBNP.CString;
 import SRBNP.Connection;
+import SRBNP.OPcode;
 import SRBNP.Request;
 import SRBNP.Utility;
 import SRBNP.Exceptions.*;
+import SRBNP.OPCode.Base;
 
 public class Handler {
 	private static Handler RH;
@@ -26,7 +28,11 @@ public class Handler {
 
 		@Override
 		public void run() {
-
+			while (true)
+				synchronized (Connection.get()) {
+					if (Connection.get().isInitialized())
+						break;
+				}
 			while (KeepRunning) {
 				try {
 					Sem.acquire();
@@ -53,7 +59,27 @@ public class Handler {
 
 		@Override
 		public void run() {
-			return;
+			while (true)
+				synchronized (Connection.get()) {
+					if (Connection.get().isInitialized())
+						break;
+				}
+			while (KeepRunning) {
+				try {
+					Request R = Receive();
+					
+					synchronized (UnrespondedRequests) {
+						for (Request r : UnrespondedRequests) {
+							r.InvokeResponseHandler(R);
+							UnrespondedRequests.remove(r);
+							break;
+						}
+					}
+				} catch (IOException | OPCodeNotInitializedException e) {
+					e.printStackTrace();
+					break;
+				}
+			}
 		}
 	}
 
@@ -66,7 +92,7 @@ public class Handler {
 
 		InsHandler = RH.new StreamInHandler();
 		OutsHandler = RH.new StreamOutHandler();
-		
+
 		StartHandlers();
 	}
 
@@ -94,25 +120,43 @@ public class Handler {
 	}
 
 	public static void Send(Request r) throws IOException {
-		byte[] CUID = CString.FromString(Connection.getClientInfo().getUuid().toString()).getBytes();
+		byte[] CUID = CString.FromString(Connection.get().getClientInfo().getUuid().toString()).getBytes();
 		byte[] RUID = r.getUID();
 		byte[] OPCODE = r.getOPCODE();
-		String Arg = "";
-		for (String arg : r.getArguments()) {
-			Arg += arg;
-			Arg += Utility.UNIT_SEPARATOR;
+		LinkedList<Byte> arg = new LinkedList<Byte>();
+		for (byte[] Arg : r.getArguments()) {
+			for (byte b : Arg)
+				arg.add(b);
+			arg.add((byte) Utility.UNIT_SEPARATOR);
 		}
-		CString toCSend = CString.FromString(Arg);
+		arg.add((byte) 0x00);
+		byte[] fb = Utility.IntToBytes(arg.size() == 1 ? 0 : arg.size());
+		byte[] Content = new byte[arg.size()];
+		for (int i = 0; i < arg.size(); i++)
+			Content[i] = arg.get(i);
 
-		byte[] fb = Utility.IntToBytes(toCSend.length() == 0 ? 0 : toCSend.nlength());
-		
 		StreamOut.write(CUID);
 		write(OPCODE);
 		write(RUID);
 		write(fb);
-		if (toCSend.length() > 0)
-			StreamOut.write(toCSend.getBytes());
+		if (arg.size() > 1)
+			write(Content);
 
+	}
+
+	public static Request Receive() throws OPCodeNotInitializedException, IOException {
+		Request re = new Request(Base.getInvalid());
+
+		byte[] opcode = read(4);
+		byte[] uid = read(16);
+		byte[] msgsize = read(4);
+		int size = Utility.BytesToInt(msgsize);
+		byte[][] Content = read(size, Utility.UNIT_SEPARATOR);
+		
+		re.setOPCODE(new OPcode(opcode[0], opcode[1], opcode[2], opcode[3]));
+		re.setUID(uid);
+		re.setArguments(Content);
+		return re;
 	}
 
 	public static void StartHandlers() {
@@ -122,15 +166,49 @@ public class Handler {
 			OutsHandler.start();
 	}
 
-	private static void write(byte[] Content) throws IOException
-	{
-		if(StreamOut == null)
+	private static void write(byte[] Content) throws IOException {
+		if (StreamOut == null)
 			throw new RequestsHandlerNotInitializedException();
-		for(byte b : Content)
-		{
+		for (byte b : Content) {
 			StreamOut.write(b);
 		}
 	}
+
+	private static byte[] read(int length) throws IOException {
+		if (StreamIn == null)
+			throw new RequestsHandlerNotInitializedException();
+		byte[] re = new byte[length];
+		for (int i = 0; i < length; i++) {
+			re[i] = (byte) StreamIn.read();
+		}
+		return re;
+	}
+
+	private static byte[][] read(int length, int Splitter) throws IOException {
+		if (StreamIn == null)
+			throw new RequestsHandlerNotInitializedException();
+		Splitter &= 0xFF;
+		LinkedList<byte[]> re = new LinkedList<byte[]>();
+		for (int i = 0; i < length; i++) {
+			LinkedList<Byte> word = new LinkedList<Byte>();
+			while (i < length) {
+				byte b = (byte) StreamIn.read();
+				if (b == Splitter)
+					break;
+				i++;
+				word.add(b);
+			}
+			byte[] wordArr = new byte[word.size()];
+			for (int u = 0; u < word.size(); u++)
+				wordArr[u] = word.get(u);
+
+			re.add(wordArr);
+		}
+		byte[][] reArr = new byte[re.size()][];
+		re.toArray(reArr);
+		return reArr;
+	}
+
 	public static void JoinHandlers() throws InterruptedException {
 		InsHandler.join();
 		OutsHandler.join();
@@ -140,5 +218,4 @@ public class Handler {
 		KeepRunning = false;
 		Sem.release();
 	}
-
 }

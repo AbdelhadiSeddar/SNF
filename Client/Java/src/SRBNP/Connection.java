@@ -20,23 +20,26 @@ public class Connection {
 	private Socket Server;
 	private InputStream StreamIn;
 	private OutputStream StreamOut;
+	private boolean initialized = false;
 
-	public Connection() 
-			throws UnknownHostException, IOException, CStringInvalidException, InterruptedException {
+	public Connection() throws UnknownHostException, IOException, CStringInvalidException, InterruptedException {
 		Current = this;
 	}
 
 	public void Connect(Listener OnConnect)
 			throws UnknownHostException, IOException, CStringInvalidException, InterruptedException {
-		Client = new ClientInfo();
-		Server = new Socket(ServerHost, ServerPort);
-		StreamIn = Server.getInputStream();
-		StreamOut = Server.getOutputStream();
-		OPcode.Init();
-		Handler.Initialize();
-		Handler.setStreams(StreamIn, StreamOut);
-		Send(Base.get(Base.CMD_CONNECT));
-		Client.setUuid(new CString(Connection.get().StreamIn.readNBytes(37)));
+		synchronized (get()) {
+			Client = new ClientInfo();
+			Server = new Socket(ServerHost, ServerPort);
+			StreamIn = Server.getInputStream();
+			StreamOut = Server.getOutputStream();
+			OPcode.Init();
+			Handler.setStreams(StreamIn, StreamOut);
+			Handler.Initialize();
+			Send(Base.get(Base.CMD_CONNECT));
+			Client.setUuid(new String(StreamIn.readNBytes(36)));
+			initialized = true;
+		}
 	}
 
 	public void Connect(String URL, int Port, Listener OnConnect)
@@ -72,12 +75,16 @@ public class Connection {
 		Handler.addRequest(Rqst);
 	}
 
-	public static ClientInfo getClientInfo() {
+	public ClientInfo getClientInfo() {
 		return get().Client;
 	}
 
 	public static Connection get() {
 		return Current;
+	}
+
+	public boolean isInitialized() {
+		return initialized;
 	}
 
 }

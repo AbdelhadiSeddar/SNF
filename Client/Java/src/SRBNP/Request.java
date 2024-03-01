@@ -23,7 +23,7 @@ public class Request {
 	private boolean IS_RESPONSE;
 	private byte[] UID;
 	private OPcode OPCODE;
-	private LinkedList<String> Arguments = new LinkedList<String>();
+	private LinkedList<byte[]> Arguments = new LinkedList<byte[]>();
 
 	private Listener Response = null;
 
@@ -47,25 +47,33 @@ public class Request {
 		this(false, OPCODE, null);
 	}
 
-	public Request(OPcode OPCODE, String[] Args, Listener OnResponse) {
+	public Request(OPcode OPCODE, byte[][] Args, Listener OnResponse) {
 		this(OPCODE, OnResponse);
-		for (String arg : Args)
+		for (byte[] arg : Args)
 			Arguments.add(arg);
 	}
 
-	public Request(OPcode OPCODE, String[] Args) {
+	public Request(OPcode OPCODE, byte[][] Args) {
 		this(OPCODE, Args, null);
 	}
 
-	public void add(String Argument) {
+	public void add(byte[] Argument) {
 		Arguments.add(Argument);
 	}
 	public byte[] getUID() {
 		return UID;
 	}
 
+	public void setUID(byte[] uID) {
+		UID = uID;
+	}
+
 	public byte[] getOPCODE() {
 		return OPCODE.get();
+	}
+
+	public void setOPCODE(OPcode oPCODE) {
+		OPCODE = oPCODE;
 	}
 
 	public boolean AwaitsResponse() {
@@ -78,10 +86,20 @@ public class Request {
 		}
 	}
 
-	public String[] getArguments() {
-		String[] re = new String[Arguments.size()];
+	public byte[][] getArguments() {
+		byte[][] re = new byte[Arguments.size()][];
 		Arguments.toArray(re);
 		return re;
+	}
+
+	public void setArguments(LinkedList<byte[]> arguments) {
+		Arguments = arguments;
+	}
+	
+	public void setArguments(byte[][] arguments) {
+		Arguments = new LinkedList<byte[]>();
+		for(byte[] arg: arguments)
+			Arguments.add(arg);
 	}
 
 	public Listener getResponse() {
