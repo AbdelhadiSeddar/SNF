@@ -209,15 +209,6 @@ extern SRBNP_opcode *srbnp_opcode_get_base(
 /// @return OPcode || NULL if command not found
 extern SRBNP_opcode *srbnp_opcode_getu_base(
     SRBNP_opcode_mmbr_t Command);
-/// @brief Fetches a fully structured "Invalid" OPcode
-/// @param Detail Invalid COmmand's detail
-/// @return OPcode || NULL if command not found
-extern SRBNP_opcode *srbnp_opcode_get_invalid(
-    SRBNP_opcode_mmbr_t Detail);
-/// @brief Fetches a fully structured "Invalid" OPcode using the default Detail
-/// @param Detail Invalid COmmand's detail
-/// @return OPcode || NULL if command not found
-extern SRBNP_opcode *srbnp_opcode_getu_invalid();
 #pragma endregion
 
 #endif

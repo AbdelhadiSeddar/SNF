@@ -1,6 +1,7 @@
 #include <SRBNP/request.h>
+#include "request.h"
 
-SRBNP_RQST *srbnp_request_fetchfrom_clt(
+SRBNP_RQST *srbnp_request_fetch(
     SRBNP_CLT *Client)
 {
     SRBNP_RQST *re = srbnp_request_gen();
@@ -108,13 +109,23 @@ SRBNP_RQST *srbnp_request_gen_server_OPCODE(
     return srbnp_request_gen_response(srbnp_request_gen_wUID(NULLREQUEST), OPCODE, NULL);
 }
 
-SRBNP_RQST *srbnp_request_gen_invalid(
-    SRBNP_RQST *Original)
+SRBNP_RQST *srbnp_request_gen_base(
+    SRBNP_RQST *Original,
+    SRBNP_opcode_mmbr_t Command,
+    SRBNP_opcode_mmbr_t Detail)
 {
     return srbnp_request_gen_response(
         Original,
-        srbnp_opcode_get_invalid(
-            SRBNP_OPCODE_BASE_DET_UNDETAILED),
+        srbnp_opcode_get_base(Command, Detail),
+        NULL);
+}
+SRBNP_RQST *srbnp_request_genu_base(
+    SRBNP_RQST *Original,
+    SRBNP_opcode_mmbr_t Command)
+{
+    return srbnp_request_gen_response(
+        Original,
+        srbnp_opcode_get_base(Command, SRBNP_OPCODE_BASE_DET_UNDETAILED),
         NULL);
 }
 
@@ -186,7 +197,7 @@ void srbnp_request_arg_insert(
     }
 }
 
-void srbnp_request_send_clt(
+void srbnp_request_send(
     SRBNP_CLT *Client,
     SRBNP_RQST *Request)
 {
@@ -237,10 +248,21 @@ void srbnp_request_send_clt(
     srbnp_request_free(Request);
     return;
 }
-
+void srbnp_request_send_confirm(
+    SRBNP_CLT *Client,
+    SRBNP_RQST *Original)
+{
+    srbnp_request_send(Client, srbnp_request_genu_base(Original, SRBNP_OPCODE_BASE_CMD_CONFIRM));
+}
+void srbnp_request_send_reject(
+    SRBNP_CLT *Client,
+    SRBNP_RQST *Original)
+{
+    srbnp_request_send(Client, srbnp_request_genu_base(Original, SRBNP_OPCODE_BASE_CMD_REJECT));
+}
 void srbnp_request_send_invalid(
     SRBNP_CLT *Client,
     SRBNP_RQST *Original)
 {
-    srbnp_request_send_clt(Client, srbnp_request_gen_invalid(Original));
+    srbnp_request_send(Client, srbnp_request_genu_base(Original, SRBNP_OPCODE_BASE_CMD_INVALID));
 }

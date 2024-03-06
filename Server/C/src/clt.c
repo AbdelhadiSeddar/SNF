@@ -63,7 +63,7 @@ void *srbnp_clt_handle(void *arg)
         goto end_clt_handle;
     }
     pthread_mutex_lock(&(Original->mutex));
-    SRBNP_RQST *Rqst = srbnp_request_fetchfrom_clt(Client);
+    SRBNP_RQST *Rqst = srbnp_request_fetch(Client);
 
     if (Rqst != NULL)
     {
@@ -80,7 +80,7 @@ void *srbnp_clt_handle(void *arg)
                          SRBNP_OPCODE_BASE_CMD_SRBNP_VER,
                          0x00)) >= 0)
         {
-            srbnp_request_send_clt(Client,
+            srbnp_request_send(Client,
                                    srbnp_request_gen_response(Rqst,
                                                               srbnp_opcode_getu_base(SRBNP_OPCODE_BASE_CMD_CONFIRM),
                                                               srbnp_request_arg_gen(_SRBNP_VER)));

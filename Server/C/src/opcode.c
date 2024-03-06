@@ -473,19 +473,3 @@ SRBNP_opcode *srbnp_opcode_getu_base(SRBNP_opcode_mmbr_t Command)
         Command,
         SRBNP_OPCODE_BASE_DET_UNDETAILED);
 }
-
-SRBNP_opcode *srbnp_opcode_get_invalid(
-    SRBNP_opcode_mmbr_t Detail)
-{
-    return srbnp_opcode_get(
-        SRBNP_OPCODE_BASE_CAT,
-        SRBNP_OPCODE_BASE_SUBCAT,
-        SRBNP_OPCODE_BASE_CMD_INVALID,
-        Detail);
-}
-
-SRBNP_opcode *srbnp_opcode_getu_invalid()
-{
-    return srbnp_opcode_get_invalid(
-        SRBNP_OPCODE_BASE_DET_UNDETAILED);
-}
