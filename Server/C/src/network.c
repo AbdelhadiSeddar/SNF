@@ -68,10 +68,6 @@ void *Network_Worker(void *arg)
             }
         }
 
-        if (SRBNP_NFDS > 0)
-        {
-            srbnp_thpool_wait(Ntwrk);
-        }
     }
     return NULL;
 }

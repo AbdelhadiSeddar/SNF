@@ -81,9 +81,9 @@ void *srbnp_clt_handle(void *arg)
                          0x00)) >= 0)
         {
             srbnp_request_send(Client,
-                                   srbnp_request_gen_response(Rqst,
-                                                              srbnp_opcode_getu_base(SRBNP_OPCODE_BASE_CMD_CONFIRM),
-                                                              srbnp_request_arg_gen(_SRBNP_VER)));
+                               srbnp_request_gen_response(Rqst,
+                                                          srbnp_opcode_getu_base(SRBNP_OPCODE_BASE_CMD_CONFIRM),
+                                                          srbnp_request_arg_gen(_SRBNP_VER)));
         }
         //    else if(###)
         //    {
@@ -116,7 +116,7 @@ void srbnp_clt_connect(SRBNP_CLT *Client)
 
 void srbnp_clt_reconnect(SRBNP_CLT *Client)
 {
-    srbnp_rcv(Client, Client->UUID, 37);
+    srbnp_rcv(Client, Client->UUID, 36);
     SRBNP_CLT *Original = srbnp_hashtable_lookup(SRBNP_Clt_ht, Client->UUID)->Content;
     if (Original != NULL)
     {
@@ -126,9 +126,13 @@ void srbnp_clt_reconnect(SRBNP_CLT *Client)
             return;
         }
         srbnp_epoll_add(Client->sock);
+        srbnp_request_send_confirm(Client, NULL);
     }
     else
+    {
         srbnp_request_send_invalid(Client, NULL);
+        srbnp_clt_connect(Client);
+    }
 }
 
 void srbnp_clt_disconnect(SRBNP_CLT *Client)
