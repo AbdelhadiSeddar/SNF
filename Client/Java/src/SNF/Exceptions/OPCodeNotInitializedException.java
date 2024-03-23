@@ -1,4 +1,4 @@
-package SRBNP.Exceptions;
+package SNF.Exceptions;
 
 public class OPCodeNotInitializedException extends Exception{
 

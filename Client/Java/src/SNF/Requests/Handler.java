@@ -1,4 +1,4 @@
-package SRBNP.Requests;
+package SNF.Requests;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -7,13 +7,13 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.Semaphore;
 
-import SRBNP.CString;
-import SRBNP.Connection;
-import SRBNP.OPcode;
-import SRBNP.Request;
-import SRBNP.Utility;
-import SRBNP.Exceptions.*;
-import SRBNP.OPCode.Base;
+import SNF.CString;
+import SNF.Connection;
+import SNF.OPcode;
+import SNF.Request;
+import SNF.Utility;
+import SNF.Exceptions.*;
+import SNF.OPCode.Base;
 
 public class Handler {
 	private static Handler RH;

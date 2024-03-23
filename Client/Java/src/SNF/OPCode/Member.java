@@ -1,8 +1,8 @@
-package SRBNP.OPCode;
-
-import SRBNP.Exceptions.*;
+package SNF.OPCode;
 
 import java.util.LinkedList;
+
+import SNF.Exceptions.*;
 
 public class Member {
 	private static Member Undefined_Detail;

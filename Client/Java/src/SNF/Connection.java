@@ -1,4 +1,4 @@
-package SRBNP;
+package SNF;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,10 +6,10 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import SRBNP.Exceptions.*;
-import SRBNP.OPCode.Base;
-import SRBNP.Requests.Handler;
-import SRBNP.Requests.Listener;
+import SNF.Exceptions.*;
+import SNF.OPCode.Base;
+import SNF.Requests.Handler;
+import SNF.Requests.Listener;
 
 public class Connection {
 	private static Connection Current;

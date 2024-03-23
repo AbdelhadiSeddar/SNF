@@ -1,6 +1,6 @@
-package SRBNP.Exceptions;
+package SNF.Exceptions;
 
-import SRBNP.OPCode.Member.Rank;
+import SNF.OPCode.Member.Rank;
 
 public class OPCodeInvalidRankException extends Exception
 {

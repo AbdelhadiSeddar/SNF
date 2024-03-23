@@ -1,8 +1,8 @@
-package SRBNP;
+package SNF;
 
 import java.nio.charset.StandardCharsets;
 
-import SRBNP.Exceptions.*;
+import SNF.Exceptions.*;
 
 public class CString {
 	String Content;

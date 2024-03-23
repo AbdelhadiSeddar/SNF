@@ -1,8 +1,8 @@
-package SRBNP;
+package SNF;
 
 import java.util.LinkedList;
 
-import SRBNP.Requests.Listener;
+import SNF.Requests.Listener;
 
 public class Request {
 	public final static int _UID_LENGTH = 16;

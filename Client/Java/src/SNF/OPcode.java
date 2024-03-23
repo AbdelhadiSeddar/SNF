@@ -1,8 +1,8 @@
-package SRBNP;
+package SNF;
 
-import SRBNP.Exceptions.*;
-import SRBNP.OPCode.*;
-import SRBNP.OPCode.Member.*;
+import SNF.Exceptions.*;
+import SNF.OPCode.*;
+import SNF.OPCode.Member.*;
 
 public class OPcode {
 	public static final int LENGTH = 4;
@@ -17,7 +17,7 @@ public class OPcode {
 		} catch (OPCodeNotInitializedException e) {
 			/*
 			 * To be avoided as the only way this exception would be triggered in this case
-			 * is if SRBNP.OPCode.Member.Init() wasn't called before.
+			 * is if SNF.OPCode.Member.Init() wasn't called before.
 			 * 
 			 * Print Stack Trace will be left in case any undocumented reason for triggering
 			 * this Exception would be found.

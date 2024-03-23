@@ -1,4 +1,4 @@
-package SRBNP.Exceptions;
+package SNF.Exceptions;
 
 public class CStringInvalidException extends RuntimeException
 {

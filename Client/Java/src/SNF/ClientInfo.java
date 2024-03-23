@@ -1,4 +1,4 @@
-package SRBNP;
+package SNF;
 
 import java.util.UUID;
 

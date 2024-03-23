@@ -1,6 +1,6 @@
-package SRBNP.Requests;
+package SNF.Requests;
 
-import SRBNP.Request;
+import SNF.Request;
 
 public interface Listener {
 	

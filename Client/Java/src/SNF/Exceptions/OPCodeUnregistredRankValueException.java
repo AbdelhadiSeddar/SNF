@@ -1,7 +1,7 @@
-package SRBNP.Exceptions;
+package SNF.Exceptions;
 
-import SRBNP.OPCode.Member;
-import SRBNP.OPCode.Member.Rank;
+import SNF.OPCode.Member;
+import SNF.OPCode.Member.Rank;
 
 public class OPCodeUnregistredRankValueException extends Exception{
 
