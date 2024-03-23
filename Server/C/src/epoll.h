@@ -1,17 +1,17 @@
 #ifndef epoll_h
 #define epoll_h
 
-#include <SRBNP/SRBNP.h>
-#include <SRBNP/network.h>
+#include <SNF/SNF.h>
+#include <SNF/network.h>
 
-#define SRBNP_MAXEVENTS 4096
+#define SNF_MAXEVENTS 4096
 
-extern struct epoll_event SRBNP_EPOLL_EVENTS[SRBNP_MAXEVENTS];
-extern int SRBNP_NFDS, SRBNP_EPOLLFD;
+extern struct epoll_event SNF_EPOLL_EVENTS[SNF_MAXEVENTS];
+extern int SNF_NFDS, SNF_EPOLLFD;
 
-extern void srbnp_epoll_init();
-extern int srbnp_epoll_add(int FD);
-extern void srbnp_epoll_del(int fd);
-extern int srbnp_epoll_getList();
+extern void snf_epoll_init();
+extern int snf_epoll_add(int FD);
+extern void snf_epoll_del(int fd);
+extern int snf_epoll_getList();
 
 #endif

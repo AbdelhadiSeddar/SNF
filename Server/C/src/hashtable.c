@@ -1,36 +1,35 @@
-#include <SRBNP/hashtable.h>
+#include <SNF/hashtable.h>
 
 #define hash(Key) hashlittle(Key, strlen(Key), 0x592c0d1e)
 
-SRBNP_ht *srbnp_hashtable_inis(int MaxItems)
+SNF_ht *snf_hashtable_inis(int MaxItems)
 {
-    SRBNP_ht *re;
-    if (MaxItems < 1 || (re = calloc(1, sizeof(SRBNP_ht))) == NULL)
+    SNF_ht *re;
+    if (MaxItems < 1 || (re = calloc(1, sizeof(SNF_ht))) == NULL)
         return NULL;
-        
 
     pthread_mutex_init(&(re->mutex), 0);
-    double l = log(MaxItems)/ log(2);
+    double l = log(MaxItems) / log(2);
     int Size = round(l);
-    Size = (Size - l < 0 ) ? Size +1 : Size; 
+    Size = (Size - l < 0) ? Size + 1 : Size;
     re->Size = (int)pow(2, Size);
 
-    (re->Contents) = calloc(re->Size, sizeof(SRBNP_ht_item *));
+    (re->Contents) = calloc(re->Size, sizeof(SNF_ht_item *));
     return re;
 }
 
-int srbnp_hashtable_insert(SRBNP_ht *HashTable, const char *Key, void *Content)
+int snf_hashtable_insert(SNF_ht *HashTable, const char *Key, void *Content)
 {
     if (HashTable == NULL || Key == NULL || Content == NULL)
         return -1;
 
-    SRBNP_ht_item *new_item = calloc(1, sizeof(SRBNP_ht_item));
+    SNF_ht_item *new_item = calloc(1, sizeof(SNF_ht_item));
     new_item->Content = Content;
     new_item->Key = Key;
     uint32_t Hash = hash(Key);
     pthread_mutex_lock(&(HashTable->mutex));
     int pos = Hash % HashTable->Size;
-    SRBNP_ht_item *tmp = (HashTable->Contents)[pos];
+    SNF_ht_item *tmp = (HashTable->Contents)[pos];
     if (tmp == NULL)
         (HashTable->Contents)[pos] = new_item;
     else
@@ -45,7 +44,7 @@ int srbnp_hashtable_insert(SRBNP_ht *HashTable, const char *Key, void *Content)
     return 0;
 }
 
-SRBNP_ht_item *srbnp_hashtable_lookup(SRBNP_ht *HashTable, const char *Key)
+SNF_ht_item *snf_hashtable_lookup(SNF_ht *HashTable, const char *Key)
 {
     if (HashTable == NULL || Key == NULL)
         return NULL;
@@ -54,14 +53,14 @@ SRBNP_ht_item *srbnp_hashtable_lookup(SRBNP_ht *HashTable, const char *Key)
 
     pthread_mutex_lock(&(HashTable->mutex));
     int pos = Hash % HashTable->Size;
-    SRBNP_ht_item *tmp = (HashTable->Contents)[pos];
+    SNF_ht_item *tmp = (HashTable->Contents)[pos];
     while (tmp != NULL && strcmp(Key, tmp->Key))
         tmp = tmp->next;
     pthread_mutex_unlock(&(HashTable->mutex));
     return tmp;
 }
 
-SRBNP_ht_item *srbnp_hashtable_delete(SRBNP_ht *HashTable, const char *Key)
+SNF_ht_item *snf_hashtable_delete(SNF_ht *HashTable, const char *Key)
 {
     if (HashTable == NULL || Key == NULL)
         return NULL;
@@ -69,8 +68,8 @@ SRBNP_ht_item *srbnp_hashtable_delete(SRBNP_ht *HashTable, const char *Key)
     uint32_t Hash = hash(Key);
     pthread_mutex_lock(&(HashTable->mutex));
     int pos = Hash % HashTable->Size;
-    SRBNP_ht_item *tmp = (HashTable->Contents)[pos];
-    SRBNP_ht_item *deleted;
+    SNF_ht_item *tmp = (HashTable->Contents)[pos];
+    SNF_ht_item *deleted;
     if (tmp == NULL || (!strcmp(Key, tmp->Key) && tmp->next == NULL))
     {
         deleted = tmp;

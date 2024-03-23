@@ -1,7 +1,7 @@
 #ifndef UTILITY_H
 #define UTILITY_H
 
-#include <SRBNP/SRBNP.h>
+#include <SNF/SNF.h>
 
 /// @brief Checks if Result is < 0 then printout the ErrorOut and exits with code 0
 /// @param Result Input to be checked if < 0
@@ -12,22 +12,22 @@ extern void checkerr(int Result, const char *ErrorOut);
 /// @param bytes Bytes sequence
 /// @param nBytes Bytes sequence's length
 /// @return bytes's value in uint32_t On Sucess || 0
-extern uint32_t srbnp_bytes_to_uint32(const char *bytes, int nBytes);
+extern uint32_t snf_bytes_to_uint32(const char *bytes, int nBytes);
 
 /// @brief Turns a string's length into a sequence of bytes (Following big-endian)
 /// @param Str String whose length would be formatted into Bytes sequence
 /// @param nBytes Bytes sequence's length
 /// @return Byte sequence On Success | NULL On fail { Shall fail if Str is NULL || nBytes is a negative number || Str doesn't finish with a null character  || an Error occured during allocation }
-extern char *srbnp_strlen_to_bytes(const char *Str, int nBytes);
+extern char *snf_strlen_to_bytes(const char *Str, int nBytes);
 
 /// @brief Turns a uint32 into a sequence of bytes (Following big-endian)
 /// @param i uint32_t that would be formatted into Bytes sequence
 /// @param nBytes Bytes sequence's length
 /// @return Byte sequence On Success | NULL On fail { Shall fail if nBytes is a negative number || Str doesn't finish with a null character  || an Error occured during allocation }
-extern char *srbnp_uint32_to_bytes(uint32_t i, int nBytes);
+extern char *snf_uint32_to_bytes(uint32_t i, int nBytes);
 
 /// @brief Sets a socket as non blocking.
 /// @param _sock Socket to be operated on
 /// @return See fcntl(..)
-extern int srbnp_setnonblocking(int _sock);
+extern int snf_setnonblocking(int _sock);
 #endif

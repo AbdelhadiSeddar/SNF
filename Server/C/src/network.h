@@ -1,7 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#define _SRBNP_VER "0.0.1-alpha"
+#define _SNF_VER "0.0.1-alpha"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,34 +9,32 @@
 #include <strings.h>
 #include <arpa/inet.h>
 
-#include <SRBNP/SRBNP.h>
-#include <SRBNP/clt.h>
-#include <SRBNP/thpool.h>
+#include <SNF/SNF.h>
+#include <SNF/clt.h>
+#include <SNF/thpool.h>
 
 extern thpool *Ntwrk;
-extern int SRBNP_PORT;
-extern int SRBNP_MAX_QUEUE;
+extern int SNF_PORT;
+extern int SNF_MAX_QUEUE;
 
-extern int SRBNP_SERVER_SOCKET;
-extern struct sockaddr_in SRBNP_SERVER_ADDR;
-extern struct sockaddr_in SRBNP_CLIENT_ADDR;
-extern socklen_t SRBNP_CLIENT_LEN;
+extern int SNF_SERVER_SOCKET;
+extern struct sockaddr_in SNF_SERVER_ADDR;
+extern struct sockaddr_in SNF_CLIENT_ADDR;
+extern socklen_t SNF_CLIENT_LEN;
 
-
-#define SRBNP_Total_Data  (SRBNP_Total_Data_Rcv + SRBNP_Total_Data_Snt)
-extern _Atomic uint64_t SRBNP_Total_Data_Rcv;
-extern _Atomic uint64_t SRBNP_Total_Data_Snt;
+#define SNF_Total_Data (SNF_Total_Data_Rcv + SNF_Total_Data_Snt)
+extern _Atomic uint64_t SNF_Total_Data_Rcv;
+extern _Atomic uint64_t SNF_Total_Data_Snt;
 
 #define UNIT_SCEPARATOR "\x1F"
 
-extern int SRBNP_SERVER_SOCKET;
-extern void srbnp_network_init();
-extern void srbnp_network_join();
+extern int SNF_SERVER_SOCKET;
+extern void snf_network_init();
+extern void snf_network_join();
 
-
-extern int srbnp_snd(SRBNP_CLT *Client, const char *Buffer, int _Size);
-extern int srbnp_rcv_(SRBNP_CLT *Client, void *Buffer, int _Size, int _Flags);
-#define srbnp_rcv(Client, Buffer, _Size) srbnp_rcv_(Client, Buffer, _Size, 0)
-#define srbnp_rcv_PEEK(Client, Buffer, _Size) srbnp_rcv_(Client, Buffer, _Size, MSG_PEEK)
+extern int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size);
+extern int snf_rcv_(SNF_CLT *Client, void *Buffer, int _Size, int _Flags);
+#define snf_rcv(Client, Buffer, _Size) snf_rcv_(Client, Buffer, _Size, 0)
+#define snf_rcv_PEEK(Client, Buffer, _Size) snf_rcv_(Client, Buffer, _Size, MSG_PEEK)
 
 #endif

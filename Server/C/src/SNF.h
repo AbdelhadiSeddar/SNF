@@ -1,5 +1,5 @@
-#ifndef SRBNP_H
-#define SRBNP_H
+#ifndef SNF_H
+#define SNF_H
 
 #define _GNU_SOURCE
 
@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #pragma endregion
 
-#if __STDC_VERSION__ < 201112L 
+#if __STDC_VERSION__ < 201112L
 #error Use C 11 or later !
 #else
 #if __STDC_NO_ATOMICS__ == 1

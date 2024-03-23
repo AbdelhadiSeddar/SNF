@@ -1,4 +1,4 @@
-#include <SRBNP/utility.h>
+#include <SNF/utility.h>
 
 void checkerr(int Result, const char *ErrorOut)
 {
@@ -8,7 +8,7 @@ void checkerr(int Result, const char *ErrorOut)
         exit(EXIT_FAILURE);
     }
 }
-uint32_t srbnp_bytes_to_uint32(const char *bytes, int nBytes)
+uint32_t snf_bytes_to_uint32(const char *bytes, int nBytes)
 {
     if (bytes == NULL || nBytes < 0)
         return -1;
@@ -19,17 +19,17 @@ uint32_t srbnp_bytes_to_uint32(const char *bytes, int nBytes)
     }
     return re;
 }
-char *srbnp_strlen_to_bytes(const char *Str, int nBytes)
+char *snf_strlen_to_bytes(const char *Str, int nBytes)
 {
     if (Str == NULL || nBytes < 0)
         return NULL;
     int len = 0;
     if ((len = strnlen(Str, 0)))
-        return srbnp_uint32_to_bytes(len, nBytes);
+        return snf_uint32_to_bytes(len, nBytes);
     else
         return NULL;
 }
-char *srbnp_uint32_to_bytes(uint32_t i32, int nBytes)
+char *snf_uint32_to_bytes(uint32_t i32, int nBytes)
 {
     if (nBytes < 0)
         return NULL;
@@ -40,7 +40,7 @@ char *srbnp_uint32_to_bytes(uint32_t i32, int nBytes)
     }
     return re;
 }
-int srbnp_setnonblocking(int _sock)
+int snf_setnonblocking(int _sock)
 {
     int result;
     int flags;

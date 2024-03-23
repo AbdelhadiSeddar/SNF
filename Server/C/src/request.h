@@ -1,52 +1,51 @@
 #ifndef REQUEST_H
 #define REQUEST_H
 
-#include <SRBNP/SRBNP.h>
-#include <SRBNP/clt.h>
-#include <SRBNP/utility.h>
-#include <SRBNP/opcode.h>
-#include <SRBNP/network.h>
+#include <SNF/SNF.h>
+#include <SNF/clt.h>
+#include <SNF/utility.h>
+#include <SNF/opcode.h>
+#include <SNF/network.h>
 
 #define NULLREQUEST "000000000000000"
-#define SRBNP_REQUEST_MAXSIZE 4096
+#define SNF_REQUEST_MAXSIZE 4096
 
-typedef struct SRBNP_Request_t SRBNP_RQST;
-typedef struct SRBNP_Request_args_t SRBNP_RQST_ARG;
+typedef struct SNF_Request_t SNF_RQST;
+typedef struct SNF_Request_args_t SNF_RQST_ARG;
 
-struct SRBNP_Request_t
+struct SNF_Request_t
 {
     char UID[16];
-    SRBNP_opcode *OPCODE;
-    SRBNP_RQST_ARG *args;
+    SNF_opcode *OPCODE;
+    SNF_RQST_ARG *args;
 };
 
-struct SRBNP_Request_args_t
+struct SNF_Request_args_t
 {
     char *arg;
-    SRBNP_RQST_ARG *next;
+    SNF_RQST_ARG *next;
 };
 
+extern void snf_request_free(SNF_RQST *Request);
+extern SNF_RQST *snf_request_gen();
+extern SNF_RQST *snf_request_gen_wUID(const char UID[16]);
+extern SNF_RQST *snf_request_gen_response(SNF_RQST *Original, SNF_opcode *OPCODE, SNF_RQST_ARG *Args);
+extern SNF_RQST *snf_request_gen_server_OPCODE(SNF_opcode *OPCODE);
+extern SNF_RQST *snf_request_gen_base(SNF_RQST *Original, SNF_opcode_mmbr_t Command, SNF_opcode_mmbr_t Detail);
+extern SNF_RQST *snf_request_genu_base(SNF_RQST *Original, SNF_opcode_mmbr_t Command);
+extern int snf_request_get_nargs(SNF_RQST *args);
 
-extern void srbnp_request_free(SRBNP_RQST *Request);
-extern SRBNP_RQST *srbnp_request_gen();
-extern SRBNP_RQST *srbnp_request_gen_wUID(const char UID[16]);
-extern SRBNP_RQST *srbnp_request_gen_response(SRBNP_RQST *Original, SRBNP_opcode *OPCODE, SRBNP_RQST_ARG *Args);
-extern SRBNP_RQST *srbnp_request_gen_server_OPCODE(SRBNP_opcode *OPCODE);
-extern SRBNP_RQST *srbnp_request_gen_base(SRBNP_RQST *Original, SRBNP_opcode_mmbr_t Command, SRBNP_opcode_mmbr_t Detail);
-extern SRBNP_RQST *srbnp_request_genu_base(SRBNP_RQST *Original, SRBNP_opcode_mmbr_t Command);
-extern int srbnp_request_get_nargs(SRBNP_RQST *args);
-
-extern SRBNP_RQST_ARG *srbnp_request_arg_gen(const char* arg);
-extern void srbnp_request_arg_free(SRBNP_RQST_ARG *arg);
-extern void srbnp_request_args_free(SRBNP_RQST_ARG *arg);
+extern SNF_RQST_ARG *snf_request_arg_gen(const char *arg);
+extern void snf_request_arg_free(SNF_RQST_ARG *arg);
+extern void snf_request_args_free(SNF_RQST_ARG *arg);
 // Only use on first time. unless you dont care about execution time
-extern void srbnp_request_arg_insert(SRBNP_RQST *Request, SRBNP_RQST_ARG *arg); 
+extern void snf_request_arg_insert(SNF_RQST *Request, SNF_RQST_ARG *arg);
 
-extern SRBNP_RQST *srbnp_request_fetch(SRBNP_CLT *Client);
+extern SNF_RQST *snf_request_fetch(SNF_CLT *Client);
 
-extern void srbnp_request_send(SRBNP_CLT *Client, SRBNP_RQST *Request);
-extern void srbnp_request_send_confirm(SRBNP_CLT *Client, SRBNP_RQST *Original);
-extern void srbnp_request_send_reject(SRBNP_CLT *Client, SRBNP_RQST *Original);
-extern void srbnp_request_send_invalid(SRBNP_CLT *Client, SRBNP_RQST *Original);
+extern void snf_request_send(SNF_CLT *Client, SNF_RQST *Request);
+extern void snf_request_send_confirm(SNF_CLT *Client, SNF_RQST *Original);
+extern void snf_request_send_reject(SNF_CLT *Client, SNF_RQST *Original);
+extern void snf_request_send_invalid(SNF_CLT *Client, SNF_RQST *Original);
 
 #endif

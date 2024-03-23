@@ -1,22 +1,22 @@
-#include <SRBNP.h>
+#include <SNF.h>
 
 void print_opcodes()
 {
     printf("#\tListing Saaved OPcodes\n");
-    SRBNP_opcode_LL_item *cat = SRBNP_opcode_LL;
+    SNF_opcode_LL_item *cat = SNF_opcode_LL;
     while (cat != NULL)
     {
         printf("Category Code [%x] : %s\n", cat->OPmmbr, cat->Definition);
-        SRBNP_opcode_LL_item *subcat = cat->sub;
+        SNF_opcode_LL_item *subcat = cat->sub;
         while (subcat != NULL)
         {
             printf(" - Sub-Category Code [%x] : %s\n", subcat->OPmmbr, subcat->Definition);
-            SRBNP_opcode_LL_item *cmd = subcat->sub;
+            SNF_opcode_LL_item *cmd = subcat->sub;
             while (cmd != NULL)
             {
                 printf("\t) Command Code [%x] : %s\n", cmd->OPmmbr, cmd->Definition);
-                SRBNP_opcode_LL_item *det = cmd->sub;
-                while(det != NULL)
+                SNF_opcode_LL_item *det = cmd->sub;
+                while (det != NULL)
                 {
                     printf("\t  - Detail Code [%x] : %s\n", det->OPmmbr, det->Definition);
                     det = det->next;
@@ -27,65 +27,63 @@ void print_opcodes()
         }
         cat = cat->next;
     }
-    
+
     printf("####### END\n");
 }
 
-void print_detail(SRBNP_opcode_LL_item* op_ll)
+void print_detail(SNF_opcode_LL_item *op_ll)
 {
-    if(op_ll == NULL)
+    if (op_ll == NULL)
     {
         printf("Invalid's Detail wasnt found");
     }
     else
     {
-        printf("Command [ %x ] : %s \n\tDetail [ %x ]: %s\n", 
-            op_ll->parent->OPmmbr, 
-            op_ll->parent->Definition,
-            op_ll->OPmmbr,
-            op_ll->Definition);
+        printf("Command [ %x ] : %s \n\tDetail [ %x ]: %s\n",
+               op_ll->parent->OPmmbr,
+               op_ll->parent->Definition,
+               op_ll->OPmmbr,
+               op_ll->Definition);
     }
 }
 
 int main()
 {
-    srbnp_opcode_init();
-    if(!SRBNP_opcode_base_isinit)
+    snf_opcode_init();
+    if (!SNF_opcode_base_isinit)
         printf("Undefined\n");
     print_opcodes();
 
-    srbnp_opcode_define_category(0x01, "Category Test");
-    srbnp_opcode_define_sub_category(0x01, 0x00, "Sub Category 1");
-    srbnp_opcode_define_sub_category(0x01, 0x01, "Sub Category 2");
+    snf_opcode_define_category(0x01, "Category Test");
+    snf_opcode_define_sub_category(0x01, 0x00, "Sub Category 1");
+    snf_opcode_define_sub_category(0x01, 0x01, "Sub Category 2");
 
-    srbnp_opcode_define_command(0x01, 0x00, 0xAB, "Command Test 1-1");
-    srbnp_opcode_define_command(0x01, 0x00, 0xCB, "Command Test 1-2");
-    srbnp_opcode_define_command(0x01, 0x00, 0x4B, "Command Test 1-3");
-    srbnp_opcode_define_command(0x01, 0x00, 0x5B, "Command Test 1-4");
+    snf_opcode_define_command(0x01, 0x00, 0xAB, "Command Test 1-1");
+    snf_opcode_define_command(0x01, 0x00, 0xCB, "Command Test 1-2");
+    snf_opcode_define_command(0x01, 0x00, 0x4B, "Command Test 1-3");
+    snf_opcode_define_command(0x01, 0x00, 0x5B, "Command Test 1-4");
 
-    srbnp_opcode_define_command(0x01, 0x01, 0x67, "Command Test 2-1");
-    srbnp_opcode_define_command(0x01, 0x01, 0xFE, "Command Test 2-2");
-    srbnp_opcode_define_command(0x01, 0x01, 0x12, "Command Test 2-3");
-    srbnp_opcode_define_command(0x01, 0x01, 0x3E, "Command Test 2-4");
-    srbnp_opcode_define_command(0x01, 0x01, 0x6D, "Command Test 2-5");
+    snf_opcode_define_command(0x01, 0x01, 0x67, "Command Test 2-1");
+    snf_opcode_define_command(0x01, 0x01, 0xFE, "Command Test 2-2");
+    snf_opcode_define_command(0x01, 0x01, 0x12, "Command Test 2-3");
+    snf_opcode_define_command(0x01, 0x01, 0x3E, "Command Test 2-4");
+    snf_opcode_define_command(0x01, 0x01, 0x6D, "Command Test 2-5");
 
     print_opcodes();
 
-    SRBNP_opcode* op = srbnp_opcode_getu_invalid();
+    SNF_opcode *op = snf_opcode_getu_invalid();
     printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
     free(op);
-     op = srbnp_opcode_get_invalid(SRBNP_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL);
+    op = snf_opcode_get_invalid(SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL);
     printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
     free(op);
 
-    print_detail(srbnp_opcode_get_base_detail(
-        SRBNP_OPCODE_BASE_CMD_INVALID,
-        SRBNP_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE
-    ));
-    print_detail(srbnp_opcode_get_base_detail(
-        SRBNP_OPCODE_BASE_CMD_INVALID,
-        SRBNP_OPCODE_BASE_DET_UNDETAILED
-    ));
+    print_detail(snf_opcode_get_base_detail(
+        SNF_OPCODE_BASE_CMD_INVALID,
+        SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE));
+    print_detail(snf_opcode_get_base_detail(
+        SNF_OPCODE_BASE_CMD_INVALID,
+        SNF_OPCODE_BASE_DET_UNDETAILED));
 
     return 0;
 }
