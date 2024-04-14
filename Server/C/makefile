@@ -1,5 +1,5 @@
-PROJECT = SRBNP
-lib_name = srbnp
+PROJECT = SNF
+lib_name = snf
 
 STD_LIB_PATH = $(shell cat /etc/ld.so.conf.d/libc.conf | grep /)
 STD_INC_PATH = /usr/include
@@ -96,3 +96,8 @@ t_%: install
 	-l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
 	-o $(TST_PATH)$@.out
 	$(TST_PATH)$@.out
+gdbt_%: install
+	$(COMPILER) $(TST_PATH)$(patsubst gdbt_%,%, $@).c \
+	-l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
+	-o $(TST_PATH)$@.out
+	gdb $(TST_PATH)$@.out

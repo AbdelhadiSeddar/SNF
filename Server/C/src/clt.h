@@ -11,7 +11,7 @@
 #include <SNF/opcode.h>
 typedef struct SNF_Client_t SNF_CLT;
 
-RBNPtruct SNF_Client_t
+struct SNF_Client_t
 {
     //  Mutex used to avoid Race Condition.
     pthread_mutex_t mutex;

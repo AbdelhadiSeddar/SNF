@@ -63,7 +63,7 @@ void thpool_remove_worker(thpool *pool, SNF_thpool_worker *worker)
                 tmp->next = worker->next;
                 goto end_thpool_remove_worker;
             }
-            tmp = worker->next;
+            tmp = tmp->next;
         }
     }
 end_thpool_remove_worker:;
@@ -111,13 +111,16 @@ void *thpool_handler(void *arg)
         pthread_mutex_lock(&(pool->thpool_works_MUTEX));
         if (!(pool->thpool_n_works))
             pthread_cond_wait(&(pool->thpool_works_cond), &(pool->thpool_works_MUTEX));
-        SNF_thpool_worker *worker = thpool_insertnew_worker(pool);
-        if (worker != NULL)
+        if(!(pool->stop))
+        {
+          SNF_thpool_worker *worker = thpool_insertnew_worker(pool);
+          if (worker != NULL)
             pthread_create(
                 (worker->worker),
                 NULL,
                 thpool_work_wrapper,
                 thpool_pop_work(pool, worker));
+        }
         pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
     }
     snf_thpool_wait(pool);
@@ -207,7 +210,14 @@ void snf_thpool_join(thpool *pool)
 }
 void snf_thpool_stop(thpool *pool)
 {
-    pool->stop = 1;
-    snf_thpool_wait(pool);
-    snf_thpool_join(pool);
+  if (pool == NULL || pool->thpool_handler == NULL)
+    return;
+  pool->stop = 1;
+  
+  pthread_mutex_lock(&(pool->thpool_workers_MUTEX));
+  if (pool->thpool_workers == NULL)
+  {
+    pthread_cond_broadcast(&(pool->thpool_noworks_cond));
+  }
+  pthread_mutex_unlock(&(pool->thpool_workers_MUTEX));
 }

@@ -1,10 +1,10 @@
 /*
-*   Example Code
-*/
-#include <SRBNP.h>
+ *   Example Code
+ */
+#include <SNF.h>
 
-int main(int argc, char** args)
+int main(int argc, char **args)
 {
-    srbnp_network_init();
-    srbnp_network_join();   
+    snf_network_init();
+    snf_network_join();
 }
