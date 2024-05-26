@@ -1,4 +1,4 @@
-/* Since i lienced this project under LGPL, this code follows it too, although i'll keep the original notice and original owner.
+/* Since i lienced this project under LGPL, this code follows it too, although i'll keep the original notice and original owner's name and release date.
 -------------------------------------------------------------------------------
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 
