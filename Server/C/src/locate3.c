@@ -1,4 +1,4 @@
-/* I, Abdelhadi Seddar do not own any of the code written below in this, all i changed was remove the SELF TEST , it is Public Domain and I do not intend to own and/or copyright and/or licence this file
+/* Since i lienced this project under LGPL, this code follows it too, although i'll keep the original notice and original owner.
 -------------------------------------------------------------------------------
 lookup3.c, by Bob Jenkins, May 2006, Public Domain.
 
