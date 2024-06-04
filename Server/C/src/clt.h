@@ -1,3 +1,10 @@
+//////////////////////////////////////////////////////////////
+///
+/// \file clt.h
+/// This file Defines everything related to handling  Clients 
+///
+/// //////////////////////////////////////////////////////////
+
 #ifndef clt_h
 #define clt_h
 
@@ -9,33 +16,90 @@
 #include <uuid/uuid.h>
 #include <SNF/SNF.h>
 #include <SNF/opcode.h>
+
+/// @brief Shortened definiton of struct SNF_Client_t .
 typedef struct SNF_Client_t SNF_CLT;
 
+/// @brief The structure for each saved client.
 struct SNF_Client_t
 {
-    //  Mutex used to avoid Race Condition.
+    /// @brief Mutex used to avoid Race Condition.
     pthread_mutex_t mutex;
-    //  Saves the  36 ( +1 Null character ) character wide Unique User IDentifier. Used to defined the connected Client
+    /// @brief Saves the 36 ( +1 Null character ) character wide Unique User IDentifier. Used to defined the connected Client
     char UUID[37];
-    //  Saves the socket id
+    /// @brief Saves the socket id
     int sock;
 };
 
-void snf_clt_init(int ht_min_Size);
+/// @brief Initialises the HashTable that saves the clients
+/// @param ht_min_Size The HashTable's length ( See note )
+/// @note   **ht_min_Size** isnt (in most cases) the same as the true size of HashTable length <br><br>
+/// @note   See \ref snf_hashtable_inis() . 
+extern void snf_clt_init(int ht_min_Size);
 
+/// @brief  Creates (and allocates) a new Client using their **Sockfd**, 
+///         with a default \ref SNF_CLT::UUID with the value of "00000000-0000-0000-0000-000000000000"
+/// @param Sockfd The Client's \ref SNF_CLT::sock ( Client's Socket Discriptor )
+/// @return the new \ref SNF_CLT Instance. 
+/// @note Free with \ref snf_clt_free
 extern SNF_CLT *snf_clt_new(int Sockfd);
+
+/// @brief Frees the allocated \ref SNF_CLT
+/// @param Client The \ref SNF_CLT instance to be free'd.
+/// @warning Make sure you closed the \ref SNF_CLT::sock if you have no use for it.
 extern void snf_clt_free(SNF_CLT *Client);
+/// @brief Searches for a \ref SNF_CLT depending on their \ref SNF_CLT::sock
+/// @param Sockfd The socket descriptor to search with
+/// @return \ref SNF_CLT address pointer where it's value could be:
+///         * The searched \ref SNF_CLT instance's address.<br>
+///         * **NULL** if no \ref SNF_CLT found.<br>
+/// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern SNF_CLT *snf_clt_get_sockfd(int Sockfd);
+/// @brief Searches for a \ref SNF_CLT depending on their \ref SNF_CLT::UUID
+/// @param uuid The socket descriptor to search with
+/// @return \ref SNF_CLT address pointer where it's value could be:
+///         * The searched \ref SNF_CLT instance's address.<br>
+///         * **NULL** if no \ref SNF_CLT found.<br>
+/// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern SNF_CLT *snf_clt_get_uuid(const char *uuid);
 
+/// @brief Checks the existance of a \ref SNF_CLT depending on their \ref SNF_CLT::sock
+/// @param Sockfd The socket descriptor to search with
+/// @return An Integer dipicting the check's result:
+///         * **1** if found<br>
+///         * **0** if not found.<br>
+/// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern int snf_clt_check_sockfd(int Sockfd);
+/// @brief Checks the existance of a \ref SNF_CLT depending on their \ref SNF_CLT::UUID
+/// @param uuid The socket descriptor to search with
+/// @return An Integer dipicting the check's result:
+///         * **1** if found<br>
+///         * **0** if not found.<br>
+/// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern int snf_clt_check_uuid(const char *uuid);
 
+/// @brief Handles new incoming Clients.
+/// @param arg new Clitent's address ( \ref SNF_CLT pointer) 
+/// @return **NULL**
+/// @warning  Core Function in network.c do not use it elsewhere.
 extern void *snf_clt_handle_new(void *arg);
+/// @brief Handles existing Clients.
+/// @param arg new Clitent's address ( \ref SNF_CLT pointer) 
+/// @return **NULL**
+/// @warning  Core Function in network.c do not use it elsewhere.
 extern void *snf_clt_handle(void *arg);
 
+/// @brief Function to be called upon Client Connection.
+/// @param Client Connecting Client( \ref SNF_CLT pointer) 
+/// @warning  Core Function in clt.c do not use it elsewhere.
 extern void snf_clt_connect(SNF_CLT *Client);
+/// @brief Function to be called upon Client Re-Connection
+/// @param Client Re-Connecting Client 
+/// @warning  Core Function in clt.c do not use it elsewhere.
 extern void snf_clt_reconnect(SNF_CLT *Client);
+/// @brief Function to be called upon Client Disconnection
+/// @param Client Disconnecting Client.
+/// @warning  Core Function in clt.c do not use it elsewhere.
 extern void snf_clt_disconnect(SNF_CLT *Client);
 
 #include <SNF/hashtable.h>

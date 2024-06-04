@@ -29,7 +29,10 @@ all: build
 %.h:
 	echo "#include <$(PROJECT)/$@>" >> $(INC_PATH)$(PROJECT).h
 
-headers: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
+headers: heads
+	echo "#endif" >> $(INC_PATH)$(PROJECT).h
+
+heads: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
 	echo "##	Copying Headers"
 	cp $(H_FILES) $(INC_PATH)$(PROJECT)
 
@@ -61,7 +64,7 @@ prepare:
 	mkdir $(OBJ_PATH) $(INC_PATH) $(INC_PATH)$(PROJECT) $(LIB_PATH)
 	touch $(INC_PATH)$(PROJECT).h
 	echo "##	Preparing $(PROJECT).h"
-	echo "// Main Source file" > $(INC_PATH)$(PROJECT).h
+	cat $(PROJECT).h > $(INC_PATH)$(PROJECT).h
 
 install: build cleanlib
 	sudo rm -rf $(STD_INC_PATH)/$(PROJECT)

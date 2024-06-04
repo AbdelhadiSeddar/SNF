@@ -1,10 +1,11 @@
-Server/C/include/*.h
-Server/C/include/SRBNP/*.h
+include
+
 *.a
 *.o
 *.out
 *.json
 
 *.prefs
+bin
 
 *.jar

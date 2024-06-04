@@ -27,6 +27,7 @@ SNF_RQST *snf_request_fetch(
     if (Size < 0)
         return NULL;
     else if (Size > SNF_REQUEST_MAXSIZE)
+        /// TODO: Handle this better
         return NULL;
 
     SNF_RQST_ARG *Top_rqst = NULL;
