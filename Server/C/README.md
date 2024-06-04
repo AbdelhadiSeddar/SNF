@@ -15,4 +15,4 @@ This library is used for C programs who want to host the server side of the snf,
 * [**Getting Started**](https://docs.abdelhadiseddar.com/snf/c/latest/d9/d5c/md_GET__START.html)(Documentation)
 
 ## Documentation
-Check the Documentation at [https://docs.abdelhadiseddar/snf/c/0.0.1-alpha/](https://docs.abdelhadiseddar/snf/c/0.0.1-alpha/)
+Check the Documentation at [https://docs.abdelhadiseddar.com/snf/c/0.0.1-alpha/](https://docs.abdelhadiseddar.com/snf/c/0.0.1-alpha/)
