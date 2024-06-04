@@ -43,4 +43,4 @@ make install
 ```
 
 Done! Enjoy SNF C Library! (Server)
-Next Go to [Getting Started](GET_START.md)
+Next Go to [Getting Started](https://docs.abdelhadiseddar.com/snf/c/latest/d9/d5c/md_GET__START.html)
