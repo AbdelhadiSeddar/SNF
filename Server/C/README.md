@@ -1,7 +1,7 @@
 # Welcome to SNF's C library!
 
 ## Warning
-The library right now is a **static** Library so be aware of lisencing, i am planning to make the project compile a Shared Library.
+The library right now is a Shared Library by default, but you can still compile it statically, just be aware of licensing
 ## Disclaimer
 This directory is the code source for the C library of SNF , this library is for creating the server side only and not the client side check the **Clients** directory for all Client libraries that are available.
 Although it currently only Contains currently an incomplete java library, but i'm currectly working on improuving it and making other languages once i can.

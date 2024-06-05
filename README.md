@@ -1,1 +1,5 @@
-[Documentation for Server /C Library](https://docs.abdelhadiseddar.com/snf/c/latest/) (Incomplete)
+# Table of Contents
+* Client
+    * [Java](Client/Java/)
+* Server
+    * [C](Server/C/)

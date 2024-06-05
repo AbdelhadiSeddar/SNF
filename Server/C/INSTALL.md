@@ -41,6 +41,9 @@ make
 ```bash
 make install
 ```
-
+* `Note` You can install this framework as a static library using
+```bash
+make install_static
+```
 Done! Enjoy SNF C Library! (Server)
 Next Go to [Getting Started](https://docs.abdelhadiseddar.com/snf/c/latest/d9/d5c/md_GET__START.html)

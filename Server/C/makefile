@@ -1,6 +1,11 @@
 PROJECT = SNF
 lib_name = snf
 
+lib_v_MAJOR = 0
+lib_v_MINOR = 0
+lib_v_PATCH = 1
+lib_v_EXTRA = -alpha
+
 STD_LIB_PATH = $(shell cat /etc/ld.so.conf.d/libc.conf | grep /)
 STD_INC_PATH = /usr/include
 
@@ -24,7 +29,7 @@ O_FILES := $(patsubst %.c,%.o,$(C_FILES))
 
 .SILENT:
 
-all: build
+all: shared_build
 
 %.h:
 	echo "#include <$(PROJECT)/$@>" >> $(INC_PATH)$(PROJECT).h
@@ -37,16 +42,21 @@ heads: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
 	cp $(H_FILES) $(INC_PATH)$(PROJECT)
 
 %.o: %.c
-	$(COMPILER) -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
+	$(COMPILER) -fPIC -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
 
 objbuild: headers $(O_FILES)
 	echo "##	Building Objects"
 	mv $(O_FILES) $(OBJ_PATH)
 
-build: objbuild
-	echo "##	Building Library"
+static_build: objbuild
+	echo "##	Building Static Library"
 	ar cr $(LIB_PATH)lib$(lib_name).a $(OBJ_PATH)*.o
 	echo "##	Successfully Built $(PROJECT) ( lib$(lib_name).a )"
+
+shared_build: objbuild
+	echo "##	Building Shared Library"
+	$(COMPILER) -shared -o $(LIB_PATH)lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(OBJ_PATH)*.o
+	echo "##	Successfully Built $(PROJECT) ( lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) )"
 
 clean:
 	echo "##	Cleaning paths"
@@ -66,7 +76,27 @@ prepare:
 	echo "##	Preparing $(PROJECT).h"
 	cat $(PROJECT).h > $(INC_PATH)$(PROJECT).h
 
-install: build cleanlib
+install: shared_build cleanlib install_headers
+	echo "##	Installing Shared library: lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA)"
+	sudo mv $(LIB_PATH)lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(STD_LIB_PATH)/
+	sudo ln -si $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(STD_LIB_PATH)/lib$(lib_name).so
+	sudo ln -si $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR)$(lib_v_EXTRA)
+	sudo ln -si $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR)$(lib_v_EXTRA)
+	echo "##	Installed the Following:"
+	ls -la $(STD_LIB_PATH)/ | grep lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA)
+
+	echo "##	Library installed at $(STD_LIB_PATH)/"
+	echo "##	Done! link library with -l$(lib_name)"
+	echo "##		Note: must also link [ $(C_LIB) ]"
+
+install_static: static_build cleanlib install_headers
+	echo "##	Installing library: lib$(lib_name).a"
+	sudo mv $(LIB_PATH)lib$(lib_name).a $(STD_LIB_PATH)/
+	echo "##	Library installed at $(STD_LIB_PATH)/"
+	echo "##	Done! link library with -l$(lib_name)"
+	echo "##		Note: must also link [ $(C_LIB) ]"
+
+install_headers:
 	sudo rm -rf $(STD_INC_PATH)/$(PROJECT)
 	sudo mkdir $(STD_INC_PATH)/$(PROJECT)
 	echo "##	Installing headerfiles"
@@ -74,11 +104,6 @@ install: build cleanlib
 	sudo mv $(INC_PATH)$(PROJECT).h $(STD_INC_PATH)
 	echo "##	Haderfiles installed at $(STD_INC_PATH)/ :"
 	ls -l $(STD_INC_PATH)/$(PROJECT)
-	echo "##	Installing library: lib$(lib_name).a"
-	sudo mv $(LIB_PATH)lib$(lib_name).a $(STD_LIB_PATH)/
-	echo "##	Library installed at $(STD_LIB_PATH)/"
-	echo "##	Done! link library with -l$(lib_name)"
-	echo "##		Note: must also link [ $(C_LIB) ]"
 
 buildtest: build
 	echo "##	Building test main"
