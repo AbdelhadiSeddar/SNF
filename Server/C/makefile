@@ -105,7 +105,7 @@ install_headers:
 	echo "##	Haderfiles installed at $(STD_INC_PATH)/ :"
 	ls -l $(STD_INC_PATH)/$(PROJECT)
 
-buildtest: build
+buildtest: static_build
 	echo "##	Building test main"
 	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
 

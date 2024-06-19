@@ -16,7 +16,7 @@ public class Request {
 			UID[i] = (byte) ((gen != 0 ? (((gen % 64) + 33) * (i == 0 ? 1 : i)) : '0') & (byte)0xFF);
 			gen /= 64;
 		}
-		UID[_UID_LENGTH -1 ] = 0x00;
+		UID[_UID_LENGTH -1] = 0x00;
 		return UID;
 	}
 

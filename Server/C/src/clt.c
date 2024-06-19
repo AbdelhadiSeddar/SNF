@@ -57,7 +57,7 @@ void *snf_clt_handle(void *arg)
     SNF_ht_item *Slot;
     SNF_CLT *Original;
     int i = 0;
-    if ((i = snf_rcv(Client, Client->UUID, 37)) < 37 || (Slot = snf_hashtable_lookup(SNF_Clt_ht, Client->UUID)) == NULL || (Original = Slot->Content) == NULL || Original->sock != Client->sock)
+    if ((i = snf_rcv(Client, Client->UUID, 36)) < 36 || (Slot = snf_hashtable_lookup(SNF_Clt_ht, Client->UUID)) == NULL || (Original = Slot->Content) == NULL || Original->sock != Client->sock)
     {
         snf_clt_disconnect(Client);
         goto end_clt_handle;
