@@ -7,8 +7,6 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-/// @brief Defines the library's version
-#define _SNF_VER "0.0.1-alpha"
 
 #include <stdlib.h>
 #include <stdio.h>

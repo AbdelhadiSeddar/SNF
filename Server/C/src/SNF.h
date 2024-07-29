@@ -8,6 +8,11 @@
 #ifndef SNF_H
 #define SNF_H
 
+extern char* snf_getver();
+/// @brief Defines the library's version
+#define _SNF_VER snf_getver()
+
+
 #define _GNU_SOURCE
 
 #pragma region[Standard]
