@@ -12,7 +12,7 @@ STD_INC_PATH = /usr/include
 CC := c11
 COMPILER := clang --std=$(CC)
 
-C_FLAGS := -g
+C_FLAGS :=
 C_LIB := -lm -luuid -lpthread
 
 CURRENT_PATH = $(shell pwd)/
@@ -42,7 +42,7 @@ heads: clean prepare $(patsubst $(SRC_PATH)%.h,%.h,$(H_FILES))
 	cp $(H_FILES) $(INC_PATH)$(PROJECT)
 
 %.o: %.c
-	$(COMPILER) -fPIC -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
+	$(COMPILER) -fPIC -O3 -o $@ -c $< -I$(INC_PATH) $(C_FLAGS)
 
 objbuild: headers $(O_FILES)
 	echo "##	Building Objects"
@@ -55,7 +55,7 @@ static_build: objbuild
 
 shared_build: objbuild
 	echo "##	Building Shared Library"
-	$(COMPILER) -shared -o $(LIB_PATH)lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(OBJ_PATH)*.o
+	$(COMPILER) -shared -O3 -o $(LIB_PATH)lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) $(OBJ_PATH)*.o
 	echo "##	Successfully Built $(PROJECT) ( lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) )"
 
 clean:
