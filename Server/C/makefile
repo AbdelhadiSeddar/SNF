@@ -12,7 +12,7 @@ STD_INC_PATH = /usr/include
 CC := c11
 COMPILER := clang --std=$(CC)
 
-C_FLAGS :=
+C_FLAGS := -g
 C_LIB := -lm -luuid -lpthread
 
 CURRENT_PATH = $(shell pwd)/
@@ -107,7 +107,8 @@ install_headers:
 
 buildtest: static_build
 	echo "##	Building test main"
-	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name) -I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
+	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name).$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) \
+	-I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
 
 test: buildtest
 	./a.out

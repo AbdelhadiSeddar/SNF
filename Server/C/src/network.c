@@ -1,6 +1,6 @@
 #include <SNF/network.h>
 
-thpool *Ntwrk;
+SNF_thpool *Ntwrk;
 
 int _PORT = 9114;
 int _MAX_QUEUE = 1000;

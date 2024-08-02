@@ -20,7 +20,7 @@
 
 /// @brief The thread pool that controls the working of the Framework
 /// @warning Do not modify the contents unless by using Appropriate functions. 
-extern thpool *Ntwrk;
+extern SNF_thpool *Ntwrk;
 /// @brief Defines the Framework's TCP/IP's port
 extern int SNF_PORT;
 /// @brief Max Queue allowed to wait to be accepted at once
