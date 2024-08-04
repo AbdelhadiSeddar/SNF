@@ -2,7 +2,7 @@
 #include <SNF/thpool.h>
 #include <semaphore.h>
 
-#define LIMIT 5000000
+#define LIMIT 500000
 SNF_thpool *POOL;
 sem_t sem;
 sem_t end;
@@ -15,7 +15,7 @@ void *work(void *arg)
     {
         f+= u;
     }
-    printf("F : %d \n", f);
+    //printf("F : %d \n", f);
     sem_post(&end);
     free(i);
 }
@@ -46,7 +46,11 @@ int main()
 {
     snf_thpool_inis(&POOL, 25, worker, NULL);
 
-    printf("Awaiting JOIN\n");
-    snf_thpool_join(POOL);
-    printf("JOINED\n");
+    printf("Sleeping for 10s Before Stopping Everything\n");
+    sleep(10);
+
+    snf_thpool_stop(POOL);
+    printf("Stopping.. Waiting for Everything\n");
+    snf_thpool_wait(POOL);
+    printf("exit\n");
 }

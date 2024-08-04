@@ -1,4 +1,7 @@
 #include <SNF/thpool.h>
+#include "thpool.h"
+
+time_t SNF_THPOOL_STOPWAIT = 1;
 
 /// @brief Frees a worker
 /// @param work  The Worker to be freed
@@ -28,7 +31,7 @@ SNF_thpool_work *thpool_pop_work(SNF_thpool *pool)
 void *thpool_work_wrapper(void *arg)
 {
     SNF_thpool *tp = (SNF_thpool *)arg;
-    while(!tp->stop)
+    while(tp->thpool_status == SNF_THPOOL_RUN)
     {
         SNF_thpool_work * wrk = thpool_pop_work(tp);
         if(wrk == NULL)
@@ -40,16 +43,61 @@ void *thpool_work_wrapper(void *arg)
 void *thpool_handler(void *arg)
 {
     SNF_thpool *pool = arg;
-    sem_wait(&(pool->thpool_workers_sem));
-    sem_post(&(pool->thpool_workers_sem));
-        
-    sem_wait(&(pool->stop_sem));
-    //TODO: Destroy properly
-    pthread_mutex_destroy(&(pool->thpool_works_MUTEX));
+thpool_handler_start:;
+    pthread_mutex_lock(&(pool->thpool_status_MUTEX));
+    sem_post(&(pool->thpool_status_sem));
+    pthread_cond_wait(&(pool->thpool_status_COND), &(pool->thpool_status_MUTEX));
+    switch(pool->thpool_status)
+    {
+        case SNF_THPOOL_STOP:
+            goto thpool_handler_status_stop;
+        case SNF_THPOOL_RUN:
+            goto thpool_handler_status_run;
+        case SNF_THPOOL_DESTROY:
+            goto thpool_handler_status_end;
+    }
 
-    pthread_mutex_destroy(&(pool->thpool_workers_MUTEX));
-    sem_destroy(&(pool->thpool_workers_sem));
-    bzero(pool, sizeof(SNF_thpool));
+thpool_handler_status_stop:;
+    struct timespec *timewait = calloc(1, sizeof(struct timespec));
+    timewait->tv_nsec = 0;
+    timewait->tv_sec = SNF_THPOOL_STOPWAIT;
+    for(int i = 0; i < (pool->thpool_n_workers) ; i++ )
+    {
+        int re = pthread_timedjoin_np(
+            pool->thpool_workers[i].worker,
+            NULL,
+            timewait
+        );
+        switch (re) {
+            case EBUSY:
+            case ETIMEDOUT:
+                pthread_cancel(pool->thpool_workers[i].worker);
+                pthread_join(pool->thpool_workers[i].worker, NULL);
+            default:
+                break;    
+        }
+
+    }
+    free(timewait);
+    free(pool->thpool_workers);
+    goto thpool_handler_status_end;
+thpool_handler_status_run:;
+    pool->thpool_workers = calloc((pool->thpool_n_workers), sizeof(SNF_thpool_worker));
+    for(int i = 0; i < (pool->thpool_n_workers); i++)
+    {
+        pthread_create(
+            &((pool->thpool_workers)[i]).worker,
+            NULL,
+            thpool_work_wrapper,
+            pool
+        );
+    }
+    goto thpool_handler_status_end;
+thpool_handler_status_end:;
+    pthread_mutex_unlock(&(pool->thpool_status_MUTEX));
+    goto thpool_handler_start;
+
+thpool_handler_status_return:;
     return NULL;
 }
 
@@ -61,38 +109,31 @@ int snf_thpool_inis(SNF_thpool **ThreadPool, int Max_Threads, void *(*Main_Worke
     pthread_mutex_init(&(new->thpool_works_MUTEX), NULL);
     pthread_mutex_init(&(new->thpool_workers_MUTEX), NULL);
     pthread_mutex_init(&(new->thpool_noworks_MUTEX), NULL);
+    pthread_mutex_init(&(new->thpool_status_MUTEX), NULL);
+    pthread_cond_init(&(new->thpool_status_COND), NULL);
     sem_init(&(new->thpool_workers_sem), 0, 0);
     sem_init(&(new->thpool_works_sem), 0, 0);
-    sem_init(&(new->stop_sem), 0, 0);
+    sem_init(&(new->thpool_status_sem), 0, 0);
     (new->thpool_handler) = malloc(sizeof(pthread_t));
-    (new->thpool_main_worker) = malloc(sizeof(pthread_t));
     (new->thpool_works) = NULL;
-    (new->thpool_n_workers) = Max_Threads - 1;
+    (new->thpool_n_workers) = Max_Threads - 1 - (Main_Worker == NULL ? 0 : 1);
     (new->thpool_workers) = calloc((new->thpool_n_workers), sizeof(struct SNF_ThreadPool_worker_t));
-    (new->stop) = 0;
+    (new->thpool_status) = SNF_THPOOL_STOP;
 
     (*ThreadPool) = new;
 
-    for(int i = 0; i < (new->thpool_n_workers); i++)
-    {
-        pthread_create(
-            &((new->thpool_workers)[i]).worker,
-            NULL,
-            thpool_work_wrapper,
-            new
-        );
-        sem_post(&(new->thpool_workers_sem));
-    }
-
     pthread_create(
-        (new->thpool_handler),
-        NULL,
-        thpool_handler,
-        new);
+            new->thpool_handler,
+            NULL,
+            thpool_handler,
+            (void*)new
+        );
+
+    snf_thpool_run(new);
+    snf_thpool_wait(new);
     if (Main_Worker != NULL)
     {
-        sem_wait(&(new->thpool_workers_sem));
-        sem_post(&(new->thpool_workers_sem));
+        (new->thpool_main_worker) = malloc(sizeof(pthread_t));
         pthread_create(
             (new->thpool_main_worker),
             NULL,
@@ -123,24 +164,62 @@ void snf_thpool_addwork(SNF_thpool *pool, void *(*func)(), void *arg)
         tmp->next = work;
     }
     pthread_mutex_unlock(&(pool->thpool_works_MUTEX));
-    sem_post(&(pool)->thpool_works_sem);
+    sem_post(&(pool->thpool_works_sem));
 }
 void snf_thpool_wait(SNF_thpool *pool)
 {
     if (pool == NULL || pool->thpool_handler == NULL)
         return;
+    sem_wait(&(pool->thpool_status_sem));
+    sem_post(&(pool->thpool_status_sem));
+    pthread_mutex_lock(&(pool->thpool_status_MUTEX));
+    pthread_mutex_unlock(&(pool->thpool_status_MUTEX));
 }
 void snf_thpool_join(SNF_thpool *pool)
 {
     if (pool == NULL || pool->thpool_handler == NULL)
         return;
+    sem_wait(&(pool->thpool_status_sem));
+    sem_post(&(pool->thpool_status_sem));
     pthread_join(*(pool->thpool_handler), NULL);
 }
 void snf_thpool_stop(SNF_thpool *pool)
 {
   if (pool == NULL || pool->thpool_handler == NULL)
     return;
-  pool->stop = 1;
-  
-  sem_post(&(pool->stop_sem));
+    int re = 0;
+    sem_wait(&(pool->thpool_status_sem));
+    sem_post(&(pool->thpool_status_sem));
+  pthread_mutex_lock(&(pool->thpool_status_MUTEX));
+    if(pool->thpool_status != SNF_THPOOL_RUN)
+    {
+        re = EINPROGRESS;
+    }
+    else
+    {
+        pool->thpool_status = SNF_THPOOL_STOP;
+        pthread_cond_broadcast(&(pool->thpool_status_COND));
+    }
+  pthread_mutex_unlock(&(pool->thpool_status_MUTEX));
 }
+
+void snf_thpool_run(SNF_thpool *pool)
+{
+  if (pool == NULL || pool->thpool_handler == NULL)
+    return;
+    int re = 0;
+    sem_wait(&(pool->thpool_status_sem));
+    sem_post(&(pool->thpool_status_sem));
+  pthread_mutex_lock(&(pool->thpool_status_MUTEX));
+    if(pool->thpool_status != SNF_THPOOL_STOP)
+    {
+        re = ESHUTDOWN;
+    }
+    else
+    {
+        pool->thpool_status = SNF_THPOOL_RUN;
+        pthread_cond_broadcast(&(pool->thpool_status_COND));
+    }
+  pthread_mutex_unlock(&(pool->thpool_status_MUTEX));
+}
+

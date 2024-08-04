@@ -30,6 +30,21 @@
 typedef struct SNF_ThreadPool_work_t SNF_thpool_work;
 typedef struct SNF_ThreadPool_worker_t SNF_thpool_worker;
 typedef struct SNF_ThreadPool_t SNF_thpool;
+typedef enum SNF_ThreadPool_Status_e SNF_thpool_status;
+
+enum SNF_ThreadPool_Status_e
+{
+    /// @brief Used to Signify that the Thread Pool was stopped
+    /// or been ordred to.
+    /// @warning: Only set this status using snf_thpool_stop
+    SNF_THPOOL_STOP,
+    /// @brief Used to Signify that the Thread Pool is running or been ordred to.
+    /// @warning: Only set this status using snf_thpool_run
+    SNF_THPOOL_RUN,
+    /// @brief Used to Signify that the Thread Pool is being ordred to be destroyied
+    /// @warning Only Set this Value by calling snf_thpool_destroy
+    SNF_THPOOL_DESTROY,
+};
 
 /// @brief Defines the 'work' needed to do by defining a 'func'tion and it's 'arg'ument
 struct SNF_ThreadPool_work_t
@@ -85,9 +100,16 @@ struct SNF_ThreadPool_t
     /// @brief  If set = 1 the thpool_handler will stop creating "workers"
     ///         and wait till all already exising "workers" finish their "work"
     /// @note Use \ref snf_thpool_stop(SNF_thpool *pool) .
-    _Atomic int stop;
-    sem_t stop_sem;
+    SNF_thpool_status thpool_status;
+    pthread_mutex_t thpool_status_MUTEX;
+    pthread_cond_t thpool_status_COND;
+    sem_t thpool_status_sem;
 };
+/// @brief This defines the amount of **seconds** to wait a `worker`
+/// to stop, if the `worker` does not stop during this time period
+/// it will be forcefully be stopped.
+/// @note Default Value is 1 Second
+extern time_t SNF_THPOOL_STOPWAIT;
 
 /// @brief Insitanciates a new thread pool, with a Limiter ( Max_Threads )
 /// @param ThreadPool Returns the thread pool by writes the newly created instance in the pointer given in this parameter
@@ -103,7 +125,7 @@ extern int snf_thpool_inis(SNF_thpool **ThreadPool, int Max_Threads, void *(*Mai
 /// @param arg argument to be given to the *func* upon call.
 extern void snf_thpool_addwork(SNF_thpool *pool, void *(*func)(), void *arg);
 
-/// @brief Blocks current thread until there is No "Worker" is working and no "work" is waiting in queue
+/// @brief Blocks current thread until the Thread Pool's last changed status has taken effect
 /// @param pool The Thead Pool to be operated on.
 extern void snf_thpool_wait(SNF_thpool *pool);
 
@@ -111,7 +133,13 @@ extern void snf_thpool_wait(SNF_thpool *pool);
 /// @param pool The Thead Pool to be operated on.
 extern void snf_thpool_join(SNF_thpool *pool);
 
-/// @brief will stop creating "workers" and wait till all already exising "workers" finish their "work"
+/// @brief will order the Thread Pool to stop.
+/// @note you can block till the Thread Pool has stopped
 /// @param pool The Thead Pool to be operated on.
 extern void snf_thpool_stop(SNF_thpool *pool);
+extern void snf_thpool_run(SNF_thpool *pool);
+/// @brief 
+/// @param pool
+/// @private 
+extern void snf_thpool_destroy(SNF_thpool **pool);
 #endif
