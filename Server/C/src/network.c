@@ -34,7 +34,7 @@ void snf_network_init()
     snf_clt_init(100);
     snf_opcode_init();
 
-    if (snf_thpool_inis(&Ntwrk, 4, Network_Worker, NULL) < 0)
+    if (snf_thpool_inis(&Ntwrk, 15, Network_Worker, NULL) < 0)
     {
         fprintf(stderr, "Unable to initiate network thread pool");
         return;

@@ -8,10 +8,7 @@
 #define REQUEST_H
 
 #include <SNF/SNF.h>
-#include <SNF/clt.h>
 #include <SNF/utility.h>
-#include <SNF/opcode.h>
-#include <SNF/network.h>
 
 /// @brief Requests's Default Request ID
 /// @note Server Requests to client always must have this as their ID 
@@ -24,6 +21,7 @@ typedef struct SNF_Request_t SNF_RQST;
 /// @brief Shortened definition of struct SNF_Request_args_t .
 typedef struct SNF_Request_args_t SNF_RQST_ARG;
 
+#include <SNF/opcode.h>
 /// @brief The Structure for saving Requests
 struct SNF_Request_t
 {
@@ -44,6 +42,8 @@ struct SNF_Request_t
     SNF_RQST_ARG *args;
 };
 
+#include <SNF/network.h>
+#include <SNF/clt.h>
 struct SNF_Request_args_t
 {
     /// @brief The Argument's Content

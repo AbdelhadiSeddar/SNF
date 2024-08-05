@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <uuid/uuid.h>
 #include <SNF/SNF.h>
-#include <SNF/opcode.h>
 
 /// @brief Shortened definiton of struct SNF_Client_t .
 typedef struct SNF_Client_t SNF_CLT;
@@ -31,6 +30,7 @@ struct SNF_Client_t
     int sock;
 };
 
+#include <SNF/opcode.h>
 /// @brief Initialises the HashTable that saves the clients
 /// @param ht_min_Size The HashTable's length ( See note )
 /// @note   **ht_min_Size** isnt (in most cases) the same as the true size of HashTable length <br><br>
@@ -107,4 +107,5 @@ extern void snf_clt_disconnect(SNF_CLT *Client);
 #include <SNF/epoll.h>
 #include <SNF/utility.h>
 #include <SNF/network.h>
+#include <SNF/cmds.h>
 #endif

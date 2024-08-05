@@ -1,4 +1,5 @@
 #include <SNF/opcode.h>
+#include "opcode.h"
 
 SNF_opcode_LL_item *SNF_opcode_LL = NULL;
 int SNF_opcode_base_isinit = 0;
@@ -21,49 +22,57 @@ int snf_opcode_define_base()
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_CONNECT,
-            "Used when client is attempting to connect") < 0)
+            "Used when client is attempting to connect",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_RECONNECT,
-            "Used when client is attempting to reconnect or is forced to.") < 0)
+            "Used when client is attempting to reconnect or is forced to.",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_DISCONNECT,
-            "Used when client is attempting to disconnect") < 0)
+            "Used when client is attempting to disconnect",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_SNF_VER,
-            "When client requests SNF version of the Server.") < 0)
+            "When client requests SNF version of the Server.",
+            snf_cmd_snf_ver) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_KICK,
-            "Used when client is Kicked") < 0)
+            "Used when client is Kicked",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_CONFIRM,
-            "Used when client's request was confirmed") < 0)
+            "Used when client's request was confirmed",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_REJECT,
-            "Used when client's request was rejected") < 0)
+            "Used when client's request was rejected",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
             SNF_OPCODE_BASE_CMD_INVALID,
-            "Used when client's request was invalid") < 0)
+            "Used when client's request was invalid",
+            snf_cmd_invalid_error_protocol) < 0)
         return -1;
 
     if (snf_opcode_define_detail(
@@ -79,6 +88,13 @@ int snf_opcode_define_base()
             SNF_OPCODE_BASE_CMD_INVALID,
             SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
             "Used when Protocol used is invalid") < 0)
+        return -1;
+    if (snf_opcode_define_detail(
+            SNF_OPCODE_BASE_CAT,
+            SNF_OPCODE_BASE_SUBCAT,
+            SNF_OPCODE_BASE_CMD_INVALID,
+            SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
+            "Received opcode does not have a function to call") < 0)
         return -1;
     SNF_opcode_base_isinit = 1;
     return 0;
@@ -171,7 +187,8 @@ int snf_opcode_define_command(
     SNF_opcode_mmbr_t Category,
     SNF_opcode_mmbr_t SubCategory,
     SNF_opcode_mmbr_t Code,
-    const char *Definition)
+    const char *Definition,
+    SNF_RQST *(func)(SNF_RQST *))
 {
 
     SNF_opcode_LL_item *item = calloc(1, sizeof(SNF_opcode_LL_item));
@@ -183,6 +200,7 @@ int snf_opcode_define_command(
     item->sub = calloc(1, sizeof(SNF_opcode_LL_item));
     item->sub->OPmmbr = SNF_OPCODE_BASE_DET_UNDETAILED;
     item->sub->Definition = undetailed_definition;
+    item->func = func;
     item->sub->next = (item->sub->sub = NULL);
     item->sub->parent = item;
 
@@ -423,6 +441,21 @@ int snf_opcode_compare(SNF_opcode *op1, SNF_opcode *op2)
         return 2;
 }
 
+int snf_opcode_isbase(SNF_opcode *op)
+{
+    if(op->strct.Category != SNF_OPCODE_BASE_CAT)
+        return 0;
+    if(op->strct.SubCategory != SNF_OPCODE_BASE_SUBCAT)
+        return 0;
+    
+    if((op->strct.Command < SNF_OPCODE_BASE_CMD_CONNECT
+        || op->strct.Command > SNF_OPCODE_BASE_CMD_REJECT )
+        && op->strct.Detail != SNF_OPCODE_BASE_CMD_INVALID
+    )
+    return 0;
+
+    return 1;
+}
 SNF_opcode_LL_item *snf_opcode_get_base_category()
 {
     return snf_opcode_get_category(

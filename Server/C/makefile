@@ -3,7 +3,7 @@ lib_name = snf
 
 lib_v_MAJOR = 0
 lib_v_MINOR = 0
-lib_v_PATCH = 1
+lib_v_PATCH = 2
 lib_v_EXTRA = -alpha
 
 STD_LIB_PATH = $(shell cat /etc/ld.so.conf.d/libc.conf | grep /)
@@ -67,7 +67,7 @@ cleanlib:
 	echo "##	Cleaning standard library and include paths from $(PROJECT)"
 	echo "##	Asking for permission. "
 	sudo rm -rf $(STD_INC_PATH)/$(PROJECT)
-	sudo rm -f $(STD_INC_PATH)/$(PROJECT).h $(STD_LIB_PATH)/lib$(lib_name).a
+	sudo rm -f $(STD_INC_PATH)/$(PROJECT).h $(STD_LIB_PATH)/lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA)
 
 prepare:
 	echo "##	Preparing Paths"
@@ -107,7 +107,9 @@ install_headers:
 
 buildtest: static_build
 	echo "##	Building test main"
-	$(COMPILER) main.c -L$(LIB_PATH) -l$(lib_name).$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) \
+	$(COMPILER) main.c -L$(LIB_PATH) \
+	-fsanitize=address \
+	-l:lib$(lib_name).a \
 	-I$(INC_PATH) $(C_FLAGS) $(C_LIB) -no-pie
 
 test: buildtest
@@ -122,11 +124,13 @@ testinstall : install
 
 t_%: install
 	$(COMPILER) $(TST_PATH)$(patsubst t_%,%, $@).c \
-	-l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
+	-l:lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) \
+	$(C_FLAGS) $(C_LIB) -fsanitize=address  \
 	-o $(TST_PATH)$@.out
 	$(TST_PATH)$@.out
 gdbt_%: install
 	$(COMPILER) $(TST_PATH)$(patsubst gdbt_%,%, $@).c \
-	-l$(lib_name)  $(C_FLAGS) $(C_LIB) -no-pie \
+	-l:lib$(lib_name).so.$(lib_v_MAJOR).$(lib_v_MINOR).$(lib_v_PATCH)$(lib_v_EXTRA) \
+	$(C_FLAGS) $(C_LIB) -no-pie \
 	-o $(TST_PATH)$@.out
 	gdb $(TST_PATH)$@.out

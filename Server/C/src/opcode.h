@@ -10,7 +10,6 @@
 #define opcode_h
 
 #include <SNF/SNF.h>
-
 /// @brief Defines SNF_opcode_mmbr_t 's size
 #define SNF_opcode_mmbr_t uint8_t
 /// @brief Defines SNF_opcode_mmbr_t 's maximum possible Value
@@ -27,7 +26,7 @@ typedef struct SNF_opcode_LL_item_t SNF_opcode_LL_item;
 ///         * For a Table use ***opcode*** member See SNF_opcode::opcode
 union SNF_opcode_t
 {
-    /// @brief SNF_opcode's Structure if you wanna access it using a structure
+    /// @brief SNF_opcode's Structure if you wanna access it as a struct
     struct SNF_opcode_struct
     {
         /// @brief opcode's Category
@@ -39,7 +38,7 @@ union SNF_opcode_t
         /// @brief opcode's Detail
         SNF_opcode_mmbr_t Detail;
     } strct;
-    /// @brief SNF_opcode's Structure if you wanna access using a table
+    /// @brief SNF_opcode's Structure if you wanna access as a table
     /// @note   The content of opcode goest as the following
     ///         * Index <strong>0 -></strong> Category
     ///         * Index <strong>1 -></strong> Sub-Category
@@ -48,6 +47,7 @@ union SNF_opcode_t
     SNF_opcode_mmbr_t opcode[4];
 };
 
+#include <SNF/request.h>
 /// @brief Structure used to save registred opcode members 
 /// @note Ranks are:
 ///         * Category 
@@ -62,6 +62,9 @@ struct SNF_opcode_LL_item_t
     SNF_opcode_mmbr_t OPmmbr;
     /// @brief opcode Member's definition
     char *Definition;
+    /// @brief Function to be called when the registred command is called
+    /// @note by default it will call snf_cmd_unimplemented()
+    SNF_RQST *(*func)(SNF_RQST *);
     /// @brief the next opcode member of the same \ref SNF_opcode_LL_item_t "Rank" (and of same Parent if they have one).
     SNF_opcode_LL_item *next;
     /// @brief Parent ( or higher in Rank ) opcode Member
@@ -117,7 +120,8 @@ extern int snf_opcode_define_command(
     SNF_opcode_mmbr_t Category,
     SNF_opcode_mmbr_t SubCategory,
     SNF_opcode_mmbr_t Code,
-    const char *Definition);
+    const char *Definition,
+    SNF_RQST *(func)(SNF_RQST *));
 /// @brief Defines an opcode Detail
 /// @param Category OPcode's Category
 /// @param SubCategory OPcode's Sub-Category
@@ -215,7 +219,8 @@ extern SNF_opcode *snf_opcode_getu(
 extern int snf_opcode_compare(
     SNF_opcode *op1,
     SNF_opcode *op2);
-
+extern int snf_opcode_isbase(
+    SNF_opcode *op);
 #pragma region[Base Opcode Values]
 /// @brief Base Category for SNF
 /// @warning Do not add anything under this Catergory
@@ -257,6 +262,8 @@ extern int snf_opcode_compare(
 #define SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE (SNF_opcode_mmbr_t)0x01
 /// @brief Protocol used is invalid
 #define SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL (SNF_opcode_mmbr_t)0x02
+/// @brief Received opcode does not have a function to call
+#define SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE (SNF_opcode_mmbr_t)0x03
 #pragma endregion
 #pragma endregion
 

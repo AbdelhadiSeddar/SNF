@@ -47,7 +47,6 @@ void *snf_clt_handle_new(void *arg)
 
     snf_epoll_add(SNF_SERVER_SOCKET);
 
-    snf_clt_free(Client);
     return NULL;
 }
 
@@ -68,35 +67,38 @@ void *snf_clt_handle(void *arg)
     if (Rqst != NULL)
     {
         printf("Request : %x\n", Rqst->OPCODE->strct.Command);
-        if (snf_opcode_compare(
-                Rqst->OPCODE,
-                snf_opcode_get_base(
-                    SNF_OPCODE_BASE_CMD_DISCONNECT,
-                    0x00)) >= 0)
-            snf_clt_disconnect(Original);
-        else if (snf_opcode_compare(
-                     Rqst->OPCODE,
-                     snf_opcode_get_base(
-                         SNF_OPCODE_BASE_CMD_SNF_VER,
-                         0x00)) >= 0)
+        SNF_RQST *re = NULL;
+        if(snf_opcode_isbase(Rqst->OPCODE)
+            && Rqst->OPCODE->strct.Command == SNF_OPCODE_BASE_CMD_DISCONNECT)
         {
-            snf_request_send(Client,
-                             snf_request_gen_response(Rqst,
-                                                      snf_opcode_getu_base(SNF_OPCODE_BASE_CMD_CONFIRM),
-                                                      snf_request_arg_gen(_SNF_VER)));
+            snf_clt_disconnect(Original);
+            goto end_clt_handle;
         }
-        //    else if(###)
-        //    {
-        //          // TODO: Handle Custom Requests
-        //    }
         else
-            snf_request_send_invalid(Client, Rqst);
+        {
+            SNF_opcode_LL_item *item = snf_opcode_get_command(
+                Rqst->OPCODE->strct.Category,
+                Rqst->OPCODE->strct.SubCategory,
+                Rqst->OPCODE->strct.Command
+            );
+            if(item == NULL)
+            {
+                re = snf_cmd_invalid_unregistred(Rqst);
+            }
+            else if(item->func == NULL)
+            {
+                re = snf_cmd_invalid_unimplemented(Rqst);
+            }
+            else
+            {
+                re = item->func(Rqst);
+            }
+        }
+        snf_request_free(Rqst);
+        snf_request_send(Original, re);
     }
-    else
-        snf_request_send_invalid(Client, Rqst);
     pthread_mutex_unlock(&(Original->mutex));
     snf_epoll_add(Original->sock);
-    snf_request_free(Rqst);
 end_clt_handle:;
     snf_clt_free(Client);
     return NULL;
