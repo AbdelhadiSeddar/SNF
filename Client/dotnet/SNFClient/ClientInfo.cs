@@ -31,7 +31,7 @@ namespace SNFClient
         /// <summary>
         ///     Patch Version Number
         /// </summary>
-        public static int Version_PATCH => 1;
+        public static int Version_PATCH => 2;
         /// <summary>
         ///     Extra labels ( eg Alpha Beta )
         /// </summary>

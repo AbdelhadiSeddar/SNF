@@ -217,10 +217,12 @@ namespace SNFClient
             
             internal Queue<Request> QueuedRequest = new Queue<Request>();
             internal LinkedList<Request> UnrespondedRequests = new LinkedList<Request>();
+            internal Queue<Request[]> QueuedCallableRequests = new Queue<Request[]>();
 
             private bool KeepRunning = true;
             private Semaphore _sem = new Semaphore(0, 5);
             private Semaphore _wait_Connection = new Semaphore(0, 1);
+            private Semaphore _wait_CB = new Semaphore(0, 10000);
             private Connection _connection;
             private Stream _stream => _connection?._stream;
             private object _reader;
@@ -228,6 +230,7 @@ namespace SNFClient
 
             private Thread StreamReaderhandler;
             private Thread StreamWriterhandler;
+            private Thread CallbackHandler;
 
             private void HandleStreamReader()
             {
@@ -241,7 +244,6 @@ namespace SNFClient
                     {
                         Request R = Receive();
                         Request ClientR = null;
-                        
                         lock(UnrespondedRequests)
                         {
                             foreach(Request request in UnrespondedRequests)
@@ -255,7 +257,12 @@ namespace SNFClient
                         }
                         if(ClientR != null)
                             UnrespondedRequests.Remove(ClientR);
-                        ClientR?.Responded(R);
+                        lock(QueuedCallableRequests)
+                        {
+                            QueuedCallableRequests.Enqueue(new Request[] { ClientR, R});
+                            _wait_CB.Release();
+                        }
+
                     }
                     catch (Exception ex)
                     {
@@ -291,7 +298,7 @@ namespace SNFClient
                 catch (SocketException ex)
                 {
                     _connection.InvokeOnSocketFail(ex);
-                    
+                    KeepRunning = false;
                     _wait_Connection.Release();
                     return;
                 }
@@ -321,6 +328,20 @@ namespace SNFClient
                 }
             }
 
+            public void Callbacks()
+            {
+                while(true)
+                {
+                    _wait_CB.WaitOne();
+                    Request[] cb;
+                    lock(QueuedCallableRequests)
+                    {
+                        cb = QueuedCallableRequests.Dequeue();
+                    }
+                    cb[0]?.OnResponse(cb[1]);
+                }
+            }
+
             private bool isInstInit = false;
             /// <summary>
             /// Gets is the Instance is Initialized or not
@@ -346,8 +367,10 @@ namespace SNFClient
                 _writer = new object();
                 StreamReaderhandler = new Thread(new ThreadStart(HandleStreamReader));
                 StreamWriterhandler = new Thread(new ThreadStart(HandleStreamWriter));
+                CallbackHandler = new Thread(new ThreadStart(Callbacks));
                 StreamReaderhandler.Start();
                 StreamWriterhandler.Start();
+                CallbackHandler.Start();
 
                 isInstInit = true;
             }
@@ -397,10 +420,11 @@ namespace SNFClient
                 byte[] opcode = read(4);
                 byte[] RUID = read(_UID_LENGTH);
                 byte[] fb = read(4);
-                byte[] Content = read(Utility.BytesToInt(fb));
+                int size = Utility.BytesToInt(fb);
                 LinkedList<byte[]> args = new LinkedList<byte[]>();
-                if(Utility.BytesToInt(fb) > 0)
+                if(size > 0)
                 {
+                    byte[] Content = read(size);
                     LinkedList<byte> arg = new LinkedList<byte>();
                     foreach(byte b in Content)
                     {

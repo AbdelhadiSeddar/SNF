@@ -797,13 +797,17 @@ namespace SNFClient
             /// </summary>
             public static byte CMD_INVALID      => 0xFF;
             /// <summary>
-            ///     Received opcode was not registred.
+            ///     Received opcode on the server side was not registred.
             /// </summary>
             public static byte DET_INVALID_UNREGISTRED_OPCODE   => 0x00;
             /// <summary>
             ///     Protocol used is invalid.
             /// </summary>
             public static byte DET_INVALID_ERROR_PROTOCOL       => 0x01;
+            /// <summary>
+            ///     Sent OPCode does not have a function to call on the server side.
+            /// </summary>
+            public static byte DET_INVALID_UNIMPLEMENTED_OPCODE => 0x02;
             #endregion
             #endregion
 
@@ -846,8 +850,9 @@ namespace SNFClient
 
                 Member.AddCommand(MEM_SUBCATEGORY, MEM_INVALID);
 
-                Member.AddDetail(MEM_INVALID, DET_INVALID_UNREGISTRED_OPCODE,   "Received opcode was not registred");
-                Member.AddDetail(MEM_INVALID, DET_INVALID_ERROR_PROTOCOL,       "Protocol used is invalid");
+                Member.AddDetail(MEM_INVALID, DET_INVALID_UNREGISTRED_OPCODE,   "Received opcode was not registred.");
+                Member.AddDetail(MEM_INVALID, DET_INVALID_ERROR_PROTOCOL,       "Protocol used is invalid.");
+                Member.AddDetail(MEM_INVALID, DET_INVALID_UNIMPLEMENTED_OPCODE, "Sent OPCode does not have a function to call on the server side.");
             }
             /// <summary>
             ///     Returns the Base Category
@@ -911,6 +916,9 @@ namespace SNFClient
             /// <exception cref="Exceptions.ClassUninitialized">
             ///     Thrown When The OPCode.Base Class was not Initialized 
             /// </exception>
+            /// <exception cref="Exceptions.OPCode.Unregistred">
+            ///     <paramref name="Command"/> Is not a registred OPCode Command 
+            /// </exception>
             public static OPCode get(byte Command) 
                 => get(Command, DET_UNDETAILED);
             /// <summary>
@@ -924,13 +932,16 @@ namespace SNFClient
             /// <exception cref="Exceptions.ClassUninitialized">
             ///     Thrown When The OPCode.Base Class was not Initialized 
             /// </exception>
+            /// <exception cref="Exceptions.OPCode.Unregistred">
+            ///     <paramref name="Command"/> Is not a registred OPCode Command 
+            /// </exception>
             public static OPCode get(byte Command, byte Detail)
             {
                 Member cmd;
                 Member det;
 
                 if ((cmd = Member.getCommand(MEM_SUBCATEGORY, Command)) == null)
-                    return null;
+                    throw new Exceptions.OPCode.Unregistred(Command);
 
                 det = Member.getDetail(cmd, Command);
                 return OPCode.get(MEM_CATEGORY, MEM_SUBCATEGORY, cmd, det);

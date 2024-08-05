@@ -118,6 +118,14 @@ namespace SNFClient
                     ) 
                     : base($"Invalid Rank, Expected {Expected} Found {Found} ") {}
             }
+            public class Unregistred
+                : Exception
+            {
+                public Unregistred(
+                        byte Code
+                    )
+                    : base($"OPCode Member 0x{Code} is not registred") { }
+            }
         }
         /// <summary>
         ///     Contains Exception related to <see cref="SNFClient.Connection"/>
