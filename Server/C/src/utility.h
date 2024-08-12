@@ -3,6 +3,8 @@
 
 #include <SNF/SNF.h>
 
+extern void (*SNF_ERR_OUT)(const char*);
+
 /// @brief Checks if Result is < 0 then printout the ErrorOut and exits with code 0
 /// @param Result Input to be checked if < 0
 /// @param ErrorOut Error Message content
@@ -30,4 +32,8 @@ extern char *snf_uint32_to_bytes(uint32_t i, int nBytes);
 /// @param _sock Socket to be operated on
 /// @return See fcntl(..)
 extern int snf_setnonblocking(int _sock);
+
+
+extern void snf_print_err(const char* StrErr);
+
 #endif

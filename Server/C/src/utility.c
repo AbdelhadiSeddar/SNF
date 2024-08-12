@@ -1,11 +1,13 @@
 #include <SNF/utility.h>
+#include "utility.h"
+
+void (*SNF_ERR_OUT)(const char*) = snf_print_err;
 
 void checkerr(int Result, const char *ErrorOut)
 {
     if (Result < 0)
-    {
-        perror(ErrorOut);
-        exit(EXIT_FAILURE);
+    { 
+        SNF_ERR_OUT(ErrorOut);
     }
 }
 uint32_t snf_bytes_to_uint32(const char *bytes, int nBytes)
@@ -56,4 +58,10 @@ int snf_setnonblocking(int _sock)
 
     result = fcntl(_sock, F_SETFL, flags);
     return result;
+}
+
+void snf_print_err(const char *StrErr)
+{
+    perror(StrErr);
+    exit(EXIT_FAILURE);
 }
