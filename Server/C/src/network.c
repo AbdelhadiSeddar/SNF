@@ -1,9 +1,5 @@
 #include <SNF/network.h>
-
-SNF_thpool *Ntwrk;
-
-int _PORT = 9114;
-int _MAX_QUEUE = 1000;
+typedef struct epoll_event ev;
 
 _Atomic uint64_t SNF_Total_Data_Rcv = 0;
 _Atomic uint64_t SNF_Total_Data_Snt = 0;
@@ -17,24 +13,27 @@ void *Network_Worker(void *arg);
 
 void snf_network_init()
 {
+    checkerr((snf_var_get(SNF_VAR_INITIALIZED, int) != NULL) - 1 , "Variables Undefined\n");
     checkerr((SNF_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
 
     bzero(&SNF_SERVER_ADDR, sizeof(struct sockaddr_in));
 
     SNF_SERVER_ADDR.sin_family = AF_INET;
-    SNF_SERVER_ADDR.sin_port = htons(_PORT);
+    SNF_SERVER_ADDR.sin_port = htons(snf_var_getv(SNF_VAR_PORT, int));
     SNF_SERVER_ADDR.sin_addr.s_addr = htonl(INADDR_ANY);
 
     checkerr(bind(SNF_SERVER_SOCKET, (struct sockaddr *)&SNF_SERVER_ADDR, sizeof(SNF_SERVER_ADDR)), "Port is already taken");
-    checkerr(listen(SNF_SERVER_SOCKET, _MAX_QUEUE),
+    checkerr(listen(SNF_SERVER_SOCKET, snf_var_getv(SNF_VAR_MAX_QUEUE, int)),
              "Unable to listen in the port");
-
-    printf("Server is now listening on PORT %d on FD %d \n", _PORT, SNF_SERVER_SOCKET);
     snf_epoll_init();
-    snf_clt_init(100);
+    snf_clt_init(snf_var_getv(SNF_VAR_CLTS_INITIAL, int));
     snf_opcode_init();
 
-    if (snf_thpool_inis(&Ntwrk, 15, Network_Worker, NULL) < 0)
+    if (snf_thpool_inis(
+            snf_var_geta(SNF_VAR_THREADPOOL, SNF_thpool),
+            snf_var_getv(SNF_VAR_THREADS, int),
+            Network_Worker, 
+            NULL) < 0)
     {
         fprintf(stderr, "Unable to initiate network thread pool");
         return;
@@ -42,7 +41,7 @@ void snf_network_init()
 }
 void snf_network_join()
 {
-    snf_thpool_join(Ntwrk);
+    snf_thpool_join(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool));
 }
 void *Network_Worker(void *arg)
 {
@@ -51,7 +50,8 @@ void *Network_Worker(void *arg)
         snf_epoll_getList();
         for (int fd = 0; fd < SNF_NFDS; ++fd)
         {
-            int sock = SNF_EPOLL_EVENTS[fd].data.fd;
+            struct epoll_event e =  snf_var_get(SNF_VAR_EPOLL_EVENTS, struct epoll_event)[fd];
+            int sock = e.data.fd;
             snf_epoll_del(sock);
             if (sock < SNF_SERVER_SOCKET)
             {
@@ -60,11 +60,11 @@ void *Network_Worker(void *arg)
             if (sock == SNF_SERVER_SOCKET)
             {
                 sock = accept(SNF_SERVER_SOCKET, (struct sockaddr *)&SNF_CLIENT_ADDR, &SNF_CLIENT_LEN);
-                snf_thpool_addwork(Ntwrk, snf_clt_handle_new, (void *)snf_clt_new(sock));
+                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle_new, (void *)snf_clt_new(sock));
             }
             else
             {
-                snf_thpool_addwork(Ntwrk, snf_clt_handle, (void *)snf_clt_new(sock));
+                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle, (void *)snf_clt_new(sock));
             }
         }
     }

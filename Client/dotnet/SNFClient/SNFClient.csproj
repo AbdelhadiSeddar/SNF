@@ -5,7 +5,7 @@
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <SignAssembly>False</SignAssembly>
-    <Version>0.0.1-alpha</Version>
+    <Version>0.0.2-alpha</Version>
     <Company>Abdelhadi Seddar</Company>
     <Authors>Abdelhadi Seddar</Authors>
     <RepositoryUrl>https://github.com/AbdelhadiSeddar/SNF</RepositoryUrl>

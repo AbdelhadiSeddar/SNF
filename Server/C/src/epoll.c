@@ -1,11 +1,10 @@
 #include <SNF/epoll.h>
 
 int SNF_EPOLLFD, SNF_NFDS;
-struct epoll_event SNF_EPOLL_EVENTS[SNF_MAXEVENTS];
 void snf_epoll_init()
 {
-    if (SNF_SERVER_SOCKET <= 0)
-        return;
+    if (SNF_SERVER_SOCKET <= 0 || !*snf_var_get(SNF_VAR_INITIALIZED, int))
+        exit(EXIT_FAILURE);
     SNF_EPOLLFD = epoll_create1(0);
     snf_epoll_add(SNF_SERVER_SOCKET);
 }
@@ -41,7 +40,11 @@ int snf_epoll_getList()
     SNF_NFDS = -1;
     while (SNF_NFDS == -1)
     {
-        SNF_NFDS = epoll_wait(SNF_EPOLLFD, SNF_EPOLL_EVENTS, SNF_MAXEVENTS, 10);
+        SNF_NFDS = epoll_wait(
+            SNF_EPOLLFD,
+            snf_var_get(SNF_VAR_EPOLL_EVENTS, struct epoll_event),
+            *snf_var_get(SNF_VAR_EPOLL_MAXEVENTS, int),
+            *snf_var_get(SNF_VAR_EPOLL_TIMEOUT, _Atomic int));
         if (errno != EINTR)
             return -1;
     }

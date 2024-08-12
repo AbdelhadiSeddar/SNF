@@ -15,12 +15,6 @@
 #include <SNF/SNF.h>
 #include <SNF/network.h>
 
-/// @brief Defines the epoll's limit 
-/// @note Temporarly is a fixed value of 4096 for testing purposes
-#define SNF_MAXEVENTS 4096
-
-/// @brief Used to save the waiting ***Epoll Events***
-extern struct epoll_event SNF_EPOLL_EVENTS[SNF_MAXEVENTS];
 /// @brief Describes the amount of file descriptors to be handled
 extern int SNF_NFDS;
 /// @brief Defines Epoll's file descriptor.

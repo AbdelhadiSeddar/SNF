@@ -102,6 +102,8 @@ int snf_opcode_define_base()
 
 int snf_opcode_init()
 {
+    if(SNF_opcode_base_isinit)
+        return 0;
     return snf_opcode_define_base();
 }
 

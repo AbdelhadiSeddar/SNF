@@ -17,14 +17,8 @@
 #include <SNF/SNF.h>
 #include <SNF/clt.h>
 #include <SNF/thpool.h>
+#include <SNF/vars.h>
 
-/// @brief The thread pool that controls the working of the Framework
-/// @warning Do not modify the contents unless by using Appropriate functions. 
-extern SNF_thpool *Ntwrk;
-/// @brief Defines the Framework's TCP/IP's port
-extern int SNF_PORT;
-/// @brief Max Queue allowed to wait to be accepted at once
-extern int SNF_MAX_QUEUE;
 
 /// @brief the main Socket that accepts new incoming connections
 /// @warning Do not modify it's contents unless you know what you're doing.

@@ -66,7 +66,6 @@ void *snf_clt_handle(void *arg)
 
     if (Rqst != NULL)
     {
-        printf("Request : %x\n", Rqst->OPCODE->strct.Command);
         SNF_RQST *re = NULL;
         if(snf_opcode_isbase(Rqst->OPCODE)
             && Rqst->OPCODE->strct.Command == SNF_OPCODE_BASE_CMD_DISCONNECT)
@@ -113,7 +112,6 @@ void snf_clt_connect(SNF_CLT *Client)
     snf_snd(Client, Client->UUID, 36);
     snf_epoll_add(Client->sock);
 
-    printf("Client %s Connected (%d)\n", Client->UUID, Client->sock);
 }
 
 void snf_clt_reconnect(SNF_CLT *Client)
