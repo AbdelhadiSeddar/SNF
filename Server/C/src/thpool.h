@@ -117,7 +117,7 @@ extern time_t SNF_THPOOL_STOPWAIT;
 /// @param Main_Worker Main Function that would be called upon finishing the intialisation of the
 /// @param arg the argument that would be given to the Main_worker function.
 /// @return 0 On Success || -1 On fail { Shall fail only if 1 - ThreadPool is NULL || 2 - Max_Thread is below recommended/required value }
-extern int snf_thpool_inis(SNF_thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(), void *arg);
+extern int snf_thpool_inis(SNF_thpool **ThreadPool, int Max_Threads, void *(*Main_Worker)(void *), void *arg);
 
 /// @brief Creates a "work" that will call the *func* function with argument *arg*
 /// @param pool The Thead Pool to be operated on.
