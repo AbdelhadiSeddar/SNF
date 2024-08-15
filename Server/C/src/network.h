@@ -48,10 +48,10 @@ extern _Atomic uint64_t SNF_Total_Data_Snt;
 
 /// @brief Initializes the Network Framwork
 extern void snf_network_init();
-/// @brief See \ref snf_thpool_join (Works on the \ref Ntwrk Thread Pool)
+/// @brief See snf_thpool_join 
 extern void snf_network_join();
 
-/// @brief Sends a Buffer to Client's \ref SNF_CLT::sock
+/// @brief Sends a Buffer to Client's socket's file descriptor
 /// @param Client Pointer to the Client's SNF_CLT instance
 /// @param Buffer Buffer to send
 /// @param _Size Size of the Buffer (See Note )
@@ -63,7 +63,7 @@ extern void snf_network_join();
 ///         * else it will send the **Buffer** and the length will be <strong>_Size</strong>
 extern int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size);
 
-/// @brief Receives a Buffer from Client's \ref SNF_CLT::sock
+/// @brief Receives a Buffer from Client's socket's file descriptor
 /// @param Client Pointer to the Client's SNF_CLT instance
 /// @param Buffer Received Buffer 
 /// @param _Size Expected Size 
@@ -71,10 +71,10 @@ extern int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size);
 /// @return The following possible results:
 ///         * **-1** **Client** Could be NULL, or In case of an Error , Check **errno** and compare it to **send**'s possible Errors, if errno == EPIPE then ignore it as it was already dealt with.
 ///         * **int** The amount of data sent.
-/// @warning If you receive *n* amount of bytes and is lower than <strong>_Size</strong>, it will assume that recv has failed and will check errno, as it could disconnect the client in somecases and the function will return **-1**.
-/// @note   There is are re-definitions of snf_recv_ and are:
-///         * <strong> \ref snf_rcv() </strong><br>
-///         * <strong> \ref snf_rcv_PEEK() </strong><br>
+/// @warning If you receive *n* amount of bytes and is lower than _Size , it will assume that recv has failed and will check errno, as it could disconnect the client in somecases and the function will return **-1**.
+/// \note   There is are re-definitions of snf_recv_ and are:
+///         * snf_rcv() 
+///         * snf_rcv_PEEK()
 extern int snf_rcv_(SNF_CLT *Client, void *Buffer, int _Size, int _Flags);
 ///@brief Same as \ref snf_rcv_ how ever <strong>_Flags</strong> will be 0 
 #define snf_rcv(Client, Buffer, _Size) snf_rcv_(Client, Buffer, _Size, 0)

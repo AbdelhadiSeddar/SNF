@@ -39,38 +39,38 @@ extern void snf_clt_init(int ht_min_Size);
 
 /// @brief  Creates (and allocates) a new Client using their **Sockfd**, 
 ///         with a default \ref SNF_CLT::UUID with the value of "00000000-0000-0000-0000-000000000000"
-/// @param Sockfd The Client's \ref SNF_CLT::sock ( Client's Socket Discriptor )
-/// @return the new \ref SNF_CLT Instance. 
-/// @note Free with \ref snf_clt_free
+/// @param Sockfd The Client's socket file descriptor socket's file descriptor
+/// @return the new Instance. 
+/// @note Free with snf_clt_free
 extern SNF_CLT *snf_clt_new(int Sockfd);
 
 /// @brief Frees the allocated \ref SNF_CLT
-/// @param Client The \ref SNF_CLT instance to be free'd.
-/// @warning Make sure you closed the \ref SNF_CLT::sock if you have no use for it.
+/// @param Client The SNF_CLT instance to be free'd.
+/// @warning Make sure you closed the socket file discriptor if you have no use for it.
 extern void snf_clt_free(SNF_CLT *Client);
-/// @brief Searches for a \ref SNF_CLT depending on their \ref SNF_CLT::sock
+/// @brief Searches for a SNF_CLT depending on their socket file discriptor
 /// @param Sockfd The socket descriptor to search with
-/// @return \ref SNF_CLT address pointer where it's value could be:
-///         * The searched \ref SNF_CLT instance's address.<br>
-///         * **NULL** if no \ref SNF_CLT found.<br>
+/// @return SNF_CLT address pointer where it's value could be:
+///         * The searched SNF_CLT instance's address.<br>
+///         * **NULL** if no SNF_CLT instance found.<br>
 /// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern SNF_CLT *snf_clt_get_sockfd(int Sockfd);
-/// @brief Searches for a \ref SNF_CLT depending on their \ref SNF_CLT::UUID
+/// @brief Searches for a  SNF_CLT depending on their UUID
 /// @param uuid The socket descriptor to search with
-/// @return \ref SNF_CLT address pointer where it's value could be:
-///         * The searched \ref SNF_CLT instance's address.<br>
-///         * **NULL** if no \ref SNF_CLT found.<br>
+/// @return SNF_CLT address pointer where it's value could be:
+///         * The searched SNF_CLT instance's address.<br>
+///         * **NULL** if no SNF_CLT found.<br>
 /// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern SNF_CLT *snf_clt_get_uuid(const char *uuid);
 
-/// @brief Checks the existance of a \ref SNF_CLT depending on their \ref SNF_CLT::sock
+/// @brief Checks the existance of a SNF_CLT depending on their socket's file descriptor
 /// @param Sockfd The socket descriptor to search with
 /// @return An Integer dipicting the check's result:
 ///         * **1** if found<br>
 ///         * **0** if not found.<br>
 /// @warning    NOT YET IMPLEMENTED. DO NOT USE.
 extern int snf_clt_check_sockfd(int Sockfd);
-/// @brief Checks the existance of a \ref SNF_CLT depending on their \ref SNF_CLT::UUID
+/// @brief Checks the existance of a SNF_CLT depending on their \ref SNF_CLT::UUID
 /// @param uuid The socket descriptor to search with
 /// @return An Integer dipicting the check's result:
 ///         * **1** if found<br>
@@ -79,18 +79,18 @@ extern int snf_clt_check_sockfd(int Sockfd);
 extern int snf_clt_check_uuid(const char *uuid);
 
 /// @brief Handles new incoming Clients.
-/// @param arg new Clitent's address ( \ref SNF_CLT pointer) 
+/// @param arg new Clitent's address ( SNF_CLT pointer) 
 /// @return **NULL**
 /// @warning  Core Function in network.c do not use it elsewhere.
 extern void *snf_clt_handle_new(void *arg);
 /// @brief Handles existing Clients.
-/// @param arg new Clitent's address ( \ref SNF_CLT pointer) 
+/// @param arg new Clitent's address ( SNF_CLT pointer) 
 /// @return **NULL**
 /// @warning  Core Function in network.c do not use it elsewhere.
 extern void *snf_clt_handle(void *arg);
 
 /// @brief Function to be called upon Client Connection.
-/// @param Client Connecting Client( \ref SNF_CLT pointer) 
+/// @param Client Connecting Client( SNF_CLT pointer) 
 /// @warning  Core Function in clt.c do not use it elsewhere.
 extern void snf_clt_connect(SNF_CLT *Client);
 /// @brief Function to be called upon Client Re-Connection
