@@ -2,7 +2,7 @@
 ///
 /// \file 
 /// This file Defines the HashTable functions and macros
-/// The HashTable uses locate3.c 's hashing functions
+/// The HashTable uses lookup3.c 's hashing functions
 ///
 /// //////////////////////////////////////////////////////////
 #ifndef hashtable_h

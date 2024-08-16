@@ -10,7 +10,7 @@
 ///
 /// \note <br>
 /// Headers that are cable of working independently ( aka 
-/// locate3.h, hashtable.h and thpool.h are unaffected by these variables)
+/// lookup3.h, hashtable.h and thpool.h are unaffected by these variables)
 ///  do not require to default the variables if you're just using those headers
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef snf_vars_h

@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////
 ///
-/// \file locate3.h
+/// \file lookup3.h
 /// All the code in lookup3.c is written by Bob Jenkins, May 2006.
-/// this header file is written by acording to locate3.c 
+/// this header file is written by acording to lookup3.c 
 ///
 ///////////////////////////////////////////////////////////////////
 
-#ifndef locate3_h
-#define locate3_h
+#ifndef lookup3_h
+#define lookup3_h
 #include <stdint.h>
 #include <stdio.h>
 
