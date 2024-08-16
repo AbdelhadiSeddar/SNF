@@ -14,7 +14,7 @@
 #include <pthread.h>
 #include <math.h>
 
-#include <SNF/locate3.h>
+#include <SNF/lookup3.h>
 
 /// @brief Shortened definiton of struct SNF_ht_item_t .
 typedef struct SNF_ht_item_t SNF_ht_item;
