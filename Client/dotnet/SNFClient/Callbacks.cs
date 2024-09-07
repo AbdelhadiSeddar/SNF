@@ -24,9 +24,9 @@ namespace SNFClient
         /// <param name="ex">Socket Exception</param>
         public delegate void SocketExceptionCB(SocketException ex);
         /// <summary>
-        ///     Used for handling responses of requests
+        ///     Used for handling Incoming requests Either Response or Server.
         /// </summary>
-        /// <param name="Response"> The Server's Response Request</param>
-        public delegate void RequestResponseCB(Request Response);
+        /// <param name="Response"> The Server's Request (Response or not)</param>
+        public delegate void RequestCB(Request Response);
     }
 }

@@ -21,8 +21,19 @@ namespace SNFClient
         /// <summary>
         /// The length of the UID of each Request "Request"
         /// </summary>
-        public static int _UID_LENGTH 
+        public static int _UID_LENGTH
             => 16;
+        private static byte[] _UID_SERVER_RQST_CACHE = null;
+
+        /// <summary>
+        ///     Saves the default UID for a Server Request
+        /// </summary>
+        public static byte[] _UID_SERVER_RQST
+            => _UID_SERVER_RQST_CACHE == null ?
+            ( _UID_SERVER_RQST_CACHE = Encoding.ASCII.GetBytes("000000000000000\0"))
+            :
+            ( _UID_SERVER_RQST_CACHE )
+            ;
         /// <summary>
         /// Saved the total amount of generated requests
         /// </summary>
@@ -50,7 +61,7 @@ namespace SNFClient
         /// <summary>
         /// Saves The Callback When this request is responded to. 
         /// </summary>
-        internal RequestResponseCB OnResponse;
+        internal RequestCB OnResponse;
         /// <summary>
         /// Calls <paramref name="Response"/> Member
         /// </summary>
@@ -102,7 +113,7 @@ namespace SNFClient
         /// <param name="OPCODE">OPCode of the Request</param>
         /// <param name="Args">Arguments to be Sent</param>
         /// <param name="OnResponse">Response CallBack</param>
-        public Request(byte[] UID, OPCode OPCODE, byte[][] Args, RequestResponseCB OnResponse) : this()
+        public Request(byte[] UID, OPCode OPCODE, byte[][] Args, RequestCB OnResponse) : this()
         {
             this.uid = UID;
             this.op = OPCODE;
@@ -127,7 +138,7 @@ namespace SNFClient
         /// <param name="OPCODE">OPCode of the Request</param>
         /// <param name="Args">Arguments to be Sent</param>
         /// <param name="OnResponse">Response CallBack</param>
-        public Request(OPCode OPCODE, byte[][] Args, RequestResponseCB OnResponse)
+        public Request(OPCode OPCODE, byte[][] Args, RequestCB OnResponse)
             : this ( generateUID(), OPCODE, Args, OnResponse) { }
 
         /// <summary>
@@ -142,7 +153,7 @@ namespace SNFClient
         /// </summary>
         /// <param name="OPCODE">OPCode of the Request</param>
         /// <param name="OnResponse">Response CallBack</param>
-        public Request(OPCode OPCODE, RequestResponseCB OnResponse)
+        public Request(OPCode OPCODE, RequestCB OnResponse)
             : this (OPCODE, new byte[0][], OnResponse) { }
         /// <summary>
         /// Constructor for a new Request Instance with a UID Generated with <see cref="generateUID"/> and without any Arguments or a Callback
@@ -178,6 +189,7 @@ namespace SNFClient
             => Args.Length > 0 ?
                 Args[Index]
                 : null;
+
         
         /// <summary>
         /// This Class where each instance Handles the created Requests
@@ -243,13 +255,19 @@ namespace SNFClient
                     try
                     {
                         Request R = Receive();
+                        if (R == null || R.op == null)
+                        {
+                            _connection.InvokeOnSNFFail();
+                            continue;
+                        }
+
                         Request ClientR = null;
                         lock(UnrespondedRequests)
                         {
+                            if(!R.UID.SequenceEqual(_UID_SERVER_RQST))
                             foreach(Request request in UnrespondedRequests)
                             {
-                                for (int i = 0; i < request.UID.Length; i++)
-                                    if (request.UID[i] != R.UID[i])
+                                if (request.UID.SequenceEqual(R.UID))
                                         break;
                                 ClientR = request;
                                 break;
@@ -263,6 +281,10 @@ namespace SNFClient
                             _wait_CB.Release();
                         }
 
+                    }
+                    catch (SocketException ex)
+                    {
+                        _connection.InvokeOnSocketFail(ex);
                     }
                     catch (Exception ex)
                     {
@@ -328,9 +350,9 @@ namespace SNFClient
                 }
             }
 
-            public void Callbacks()
+            private void Callbacks()
             {
-                while(true)
+                while(KeepRunning)
                 {
                     _wait_CB.WaitOne();
                     Request[] cb;
@@ -338,7 +360,13 @@ namespace SNFClient
                     {
                         cb = QueuedCallableRequests.Dequeue();
                     }
-                    cb[0]?.OnResponse(cb[1]);
+                    if (cb == null)
+                        continue;
+
+                    if (cb[1] == null)
+                        cb[0]?.op.Command.InvokeCommandCB(cb[0]);
+                    else
+                        cb[0]?.OnResponse(cb[1]);
                 }
             }
 

@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Collections.Generic;
 using System.Text;
+using SNFClient.Callbacks;
 
 namespace SNFClient
 {
@@ -569,7 +570,7 @@ namespace SNFClient
             /// <exception cref="Exceptions.OPCode.InvalidRankFound">
             ///     A Member contains an innapropriate Rank
             /// </exception>
-            public static bool AddCommand(Member SubCategory, byte Command, string Definition)
+            public static bool AddCommand(Member SubCategory, byte Command, string Definition, RequestCB OnServerCall = null)
             {
                 if(Categories.Count<Member>() == 0)
                     throw new Exceptions.ClassUninitialized("OPCode.Base");
@@ -581,6 +582,7 @@ namespace SNFClient
                         return false;
                 }
                 Member cmd = new Member(Rank.Command, Command, Definition);
+                cmd.CommandCB = OnServerCall;
                 SubCategory.sub.AddLast(cmd);
                 return true;
             }
@@ -599,7 +601,7 @@ namespace SNFClient
             /// <exception cref="Exceptions.OPCode.InvalidRankFound">
             ///     A Member contains an innapropriate Rank
             /// </exception>
-            public static bool AddCommand(Member SubCategory, Member Command)
+            public static bool AddCommand(Member SubCategory, Member Command, RequestCB OnServerCall = null)
             {
                 if (SubCategory.MemberRank != Rank.SubCategory)
                     throw new Exceptions.OPCode.InvalidRankFound(Rank.SubCategory, SubCategory.MemberRank);
@@ -610,6 +612,7 @@ namespace SNFClient
                     if (m.Value == Command.value)
                         return false;
                 }
+                Command.CommandCB = OnServerCall;
                 SubCategory.sub.AddLast(Command);
                 return true;
             }
@@ -682,6 +685,8 @@ namespace SNFClient
             private byte value;
             private string definition = "Undefined Member";
             private LinkedList<Member> sub = new LinkedList<Member>();
+            private RequestCB commandCB = null;
+
 
             /// <summary>
             ///     Returns the Member's Rank
@@ -708,6 +713,12 @@ namespace SNFClient
             public LinkedList<Member> Sub
                 { get => sub; }
 
+            /// <summary>
+            ///     Sets the function to be called when the server Sends a Server Request
+            /// </summary>
+            public RequestCB CommandCB 
+                { set { if (rank == Rank.Command) commandCB += value; } }
+
             internal Member() {}
 
             /// <summary>
@@ -717,7 +728,7 @@ namespace SNFClient
             ///     Use Appropriate Functions to add this into the OPCode structure or else it would be rendred useless<br/><br/> See Also <br/>
             ///     <seealso cref="AddCategory(Member)"/><br/>
             ///     <seealso cref="AddSubCategory(Member, Member)"/><br/>
-            ///     <seealso cref="AddCommand(Member, Member)"/><br/>
+            ///     <seealso cref="AddCommand(Member, Member, RequestCB)"/><br/>
             ///     <seealso cref="AddDetail(Member, Member)"/>
             /// </remarks>
             /// 
@@ -741,6 +752,13 @@ namespace SNFClient
             /// </returns>
             public Member clone()
                 => new Member(rank, value, definition);
+
+            /// <summary>
+            ///     Invoke the Command's Callback
+            /// </summary>
+            /// <param name="Rqst"></param>
+            public void InvokeCommandCB(Request Rqst)
+                => commandCB?.Invoke(Rqst);
         }
         /// <summary>
         /// This Class Defined THe Base OPCode Structure for Basic SNF Functioning
@@ -960,6 +978,7 @@ namespace SNFClient
             /// </exception>
             public static OPCode getInvalid() 
                 => getInvalid(DET_UNDETAILED);
+
             /// <summary>
             ///     Gets an OPCode using a 'Invalid' Command with a detail
             /// </summary>
