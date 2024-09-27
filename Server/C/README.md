@@ -3,7 +3,7 @@
 ## Warning
 The library right now is a Shared Library by default, but you can still compile it statically, just be aware of licensing
 ## Disclaimer
-This directory is the code source for the C library of SNF Server , this library is for creating the server side only and not the client side check the [**Clients**](../../snfclient/) directory for all Client libraries that are available.
+This directory is the code source for the C library of SNF Server , this library is for creating the server side only and not the client side check the [**Clients**](../../Client/) directory for all Client libraries that are available.
 Although it currently only Contains currently a .NET Standard library, but i'm currently working on improuving it and adding more languages once possible.
 
 ## License
