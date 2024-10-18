@@ -7,6 +7,6 @@
 *makefile text eol=lf
 *.md    text eol=lf
 
-*.java 	text eol=CRLF
+*.java	text eol=CRLF
 *.cs	text	eol=CRLF
 *.csproj	text	eol=CRLF 

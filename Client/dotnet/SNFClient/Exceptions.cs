@@ -17,7 +17,7 @@ namespace SNFClient
         public class ClassUninitialized: Exception
         {
             /// <summary>
-            ///     Called in Case a non-specified Class is needed. 
+            ///     Called in Case a non-specified Class is needed but not initialized. 
             /// </summary>
             /// <remarks>
             ///     Do not throw this Exception Outside of SNFClient
@@ -25,7 +25,7 @@ namespace SNFClient
             public ClassUninitialized()
                 : base("A Class of SNFClient was not Initialized properly!") {}
             /// <summary>
-            ///     Called in case a specified class is needed
+            ///     Called in case a specified class is needed but not initialized. 
             /// </summary>
             /// <remarks>
             ///     Do not throw this Exception Outside of SNFClient
@@ -43,7 +43,7 @@ namespace SNFClient
             : Exception
         {
             /// <summary>
-            ///     Thrown in case an instance of a non-specified class was not initialized properly
+            ///     Thrown in case an instance of a non-specified class was not initialized properly.
             /// </summary>
             /// <remarks>
             ///     Do not throw this Exception Outside of SNFClient
@@ -51,7 +51,7 @@ namespace SNFClient
             public InstanceUninitialized()
                 : base("An Instance of a SNFClient Class was not Initialized properly!") { }
             /// <summary>
-            ///     Thrown in case an instance of a specified class was not initialized properly
+            ///     Thrown in case an instance of a specified class was not initialized properly.
             /// </summary>
             /// <remarks>
             ///     Do not throw this Exception Outside of SNFClient
@@ -60,7 +60,7 @@ namespace SNFClient
                 : base($"An Instance of {Class} was not Initialized properly!") { }
         }
         /// <summary>
-        ///     Thrown in case a global instance was not initialized properly
+        ///     Thrown in case a global instance was not initialized properly.
         /// </summary>
         /// <remarks>
         ///     Do not throw this Exception Outside of SNFClient

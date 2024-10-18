@@ -248,6 +248,7 @@ namespace SNFClient
             {
                 if (!OPCode.Base.isInitialized)
                     throw new ClassUninitialized("OPCode.Base");
+
                 _wait_Connection.WaitOne();
 
                 while(KeepRunning)
@@ -267,10 +268,10 @@ namespace SNFClient
                             if(!R.UID.SequenceEqual(_UID_SERVER_RQST))
                             foreach(Request request in UnrespondedRequests)
                             {
-                                if (request.UID.SequenceEqual(R.UID))
-                                        break;
-                                ClientR = request;
-                                break;
+                                if (request.UID.SequenceEqual(R.UID)){
+                                    ClientR = request;
+                                    break;
+                                }
                             }
                         }
                         if(ClientR != null)
@@ -297,8 +298,12 @@ namespace SNFClient
             {
                 if (!OPCode.Base.isInitialized)
                     throw new ClassUninitialized("OPCode.Base");
-                if (_stream == null || _connection == null)
-                    throw new ClassUninitialized("Request.Handler");
+                lock(this)
+                {
+                    if (_stream == null || _connection == null)
+                        throw new ClassUninitialized("Request.Handler");
+                }
+
                 try
                 {
                     if (_connection.ClientInfo == null)
@@ -356,7 +361,9 @@ namespace SNFClient
                 {
                     _wait_CB.WaitOne();
                     Request[] cb;
-                    lock(QueuedCallableRequests)
+
+
+                    lock (QueuedCallableRequests)
                     {
                         cb = QueuedCallableRequests.Dequeue();
                     }
@@ -381,26 +388,30 @@ namespace SNFClient
             {
                 if (isInstInit)
                     return;
-                if (Connection == null)
+                lock(this)
                 {
-                    if (Connection.get() == null)
-                        throw new ClassUninitialized("Connection");
+                    if (Connection == null)
+                    {
+                        if (Connection.get() == null)
+                            throw new ClassUninitialized("Connection");
+                        else
+                            _connection = Connection.get();
+                    }
                     else
-                        _connection = Connection.get();
+                        this._connection = Connection;
+
+                    _reader = new object();
+                    _writer = new object();
+
+                    StreamReaderhandler = new Thread(new ThreadStart(HandleStreamReader));
+                    StreamWriterhandler = new Thread(new ThreadStart(HandleStreamWriter));
+                    CallbackHandler = new Thread(new ThreadStart(Callbacks));
+                    StreamReaderhandler.Start();
+                    StreamWriterhandler.Start();
+                    CallbackHandler.Start();
+
+                    isInstInit = true;
                 }
-                else
-                    this._connection = Connection;
-
-                _reader = new object();
-                _writer = new object();
-                StreamReaderhandler = new Thread(new ThreadStart(HandleStreamReader));
-                StreamWriterhandler = new Thread(new ThreadStart(HandleStreamWriter));
-                CallbackHandler = new Thread(new ThreadStart(Callbacks));
-                StreamReaderhandler.Start();
-                StreamWriterhandler.Start();
-                CallbackHandler.Start();
-
-                isInstInit = true;
             }
 
             internal void AddRequest(Request request)

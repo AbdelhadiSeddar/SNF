@@ -560,6 +560,7 @@ namespace SNFClient
             /// <param name="SubCategory">Parent SubCategory</param>
             /// <param name="Command">The byte defining the Command</param>
             /// <param name="Definition">The definition of the Command</param>
+            /// <param name="OnServerCall">Defines the Function to be called if the server has called this OPCode Commnd ( Default: null )</param>
             /// <returns>
             /// <c>true</c> Member has been added<br />
             /// <c>false</c> Member already exists
@@ -591,6 +592,7 @@ namespace SNFClient
             /// </summary>
             /// <param name="SubCategory">Parent SubCategory</param>
             /// <param name="Command">The Command Member to add</param>
+            /// <param name="OnServerCall">Defines the Function to be called if the server has called this OPCode Commnd ( Default: null )</param>
             /// <returns>
             /// <c>true</c> Member has been added<br />
             /// <c>false</c> Member already exists
