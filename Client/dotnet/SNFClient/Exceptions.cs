@@ -118,9 +118,19 @@ namespace SNFClient
                     ) 
                     : base($"Invalid Rank, Expected {Expected} Found {Found} ") {}
             }
+            /// <summary>
+            ///     Thrown When an <see cref="SNFClient.OPCode.Member"/> was not registred but used.
+            /// </summary>
             public class Unregistred
                 : Exception
             {
+                /// <summary>
+                ///     Thrown When an <see cref="SNFClient.OPCode.Member"/> was not registred but used.
+                /// </summary>
+                /// <remarks>
+                ///     Do not throw this Exception Outside of SNFClient
+                /// </remarks>
+                /// <param name="Code">Unregistred Member's defining byte</param>
                 public Unregistred(
                         byte Code
                     )
