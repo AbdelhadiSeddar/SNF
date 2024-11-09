@@ -1,0 +1,4 @@
+
+message( STATUS "Library will be created as a SHARED library.")
+add_library(${PROJECT_NAME} SHARED ${source_files})
+

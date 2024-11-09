@@ -1,4 +1,4 @@
-#include <SNF/hashtable.h>
+#include "SNF/hashtable.h"
 
 #define hash(Key) hashlittle(Key, strlen(Key), 0x592c0d1e)
 

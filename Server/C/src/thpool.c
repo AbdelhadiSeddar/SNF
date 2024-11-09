@@ -1,5 +1,4 @@
-#include <SNF/thpool.h>
-#include "thpool.h"
+#include "SNF/thpool.h"
 
 time_t SNF_THPOOL_STOPWAIT = 1;
 

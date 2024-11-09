@@ -14,6 +14,7 @@
 /// @note Server Requests to client always must have this as their ID 
 #define NULLREQUEST "000000000000000"
 /// @brief Defines the Requests' maximum length
+/// TODO: Change into a variable
 #define SNF_REQUEST_MAXSIZE 4096
 
 /// @brief Shortened definition of struct SNF_Request_t .

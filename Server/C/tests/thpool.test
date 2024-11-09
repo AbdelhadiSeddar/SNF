@@ -1,0 +1,11 @@
+
+set(TestName test_thpool)
+
+add_executable(${TestName} opcode.c)
+
+target_link_libraries(${TestName} snf)
+
+add_test(
+    NAME ${TestName}
+    COMMAND ${TestName}
+)

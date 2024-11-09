@@ -1,5 +1,4 @@
-#include <SNF/vars.h>
-
+#include "SNF/vars.h"
 
 void *SNF_VARS_TABLE[SNF_N_VARS];
 size_t SNF_VARS_TABLE_LENGTHS[SNF_N_VARS];
@@ -7,9 +6,6 @@ size_t SNF_VARS_TABLE_LENGTHS[SNF_N_VARS];
 #define alloc_vartable(INDEX, TYPE) \
     SNF_VARS_TABLE_LENGTHS[INDEX] = sizeof(TYPE); \
     (*(TYPE *)(SNF_VARS_TABLE[INDEX] = calloc(1, sizeof(TYPE))))
-
-
-
 
 void snf_var_default()
 {

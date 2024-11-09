@@ -1,48 +1,25 @@
 //////////////////////////////////////////////////////////////
+/// \brief Main Header File
+/// \file /SNF.h
+/// This File Calls for all the header files exisitng in this 
+/// library, if you plan on using this library as a whole <br>
+/// eg not just using the \ref thpool.h "Thread Pool" or
+/// \ref hashtable.h "Hash Table", then including <SNF.h>
+/// should be better than including each required head one-by-one
 ///
-/// \file SNF/SNF.h
-/// This file includes necessary Checks and includes the
-/// the nesessary libraries of the library
-///
-/// //////////////////////////////////////////////////////////
-#ifndef SNF_H
-#define SNF_H
-
-extern char* snf_getver();
-/// @brief Defines the library's version
-#define _SNF_VER snf_getver()
-
-
-#define _GNU_SOURCE
-
-#pragma region[Standard]
-#include <errno.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <sys/epoll.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#pragma endregion
-
-#if __STDC_VERSION__ < 201112L
-#error Use C 11 or later !
-#else
-#if __STDC_NO_ATOMICS__ == 1
-#error Atomics not Supported, Abort.
-#endif
-#endif
-
-#pragma region[Non-Standard]
-#include <uuid/uuid.h>
-#include <pthread.h>
-#include <math.h>
-#pragma endregion
-
+//////////////////////////////////////////////////////////////
+#ifndef __SNF
+#define __SNF
+#include <SNF/clt.h>
+#include <SNF/cmds.h>
+#include <SNF/epoll.h>
+#include <SNF/hashtable.h>
+#include <SNF/lookup3.h>
+#include <SNF/network.h>
+#include <SNF/opcode.h>
+#include <SNF/request.h>
+#include <SNF/SNF.h>
+#include <SNF/thpool.h>
+#include <SNF/utility.h>
+#include <SNF/vars.h>
 #endif

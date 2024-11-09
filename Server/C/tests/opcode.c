@@ -58,23 +58,26 @@ int main()
     snf_opcode_define_sub_category(0x01, 0x00, "Sub Category 1");
     snf_opcode_define_sub_category(0x01, 0x01, "Sub Category 2");
 
-    snf_opcode_define_command(0x01, 0x00, 0xAB, "Command Test 1-1");
-    snf_opcode_define_command(0x01, 0x00, 0xCB, "Command Test 1-2");
-    snf_opcode_define_command(0x01, 0x00, 0x4B, "Command Test 1-3");
-    snf_opcode_define_command(0x01, 0x00, 0x5B, "Command Test 1-4");
+    snf_opcode_define_command(0x01, 0x00, 0xAB, "Command Test 1-1", NULL);
+    snf_opcode_define_command(0x01, 0x00, 0xCB, "Command Test 1-2", NULL);
+    snf_opcode_define_command(0x01, 0x00, 0x4B, "Command Test 1-3", NULL);
+    snf_opcode_define_command(0x01, 0x00, 0x5B, "Command Test 1-4", NULL);
 
-    snf_opcode_define_command(0x01, 0x01, 0x67, "Command Test 2-1");
-    snf_opcode_define_command(0x01, 0x01, 0xFE, "Command Test 2-2");
-    snf_opcode_define_command(0x01, 0x01, 0x12, "Command Test 2-3");
-    snf_opcode_define_command(0x01, 0x01, 0x3E, "Command Test 2-4");
-    snf_opcode_define_command(0x01, 0x01, 0x6D, "Command Test 2-5");
+    snf_opcode_define_command(0x01, 0x01, 0x67, "Command Test 2-1", NULL);
+    snf_opcode_define_command(0x01, 0x01, 0xFE, "Command Test 2-2", NULL);
+    snf_opcode_define_command(0x01, 0x01, 0x12, "Command Test 2-3", NULL);
+    snf_opcode_define_command(0x01, 0x01, 0x3E, "Command Test 2-4", NULL);
+    snf_opcode_define_command(0x01, 0x01, 0x6D, "Command Test 2-5", NULL);
 
     print_opcodes();
 
-    SNF_opcode *op = snf_opcode_getu_invalid();
+    SNF_opcode *op = snf_opcode_getu_base(SNF_OPCODE_BASE_CMD_INVALID);
     printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
     free(op);
-    op = snf_opcode_get_invalid(SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL);
+    op = snf_opcode_get_base(
+            SNF_OPCODE_BASE_CMD_INVALID,
+            SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL
+        );
     printf("Undetailed Invalid { Com: %x | Det: %x } \n", op->strct.Command, op->strct.Detail);
     free(op);
 
@@ -83,7 +86,7 @@ int main()
         SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE));
     print_detail(snf_opcode_get_base_detail(
         SNF_OPCODE_BASE_CMD_INVALID,
-        SNF_OPCODE_BASE_DET_UNDETAILED));
+        SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE));
 
     return 0;
 }

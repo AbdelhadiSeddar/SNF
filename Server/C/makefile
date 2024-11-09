@@ -12,7 +12,7 @@ STD_INC_PATH = /usr/include
 CC := c11
 COMPILER := clang --std=$(CC)
 
-C_FLAGS := -g
+C_FLAGS := -O3
 C_LIB := -lm -luuid -lpthread
 
 CURRENT_PATH = $(shell pwd)/

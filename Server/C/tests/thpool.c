@@ -1,11 +1,14 @@
 #include <SNF.h>
 #include <SNF/thpool.h>
-#include <semaphore.h>
+#include <semaphore.h> 
+#include <time.h>
 
 #define LIMIT 500000
 SNF_thpool *POOL;
 sem_t sem;
 sem_t end;
+
+_Atomic int Finished_Jobs = 0;
 
 void *work(void *arg)
 {
@@ -16,41 +19,46 @@ void *work(void *arg)
         f+= u;
     }
     //printf("F : %d \n", f);
+    Finished_Jobs++;
     sem_post(&end);
     free(i);
+    return NULL;
 }
 void *worker(void *arg)
 {
     sem_init(&sem, 0, 0);
     sem_init(&end, 0, 0);
-    printf("Stating Workers\n");
     for (uint32_t i = 0; i < LIMIT ; i += 5)
     {
         uint32_t *u = calloc(1, sizeof(uint32_t));
         *u = i;
         snf_thpool_addwork(POOL, work, (void *)u);
     }
-    for (uint32_t i = 0; i < LIMIT ; i += 5)
-    {
-        sem_post(&sem);
-    }
-    for (int i = 0; i < LIMIT ; i += 5)
-    {
-        sem_wait(&end);
-    }
-  printf("Workers Finished\n");
-  snf_thpool_stop(POOL);
+
+  return NULL;
 }
 
 int main()
 {
+    clock_t Start_Time = clock();
     snf_thpool_inis(&POOL, 25, worker, NULL);
-
-    printf("Sleeping for 10s Before Stopping Everything\n");
-    sleep(10);
-
+    
+    int amount_jobs = LIMIT /5 ;
+    while( Finished_Jobs < amount_jobs)
+    {
+        printf("--- Finished Jobs: %d/%d (%d %% ) | Elapsed Time : %.2fs \n",
+            Finished_Jobs,
+            amount_jobs,
+            (Finished_Jobs *100)/amount_jobs,
+            ((float)((double) clock() - Start_Time) / CLOCKS_PER_SEC)
+            );
+        sleep(1);
+    }
+    clock_t end = clock();
     snf_thpool_stop(POOL);
-    printf("Stopping.. Waiting for Everything\n");
-    snf_thpool_wait(POOL);
-    printf("exit\n");
+
+    printf("--- Finished %d Jobs. Time : %.2fs \n",
+        amount_jobs,
+        ((float)((double) end - Start_Time) / CLOCKS_PER_SEC)
+    );
 }

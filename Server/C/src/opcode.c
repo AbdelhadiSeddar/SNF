@@ -1,5 +1,4 @@
-#include <SNF/opcode.h>
-#include "opcode.h"
+#include "SNF/opcode.h"
 
 SNF_opcode_LL_item *SNF_opcode_LL = NULL;
 int SNF_opcode_base_isinit = 0;

@@ -1,0 +1,19 @@
+
+add_executable(Test_Main ../main.c)
+target_link_libraries(Test_Main snf)
+add_test(NAME Test_Main COMMAND Test_Main)
+
+set(TESTS Test_Main)
+
+
+file(GLOB TEST_FILES ../tests/*.test )
+foreach (TEST_FILE ${TEST_FILES})
+    get_filename_component(TEST_FILE ${TEST_FILE} NAME_WLE)
+    add_executable(Test_${TEST_FILE} ../tests/${TEST_FILE}.c)
+    target_link_libraries(Test_${TEST_FILE} snf)
+    add_test(NAME Test_${TEST_FILE} COMMAND Test_${TEST_FILE})
+    set(TESTS Test_${TEST_FILE} ${TESTS})
+endforeach (TEST_FILE ${TEST_FILES})
+
+
+

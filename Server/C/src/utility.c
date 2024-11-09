@@ -1,5 +1,4 @@
-#include <SNF/utility.h>
-#include "utility.h"
+#include "SNF/utility.h"
 
 void (*SNF_ERR_OUT)(const char*) = snf_print_err;
 

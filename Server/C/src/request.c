@@ -1,5 +1,4 @@
-#include <SNF/request.h>
-#include "request.h"
+#include "SNF/request.h"
 
 SNF_RQST *snf_request_fetch(
     SNF_CLT *Client)

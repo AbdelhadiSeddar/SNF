@@ -20,6 +20,7 @@
 #include <SNF/SNF.h>
 
 /// @brief This Enum saved the identifiers for variables available as of this version
+/// TODO: Instead of warning about not being able to change some variables, instead force the required thing to happen.
 typedef enum SNF_VARS_e {
     /// @brief Variable for threads used by SNF 
     /// @line 

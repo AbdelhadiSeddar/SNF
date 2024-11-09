@@ -1,4 +1,4 @@
-#include <SNF/epoll.h>
+#include "SNF/epoll.h"
 
 int SNF_EPOLLFD, SNF_NFDS;
 void snf_epoll_init()

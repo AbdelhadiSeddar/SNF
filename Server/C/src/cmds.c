@@ -1,5 +1,4 @@
-#include <SNF/cmds.h>
-#include "cmds.h"
+#include "SNF/cmds.h"
 
 SNF_RQST *snf_cmd_invalid_error_protocol(SNF_RQST *Request)
 {
