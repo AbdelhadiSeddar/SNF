@@ -30,16 +30,19 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: ./Server/C/build.sh
+      shell: bash
 
     - name: Test ThreadPool
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./Server/C/build.sh -t thpool
+      shell: bash
       
     - name: Test OPCode
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ./Server/C/build.sh -t opcode
+      shell: bash
 
