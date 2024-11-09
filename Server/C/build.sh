@@ -231,7 +231,7 @@ fi
 if [[ $test = true ]]
 then
     CheckBuild
-    cmake_v --build $(pwd) --target Test_${test_subject}
+    cmake --build $(pwd) --target Test_${test_subject}
 
     ../$BIN/Test_${test_subject}
 fi
