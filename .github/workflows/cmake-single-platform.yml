@@ -25,21 +25,21 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: ./build.sh -cc -nb
+      run: ./Server/C/build.sh -cc -nb
 
     - name: Build
       # Build your program with the given configuration
-      run: ./build.sh
+      run: ./Server/C/build.sh
 
     - name: Test ThreadPool
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./build.sh -t thpool
+      run: ./Server/C/build.sh -t thpool
       
     - name: Test OPCode
       working-directory: ${{github.workspace}}/build
       # Execute tests defined by the CMake configuration.
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ./build.sh -t opcode
+      run: ./Server/C/build.sh -t opcode
 
