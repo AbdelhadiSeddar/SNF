@@ -1,9 +1,11 @@
 #include "SNF/clt.h"
 
 SNF_ht *SNF_Clt_ht;
-void snf_clt_init(int ht_min_Size)
+size_t default_client_data_size = 0;
+void snf_clt_init(int ht_min_Size, size_t client_data_size)
 {
     SNF_Clt_ht = snf_hashtable_inis(ht_min_Size);
+    default_client_data_size = client_data_size;
 }
 
 SNF_CLT *snf_clt_new(int Sockfd)
@@ -12,13 +14,22 @@ SNF_CLT *snf_clt_new(int Sockfd)
     pthread_mutex_init(&(Client->mutex), NULL);
     Client->sock = Sockfd;
     strcpy(Client->UUID, "00000000-0000-0000-0000-000000000000");
+    if(default_client_data_size)
+        Client->data = calloc(1, default_client_data_size);
+    else
+        Client->data = NULL;
+
     return Client;
 }
 
 void snf_clt_free(SNF_CLT *Client)
 {
     if (Client != NULL)
+    {
+        if(!(Client->data))
+            free(Client->data) 
         free(Client);
+    }
 }
 
 void *snf_clt_handle_new(void *arg)
