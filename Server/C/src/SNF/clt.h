@@ -28,14 +28,24 @@ struct SNF_Client_t
     char UUID[37];
     /// @brief Saves the socket id
     int sock;
+    /// @brief Additional custom client data.
+    void *data;
 };
 
 #include <SNF/opcode.h>
 /// @brief Initialises the HashTable that saves the clients
 /// @param ht_min_Size The HashTable's length ( See note )
-/// @note   **ht_min_Size** isnt (in most cases) the same as the true size of HashTable length <br><br>
-/// @note   See \ref snf_hashtable_inis() . 
-extern void snf_clt_init(int ht_min_Size);
+/// @param client_data_size Sets the size of the additional client data's structure.
+///
+/// @note   **ht_min_Size** isn't (in most cases) the same as the true size of HashTable length \line
+/// @note   \line See \ref snf_hashtable_inis() .
+/// 
+/// 
+/// @note   **client_data_size** is recommended to have the value of sizeof(YOUR_CLIENT_DATA_STRUCT)
+extern void snf_clt_init(
+    int ht_min_Size,
+    size_t client_data_size
+);
 
 /// @brief  Creates (and allocates) a new Client using their **Sockfd**, 
 ///         with a default \ref SNF_CLT::UUID with the value of "00000000-0000-0000-0000-000000000000"
