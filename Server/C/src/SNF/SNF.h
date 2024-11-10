@@ -21,6 +21,7 @@ extern char* snf_getver();
 #include <netdb.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>

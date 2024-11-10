@@ -24,3 +24,21 @@ char* snf_getver()
     );
     return re;
 }
+
+void snf_default_error_print(char * Error)
+{
+    fprintf(stderr, "%s", char* Error);
+}
+
+void snf_error_print(char* format, ...){
+    va_list args;
+    char *str = calloc(250, sizeof(char));
+    va_start(args, format);
+    vsnprintf(str, 250, format, args);
+    va_end(args);
+
+    snf_default_error_print(str);
+
+    free(str);
+    return;
+}

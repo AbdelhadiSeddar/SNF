@@ -1,7 +1,7 @@
 
-set(TestName test_thpool)
+set(TestName test_vars)
 
-add_executable(${TestName} thpool.c)
+add_executable(${TestName} vars.c)
 
 target_link_libraries(${TestName} snf)
 

@@ -20,13 +20,14 @@
 #include <SNF/SNF.h>
 
 /// @brief This Enum saved the identifiers for variables available as of this version
-/// TODO: Instead of warning about not being able to change some variables, instead force the required thing to happen.
+/// @note If you set a value lower than the **Minimum Value** or that value is not in the **Allowed Values** an error will be printed and the value will not be changed!
 typedef enum SNF_VARS_e {
     /// @brief Variable for threads used by SNF 
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 4 <br>
+    /// **Minimum Value**: 3 <br>
     /// @warning Do not change after starting snf server
     SNF_VAR_THREADS,
     /// @brief Variable for saving the threadpool instance
@@ -41,18 +42,21 @@ typedef enum SNF_VARS_e {
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 9114<br>
+    /// **Minimum Value**: 0 <br>
     SNF_VAR_PORT,
     /// @brief Variable for saving maximum connections that are able to queue while waiting forthe server to accept, (aka passed as a parameter to listen()) 
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 1000<br>
+    /// **Minimum Value**: 0 <br>
     SNF_VAR_MAX_QUEUE,
     /// @brief Variable for saving if SNF_VAR_OPCODE_INIS
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 0<br>
+    /// **Allowed Values**: 0, 1<br>
     /// @note Ignored, use \ref SNF_opcode_base_isinit to Check if the opcode is initialized or not.
     SNF_VAR_OPCODE_INIS,
     /// @brief Variable for saving the amount possible of concurrent connections ( See limitations of epoll )
@@ -60,40 +64,48 @@ typedef enum SNF_VARS_e {
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 4096<br>
+    /// **Minimum Value**: 0<br>
     SNF_VAR_EPOLL_MAXEVENTS,
-    /// @brief Variable for saving events that are used by epoll
-    /// @line 
+    /// @brief Variable for saving events that are used by epoll.
     /// 
-    /// **Type**: struct event_epoll * <br>
-    /// **Default Value**: Table of (struct event_epoll) x (value of SNF_VAR_EPOLL_MAXEVENTS)<br>
-    /// @warning Never Set/Change this variable manually
+    /// **Type**: struct event_epoll *
+    /// 
+    /// **Value**: Table of [(struct event_epoll) x (value of SNF_VAR_EPOLL_MAXEVENTS)]
+    /// 
+    /// @note Trying to set this value will print an error and will be ignored.<br>
+    /// The Value of this variable is set using the calculation stated in **Value** when you set SNF_VAR_EPOLL_MAXEVENTS 
     SNF_VAR_EPOLL_EVENTS,
     /// @brief Variable for saving the maximum timeout in miliseconds for epoll_wait()
     /// @line 
     /// 
     /// **Type**: _Atomic int <br>
     /// **Default Value**: 10<br>
+    /// **Minimum Value**: -1 <br>
     SNF_VAR_EPOLL_TIMEOUT,
     /// @brief Variable for the amount of initially planned amount of client to connect, for the Hashtable saving the clients
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 100<br>
+    /// **Minimum Value**: 0 <br> 
     /// @note It will be changed where the actual hashtable length equals to 2^n where **n** will be the lowest value that makes the 2^n fit the value set for this variable <br>
-    /// **eg**: If you set SNF_VAR_CLTS_INITIAL's value to 100, the actual hashtable length will be 128  
+    /// **eg**: If you set SNF_VAR_CLTS_INITIAL's value to 100, the actual hashtable length will be 128 
+    ///
     SNF_VAR_CLTS_INITIAL,
     /// @brief Variable for saving the maximum allowed length of a Request 
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 4096<br>
+    /// **Minimum Value**: 0<br>
     SNF_VAR_RQST_MAX_LENGTH,
     /// @brief Variable for saving if the Variables has been defaulted and/or initalized before.
     /// @line 
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 0<br>
-    /// @warning Never Set/Change this variable manually
+    /// **Allowed Values**: 0, 1<br>
+    /// @note Trying to set this variable will print an error and will be ignored 
     SNF_VAR_INITIALIZED,
 } SNF_VARS;
 
