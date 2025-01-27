@@ -6,7 +6,7 @@ if(
     NOT DEFINED SNF_VERSION_MINOR OR
     NOT DEFINED SNF_VERSION_PATCH
     )
-    message( FATAL_ERROR "Unset version number run cmake with -DPROJECT_VERSION_{MAJOR|MINOR|PATCH}=X.\n* Note if this is an alpha version then add -DSNF_ALPHA")
+  message( FATAL_ERROR "Unset version number run cmake with -DSNF_VERSION_{MAJOR|MINOR|PATCH}=X.\n* Note if this is an alpha version then add -DSNF_ALPHA")
 endif()
 
 
@@ -16,13 +16,6 @@ project( snf
     DESCRIPTION "Shadow Network Framework Library"
     HOMEPAGE_URL "https://docs.abdelhadiseddar.com/snf"
     LANGUAGES C)
-
-#project( snf-dev
-#    VERSION ${SNF_VERSION_MAJOR}.${SNF_VERSION_MINOR}.${SNF_VERSION_PATCH}
-#    DESCRIPTION "Shadow Network Framework Library Headers"
-#    HOMEPAGE_URL "https://docs.abdelhadiseddar.com/snf"
-#    LANGUAGES C)
-
 
 if( SNF_ALPHA )
     set(PROJECT_VERSION_TWEAK -alpha)
@@ -180,7 +173,7 @@ string(TOLOWER "${CMAKE_SYSTEM_NAME}" SYS)
 # Binary Packages
 #
 
-set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_VERSION}_${SYS}_${CPU_TYPE}")
+set(CPACK_PACKAGE_FILE_NAME "lib${PROJECT_NAME}_${PROJECT_VERSION}_${SYS}_${CPU_TYPE}")
 
 message("Variable : $ENV{PACKAGE_BIN_DEBIAN}")
 if( "$ENV{PACKAGE_BIN_DEBIAN}" STREQUAL true )
@@ -190,7 +183,7 @@ if( "$ENV{PACKAGE_BIN_DEBIAN}" STREQUAL true )
     set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS "OFF")
 
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libuuid1 (>= 2.38)")
-    set(CPACK_DEBIAN_PACKAGE_NAME "snf")
+    set(CPACK_DEBIAN_PACKAGE_NAME "libsnf")
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://docs.abdelhadiseddar.com/snf")
 
 else()
@@ -206,29 +199,5 @@ set(CPACK_BINARY_TBZ2 "OFF")
 set(CPACK_BINARY_TXZ "OFF")
 set(CPACK_BINARY_TGZ "OFF")
 set(CPACK_BINARY_TZ "OFF")
-
-
-
-#
-#   Source Packages
-#
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}_${PROJECT_VERSION}")
-
-if( PACKAGE_SRC_TGZ )
-    set(CPACK_SOURCE_TGZ "ON")
-else()
-    set(CPACK_SOURCE_TGZ "OFF")
-endif()
-
-if( PACKAGE_SRC_ZIP )
-    set(CPACK_SOURCE_ZIP "ON")
-else()
-    set(CPACK_SOURCE_ZIP "OFF")
-endif()
-
-set(CPACK_SOURCE_RPM "OFF")
-set(CPACK_SOURCE_TBZ2 "OFF")
-set(CPACK_SOURCE_TXZ "OFF")
-set(CPACK_SOURCE_TZ "OFF")
 
 include(CPack)
