@@ -59,7 +59,7 @@ void snf_var_set(SNF_VARS VARNAME, void *Value)
                 fprintf(stderr, "Invalid Value %d, Value must be >= -1 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_EPOLL_TIMEOUT));
             break;
         // 3 is limit
-        case SNF_VAR_EPOLL_TIMEOUT:
+        case SNF_VAR_THREADS:
             if(*(int *)Value < 3)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 3 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_THREADS));
             break;
