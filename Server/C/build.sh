@@ -275,19 +275,6 @@ then
     make package
 fi
 
-#   TODO: Fix CPack to include proper source code instead of includeing Just CMake/ 
-#if [[ $package_source = true ]]
-#then
-#    cmake_packages=""
-#    for str in ${package_source_formats[@]}
-#    do
-#        cmake_packages+=" -DPACKAGE_SRC_$str=true "
-#    done
-#    cmake_v $(pwd) $cmake_packages
-#
-#    make package_source
-#
-#fi
 cd ..
 }
 
@@ -308,19 +295,6 @@ then
     make package
 fi
 
-#   TODO: Fix CPack to include proper source code instead of includeing Just CMake/ 
-#if [[ $package_source = true ]]
-#then
-#    cmake_packages=""
-#    for str in ${package_source_formats[@]}
-#    do
-#        cmake_packages+=" -DPACKAGE_SRC_$str=true "
-#    done
-#    cmake_v $(pwd) $cmake_packages
-#
-#    make package_source
-#
-#fi
 cd ..
 }
 
