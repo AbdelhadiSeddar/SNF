@@ -90,7 +90,7 @@ install(
 ## Check if Testing is intended
 if( "$ENV{TESTING}" STREQUAL true)
 install(
-  TARGETS ${TESTING}
+  TARGETS Test_$ENV{TESTING_SUBJECT}
   COMPONENT Release
 )
 endif()

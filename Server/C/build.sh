@@ -64,19 +64,25 @@ do
     then
         build_force=true
     elif [[ ${!i} = "-t" ]] || [[ ${!i} = "--test" ]] 
-    then 
+    then
+        if [[ -z "${TESTING}" ]]
+        then
+          echo No More than 1 test allowed.
+        fi
+
         ((i++))
         if [[ $# -lt $i ]]
         then
+            export TESTING=false
             echo No Test was specified
             exit
         fi
-        test=true
+        export TESTING=true
         if [[ ${!i} = "main" ]] || [[ ${!i} = "m" ]] || [[ ${!i} = "Main" ]]
         then
-            test_subject=Main
+            export TESTING_SUBJECT=Main
         else
-            test_subject=${!i}
+            export TESTING_SUBJECT=${!i}
         fi
         # TODO Make a check for test files
         # TODO: Add a way for test files
@@ -169,7 +175,6 @@ then
 
             rm -rf CMakeFiles CMake _CPack*
         fi
-        rm ../src/SNF.h
         rm ../packages -rf
         cd ..
     fi
@@ -188,24 +193,19 @@ fi
 
 #############################################
 #                                           #
-#   Checking Folders and creating SNF.h     #
+#   Checking Folders                        #
 #                                           #
 #############################################
 if [[ ! -d $CMAKE ]] ||  [[ ! -d $SRC ]]; then
     echo "Either CMake or Source folder is inexistant";
 fi;
 
-cat SNF.h > $SRC/SNF.h
-cd $SRC
-echo "" >> SNF.h
-for file in SNF/*.h
-do
-  echo "#include <"$file">" >> SNF.h
-done
 
-echo "#endif" >> SNF.h
-
-cd ..
+#############################################
+#                                           #
+#   Executing Commands                      #
+#                                           #
+#############################################
 function CheckBuild
 {
     if [[ ! -f ../$BIN"/libsnf.so.$lib_v" ]]
@@ -213,7 +213,6 @@ function CheckBuild
         echo -- Error: build failed!!!
         exit;
     fi
-    echo -- Build Successful
 }
 
 
@@ -228,6 +227,7 @@ if [[ $build = true ]]
 then 
     make snf
     CheckBuild
+    echo -- Build Successful
 fi
 if [[ $install = true ]]
 then
@@ -235,12 +235,11 @@ then
     make install
 fi
 
-if [[ $test = true ]] 
+if [[ ${TESTING} = true ]] 
 then
     CheckBuild
-    cmake --build $(pwd) --target Test_${test_subject}
-
-    ../$BIN/Test_${test_subject}
+    make Test_${TESTING_SUBJECT}
+    ../$BIN/Test_${TESTING_SUBJECT}
 fi
 
 if [[ $package_binary = true ]]

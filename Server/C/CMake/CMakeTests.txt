@@ -1,8 +1,10 @@
+get_filename_component(HEADERS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../src" ABSOLUTE)
+
 
 add_executable(Test_Main ../main.c)
 target_link_libraries(Test_Main snf)
+target_include_directories(Test_Main PRIVATE "${HEADERS_PATH}")
 add_test(NAME Test_Main COMMAND Test_Main)
-
 set(TESTS Test_Main)
 
 
@@ -11,6 +13,7 @@ foreach (TEST_FILE ${TEST_FILES})
     get_filename_component(TEST_FILE ${TEST_FILE} NAME_WLE)
     add_executable(Test_${TEST_FILE} ../tests/${TEST_FILE}.c)
     target_link_libraries(Test_${TEST_FILE} snf)
+    target_include_directories(Test_${TEST_FILE} PRIVATE "${HEADERS_PATH}")
     add_test(NAME Test_${TEST_FILE} COMMAND Test_${TEST_FILE})
     set(TESTS Test_${TEST_FILE} ${TESTS})
 endforeach (TEST_FILE ${TEST_FILES})
