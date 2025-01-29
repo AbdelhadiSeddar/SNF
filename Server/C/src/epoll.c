@@ -3,7 +3,7 @@
 int SNF_EPOLLFD, SNF_NFDS;
 void snf_epoll_init()
 {
-    if (SNF_SERVER_SOCKET <= 0 || !*snf_var_get(SNF_VAR_INITIALIZED, int))
+    if (SNF_SERVER_SOCKET <= 0 ||  !*snf_var_get(SNF_VAR_INITIALIZED, int))
         exit(EXIT_FAILURE);
     SNF_EPOLLFD = epoll_create1(0);
     snf_epoll_add(SNF_SERVER_SOCKET);

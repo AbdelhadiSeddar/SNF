@@ -27,7 +27,7 @@ char* snf_getver()
 
 void snf_default_error_print(char * Error)
 {
-    fprintf(stderr, "%s", char* Error);
+    fprintf(stderr, "%s", Error);
 }
 
 void snf_error_print(char* format, ...){

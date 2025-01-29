@@ -1,11 +1,14 @@
 #include "SNF/clt.h"
+#include "SNF/vars.h"
 
 SNF_ht *SNF_Clt_ht;
 size_t default_client_data_size = 0;
-void snf_clt_init(int ht_min_Size, size_t client_data_size)
+void snf_clt_init(int ht_min_Size)
 {
+    if(!*snf_var_get(SNF_VAR_INITIALIZED, int))
+      exit(EXIT_FAILURE);
     SNF_Clt_ht = snf_hashtable_inis(ht_min_Size);
-    default_client_data_size = client_data_size;
+    default_client_data_size = snf_var_getv(SNF_VAR_CLTS_DATA_SIZE, size_t);
 }
 
 SNF_CLT *snf_clt_new(int Sockfd)
@@ -14,7 +17,7 @@ SNF_CLT *snf_clt_new(int Sockfd)
     pthread_mutex_init(&(Client->mutex), NULL);
     Client->sock = Sockfd;
     strcpy(Client->UUID, "00000000-0000-0000-0000-000000000000");
-    if(default_client_data_size)
+    if(default_client_data_size > 0)
         Client->data = calloc(1, default_client_data_size);
     else
         Client->data = NULL;
@@ -27,7 +30,7 @@ void snf_clt_free(SNF_CLT *Client)
     if (Client != NULL)
     {
         if(!(Client->data))
-            free(Client->data) 
+            free(Client->data); 
         free(Client);
     }
 }
@@ -72,6 +75,10 @@ void *snf_clt_handle(void *arg)
         snf_clt_disconnect(Client);
         goto end_clt_handle;
     }
+
+    SNF_CLT_HANDLERS* clt_han = snf_var_get(SNF_VAR_CLTS_HANDLERS, SNF_CLT_HANDLERS);
+    if(clt_han != NULL && clt_han->on_connect != NULL)
+      clt_han->on_connect(Client);
     pthread_mutex_lock(&(Original->mutex));
     SNF_RQST *Rqst = snf_request_fetch(Client);
 
@@ -106,7 +113,9 @@ void *snf_clt_handle(void *arg)
         }
         snf_request_free(Rqst);
         snf_request_send(Original, re);
-    }
+    } 
+    if(clt_han != NULL && clt_han->on_accept != NULL)
+      clt_han->on_accept(Original);
     pthread_mutex_unlock(&(Original->mutex));
     snf_epoll_add(Original->sock);
 end_clt_handle:;

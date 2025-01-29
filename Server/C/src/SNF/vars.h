@@ -83,7 +83,7 @@ typedef enum SNF_VARS_e {
     /// **Minimum Value**: -1 <br>
     SNF_VAR_EPOLL_TIMEOUT,
     /// @brief Variable for the amount of initially planned amount of client to connect, for the Hashtable saving the clients
-    /// @line 
+    /// @line
     /// 
     /// **Type**: int <br>
     /// **Default Value**: 100<br>
@@ -92,6 +92,23 @@ typedef enum SNF_VARS_e {
     /// **eg**: If you set SNF_VAR_CLTS_INITIAL's value to 100, the actual hashtable length will be 128 
     ///
     SNF_VAR_CLTS_INITIAL,
+    /// @brief Variable for defining the storage size of the extra data. If the value equals or less than 0 it means it has no extra data to save
+    /// @line 
+    ///  
+    /// **Type**: size_t <br>
+    /// **Default Value**:  -1<br>
+    /// **Minimum Value**:  -1<br>
+    SNF_VAR_CLTS_DATA_SIZE,
+    /// @brief Variable for definiting the functions to call upon certain events of the client.
+    /// @line 
+    /// Events are 
+    ///   * On Connect  (Function Type: int on_connect(SNF_CLT*))
+    ///   * On Accept   (Function Type: void on_accept(SNF_CLT*))
+    ///
+    /// **Type**: SNF_CLT_HANLDER *<br>
+    /// **Default Value**:  NULL<br>
+    SNF_VAR_CLTS_HANDLERS,
+    ///
     /// @brief Variable for saving the maximum allowed length of a Request 
     /// @line 
     /// 

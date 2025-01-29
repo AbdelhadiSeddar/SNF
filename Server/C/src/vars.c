@@ -1,4 +1,5 @@
-     #define xstr(s) str(s)
+#include "SNF/clt.h"
+#define xstr(s) str(s)
      #define str(s) #s
 #include "SNF/vars.h"
 
@@ -21,6 +22,8 @@ void snf_var_default()
     = calloc(snf_var_getv(SNF_VAR_EPOLL_MAXEVENTS, int), sizeof(struct epoll_event));
     alloc_vartable(SNF_VAR_EPOLL_TIMEOUT, _Atomic int) = 10;
     alloc_vartable(SNF_VAR_CLTS_INITIAL, int) = 100;
+    alloc_vartable(SNF_VAR_CLTS_DATA_SIZE, size_t);
+    alloc_vartable(SNF_VAR_CLTS_HANDLERS, SNF_CLT_HANDLERS);
     alloc_vartable(SNF_VAR_RQST_MAX_LENGTH, int) = 4096;
     alloc_vartable(SNF_VAR_INITIALIZED, int) = 1;
 }
@@ -52,14 +55,15 @@ void snf_var_set(SNF_VARS VARNAME, void *Value)
             if(*(int *)Value < 0)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 0 for variable %s. IGNORED!\n", *(int*)Value, ets);
             break;
-
+        case SNF_VAR_CLTS_DATA_SIZE:
+            if(!def) { def++ ; ets = xstr(SNF_VAR_CLTS_DATA_SIZE); }
         // -1 is limit
         case SNF_VAR_EPOLL_TIMEOUT:
             if(*(int *)Value < -1)
                 fprintf(stderr, "Invalid Value %d, Value must be >= -1 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_EPOLL_TIMEOUT));
             break;
         // 3 is limit
-        case SNF_VAR_EPOLL_TIMEOUT:
+        case SNF_VAR_THREADS:
             if(*(int *)Value < 3)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 3 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_THREADS));
             break;
@@ -93,7 +97,9 @@ void snf_var_set(SNF_VARS VARNAME, void *Value)
         case SNF_VAR_INITIALIZED:
             fprintf(stderr, "Cannot set SNF_VAR_INITIALIZED, IGNORED!\n.");
             break;
-
+        case SNF_VAR_CLTS_DATA_SIZE:
+            if(*(int*)Value == 0)
+              *(int*)Value = -1;
         default:
             SNF_VARS_TABLE[VARNAME] = Value;
             break;
