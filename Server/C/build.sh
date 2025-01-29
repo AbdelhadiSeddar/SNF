@@ -234,11 +234,14 @@ fi;
 #############################################
 function CheckBuild
 {
+  if [[ $dev = false ]]
+  then
     if [[ ! -f ../$BIN"/libsnf.so.$lib_v" ]]
     then
         echo -- Error: build failed!!!
         exit;
     fi
+  fi
 }
 
 

@@ -1,7 +1,7 @@
 #include "SNF/SNF.h"
 #define _SNF_VER_MAJOR "0"
 #define _SNF_VER_MINOR "0"
-#define _SNF_VER_PATCH "2"
+#define _SNF_VER_PATCH "3"
 #define _SNF_VER_EXTRA "-alpha"
 
 

@@ -3,7 +3,7 @@ lib_name = snf
 
 lib_v_MAJOR = 0
 lib_v_MINOR = 0
-lib_v_PATCH = 2
+lib_v_PATCH = 3
 lib_v_EXTRA = -alpha
 
 STD_LIB_PATH = $(shell cat /etc/ld.so.conf.d/libc.conf | grep /)
