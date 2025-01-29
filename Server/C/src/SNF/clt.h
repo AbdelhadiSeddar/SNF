@@ -18,6 +18,7 @@
 
 /// @brief Shortened definiton of struct SNF_Client_t .
 typedef struct SNF_Client_t SNF_CLT;
+typedef struct SNF_Client_Handlers_t SNF_CLT_HANDLERS;
 
 /// @brief The structure for each saved client.
 struct SNF_Client_t
@@ -31,6 +32,14 @@ struct SNF_Client_t
     /// @brief Additional custom client data.
     void *data;
 };
+#include <SNF/request.h>
+
+struct SNF_Client_Handlers_t
+{
+    int   (*on_connect)(SNF_CLT*);
+    void  (*on_accept)(SNF_CLT*);
+};
+
 
 #include <SNF/opcode.h>
 /// @brief Initialises the HashTable that saves the clients
@@ -41,11 +50,8 @@ struct SNF_Client_t
 /// @note   \line See \ref snf_hashtable_inis() .
 /// 
 /// 
-/// @note   **client_data_size** is recommended to have the value of sizeof(YOUR_CLIENT_DATA_STRUCT)
-extern void snf_clt_init(
-    int ht_min_Size,
-    size_t client_data_size
-);
+/// @note   For custom additional client information check the SNF_VAR_CLTS_DATA_SIZE
+extern void snf_clt_init(int ht_min_Size);
 
 /// @brief  Creates (and allocates) a new Client using their **Sockfd**, 
 ///         with a default \ref SNF_CLT::UUID with the value of "00000000-0000-0000-0000-000000000000"
@@ -113,7 +119,6 @@ extern void snf_clt_reconnect(SNF_CLT *Client);
 extern void snf_clt_disconnect(SNF_CLT *Client);
 
 #include <SNF/hashtable.h>
-#include <SNF/request.h>
 #include <SNF/epoll.h>
 #include <SNF/utility.h>
 #include <SNF/network.h>
