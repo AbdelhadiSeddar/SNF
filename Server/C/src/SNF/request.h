@@ -9,6 +9,7 @@
 
 #include <SNF/SNF.h>
 #include <SNF/utility.h>
+#include <stdint.h>
 
 /// @brief Requests's Default Request ID
 /// @note Server Requests to client always must have this as their ID 
@@ -19,6 +20,8 @@
 
 /// @brief Shortened definition of struct SNF_Request_t .
 typedef struct SNF_Request_t SNF_RQST;
+/// @brief Shortened definition of struct SNF_Request_Initial_t .
+typedef struct SNF_Request_Initial SNF_RQST_INIT;
 /// @brief Shortened definition of struct SNF_Request_args_t .
 typedef struct SNF_Request_args_t SNF_RQST_ARG;
 
@@ -39,7 +42,16 @@ struct SNF_Request_t
     char UID[16];
     /// @brief Defines The OPCODE of the request
     SNF_opcode *OPCODE;
+    uint32_t n_args;
+    uint32_t s_args;
     /// @brief Defines the arguments inside the Request
+    SNF_RQST_ARG *args;
+};
+
+/// @brief Special Requests that would be used in the connecting phase
+struct SNF_Rquest_Initial_t
+{
+    SNF_opcode *OPCODE;
     SNF_RQST_ARG *args;
 };
 
@@ -53,6 +65,10 @@ struct SNF_Request_args_t
     SNF_RQST_ARG *next;
 };
 
+extern void snf_request_initial_lock();
+extern void snf_request_initial_unlock();
+extern void snf_request_initial_compile(SNF_opcode *, SNF_RQST_ARG *);
+extern void snf_request_initial_get(void**, size_t*);
 /// @brief Frees a SNF_RQST *
 /// @param Request Pointer to be free'd
 extern void snf_request_free(SNF_RQST *Request);
@@ -130,12 +146,11 @@ extern void snf_request_args_free(SNF_RQST_ARG *arg);
 ///     you save it in the \ref SNF_RQST_ARG::next member of the *pointer* variable, and then assign the \ref SNF_RQST_ARG::next 's new value as the *pointer*
 ///     variable, at the end, use this function only the *head* variable
 extern void snf_request_arg_insert(SNF_RQST *Request, SNF_RQST_ARG *arg);
-/// @brief Fetches the request from the incoming Client
-/// @param Client Client to receive request from.
-/// @return The possible results :
-///         * **NULL** if there was an error with calloc ( See errno and calloc's errcodes )
-///         * **Pointer** to the \ref SNF_RQST instance
-extern SNF_RQST *snf_request_fetch(SNF_CLT *Client);
+
+extern SNF_RQST *snf_request_fetch_metadata(SNF_CLT *Client);
+extern SNF_RQST_ARG *snf_request_fetch_arguments(SNF_CLT *Client, SNF_RQST *Rqst);
+
+extern void *snf_request_handle(SNF_CLT *Client, SNF_RQST *Rqst);
 
 /// @brief Send a request to a Client
 /// @param Client Receiving Client

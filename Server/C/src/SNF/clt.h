@@ -9,6 +9,7 @@
 #define clt_h
 
 #include <pthread.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,15 @@
 typedef struct SNF_Client_t SNF_CLT;
 typedef struct SNF_Client_Handlers_t SNF_CLT_HANDLERS;
 
+/// @brief The Current available modes for clients.
+enum SNF_Client_Mode_e {
+  SNF_CLT_MODE_REGULAR = 0,
+  SNF_CLT_MODE_ONESHOT,
+  SNF_CLT_MODE_MULTISHOT
+};
+
+typedef enum SNF_Client_Mode_e SNF_CLT_MODE;
+
 /// @brief The structure for each saved client.
 struct SNF_Client_t
 {
@@ -29,9 +39,16 @@ struct SNF_Client_t
     char UUID[37];
     /// @brief Saves the socket id
     int sock;
+    /// @brief Client's connection mode
+    SNF_CLT_MODE mode;
+    
+    /// @brief Saves the amount of left request to be responded to. (Effective in Multi-Shot only)
+    uint32_t req_count;
     /// @brief Additional custom client data.
     void *data;
 };
+
+
 #include <SNF/request.h>
 
 struct SNF_Client_Handlers_t
@@ -41,10 +58,10 @@ struct SNF_Client_Handlers_t
 };
 
 
+
 #include <SNF/opcode.h>
 /// @brief Initialises the HashTable that saves the clients
 /// @param ht_min_Size The HashTable's length ( See note )
-/// @param client_data_size Sets the size of the additional client data's structure.
 ///
 /// @note   **ht_min_Size** isn't (in most cases) the same as the true size of HashTable length \line
 /// @note   \line See \ref snf_hashtable_inis() .
@@ -105,10 +122,10 @@ extern void *snf_clt_handle_new(void *arg);
 /// @warning  Core Function in network.c do not use it elsewhere.
 extern void *snf_clt_handle(void *arg);
 
-/// @brief Function to be called upon Client Connection.
-/// @param Client Connecting Client( SNF_CLT pointer) 
+/// @brief Function to be called upon Client Registration.
+/// @param Client to be registred( SNF_CLT pointer) 
 /// @warning  Core Function in clt.c do not use it elsewhere.
-extern void snf_clt_connect(SNF_CLT *Client);
+extern void snf_clt_register(SNF_CLT *Client);
 /// @brief Function to be called upon Client Re-Connection
 /// @param Client Re-Connecting Client 
 /// @warning  Core Function in clt.c do not use it elsewhere.

@@ -8,10 +8,25 @@
 #ifndef SNF_H
 #define SNF_H
 
+#define _SNF_HEADER_VER_MAJOR "0"
+#define _SNF_HEADER_VER_MINOR "0"
+#define _SNF_HEADER_VER_PATCH "3"
+#define _SNF_HEADER_VER_EXTRA "-alpha"
+
+#define _SNF_HEADER_VER       \
+    _SNF_HEADER_VER_MAJOR"."  \
+    _SNF_HEADER_VER_MINOR"."  \
+    _SNF_HEADER_VER_PATCH     \
+    _SNF_HEADER_VER_EXTRA     \
+
+
 extern char* snf_getver();
+extern char* snf_getsnpver();
 /// @brief Defines the library's version
 #define _SNF_VER snf_getver()
+#define _SNF_SNP_VER snf_getsnpver()
 
+#define _SNF "snf"
 
 #define _GNU_SOURCE
 

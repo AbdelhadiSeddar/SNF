@@ -1,72 +1,207 @@
 #include "SNF/request.h"
 
-SNF_RQST *snf_request_fetch(
-    SNF_CLT *Client)
+pthread_mutex_t __snf_request_initial_mutex = PTHREAD_MUTEX_INITIALIZER; // Lock for Read
+sem_t           __snf_request_initial_sem;     // For Count for Current Reads
+char *__snf_request_initial = NULL;
+size_t __snf_request_initial_size = 0;
+
+void snf_request_initial_lock()
 {
-    SNF_RQST *re = snf_request_gen();
-    char *Request;
-
-    /**
-     * Fetching OPCODE
-     */
-    snf_rcv(Client, re->OPCODE->opcode, 4);
-
-    /**
-     * Fetching Request UID
-     */
-    snf_rcv(Client, re->UID, strlen(NULLREQUEST) + 1);
-
-    /**
-     * Fetching Arguments Length & handling according to it
-     */
-    char MsgSize[4];
-    snf_rcv(Client, MsgSize, 4);
-    uint32_t Size = snf_bytes_to_uint32(MsgSize, 4);
-
-    if (Size < 0)
-        return NULL;
-    else if (Size > SNF_REQUEST_MAXSIZE)
-        /// TODO: Handle this better
-        return NULL;
-
-    SNF_RQST_ARG *Top_rqst = NULL;
-    if (Size == 0)
-        goto end_request_fetchfrom_clt;
-    SNF_RQST_ARG *Current = NULL;
-    /**
-     * Fetching Arguments
-     */
-    Request = calloc(Size, sizeof(char));
-    snf_rcv(Client, Request, Size);
-    /**
-     * Separating Arguments
-     */
-    while (Size > 0)
-    {
-        int chr = (int)(strchrnul(Request, UNIT_SCEPARATOR[0]) - Request);
-        char *tmpRqst = calloc(chr, sizeof(char));
-        strncpy(tmpRqst, Request, chr);
-        tmpRqst[chr] = '\0';
-        SNF_RQST_ARG *new = snf_request_arg_gen(tmpRqst);
-        if (Top_rqst == NULL)
-            Top_rqst = new;
-        if (Current == NULL)
-            Current = new;
-        else
-        {
-            Current->next = new;
-            Current = new;
-        }
-        char *tmp = calloc(Size - chr - 1, sizeof(char));
-        memcpy(tmp, Request + chr + 1, Size -= chr + 1);
-        free(Request);
-        Request = tmp;
-    }
-end_request_fetchfrom_clt:;
-    snf_request_arg_insert(re, Top_rqst);
-    return re;
+  pthread_mutex_lock(&__snf_request_initial_mutex);
+}
+void snf_request_initial_unlock()
+{
+  pthread_mutex_unlock(&__snf_request_initial_mutex); 
 }
 
+
+void snf_request_initial_compile(SNF_opcode *op, SNF_RQST_ARG *arg)
+{
+  if(__snf_request_initial == NULL)
+  {
+    sem_init(&__snf_request_initial_sem, 0, 0); 
+  }
+  size_t
+    prot_ver_len = strlen(_SNF_SNP_VER),
+    impl_ver_len = strlen(_SNF_VER) + strlen(_SNF) + 1,
+    prog_ver_len = strlen(snf_var_get(SNF_VAR_PROGRAM_VER, char)) + strlen(snf_var_get(SNF_VAR_PROGRAM_NAME, char)) + 1;
+  size_t server_info_len = prot_ver_len + impl_ver_len + prog_ver_len + 3;
+  
+  
+  uint32_t nargs = 0;
+  size_t sargs = 0, s_split_args = 0;
+
+  SNF_RQST_ARG * head= arg;
+  while(head != NULL)
+  {
+    nargs++;
+    // TODO: Argument Length Checked here as string!!
+    sargs += strlen(head->arg);
+    head = head->next;
+    if(head != NULL)
+      s_split_args += sizeof(char);
+  }
+  
+  size_t req_len = 0;
+  req_len =
+    server_info_len  // Server Informations length + 3 @'s
+  + 4 // Size of OPCode
+  + sizeof(uint32_t) // Size of Size of Arguments
+  + sizeof(uint32_t) // Size of Amount of Arguments
+  + s_split_args // Size of included splitters
+  + sargs // Size of actual request argument
+  ;
+
+  char *final = calloc(req_len +1, sizeof(char));
+
+  sprintf(
+    final,
+    "%s|%s@%s|%s@%s|",
+    _SNF_SNP_VER, /* | */
+    _SNF_VER, /*@*/ _SNF,
+    snf_var_get(SNF_VAR_PROGRAM_VER, char), /*@*/ snf_var_get(SNF_VAR_PROGRAM_NAME, char)
+  );
+
+  uint32_t final_written = server_info_len;
+
+
+  // Preparing the rest of the metadata
+  char * Metadata = calloc( 4 * 3, sizeof(char)); 
+
+  for(int i = 0 ; i < 4; i ++)
+    Metadata[i] = op->opcode[i];
+  
+
+  // Preparing the Number of arguments
+  char *args = snf_uint32_to_bytes(nargs, 4);
+  if(args != NULL)
+  {
+    for(int i = 0 ; i < 4 ; i++)
+      Metadata[i+4] = args[i];
+    free(args);
+  }
+
+  // Preparing The size of arguments
+  args = snf_uint32_to_bytes(sargs, 4);
+
+  if(args != NULL)
+  {
+    for(int i = 0; i < 4 ; i++)
+      Metadata[i+8] = args[i];
+    free(args);
+  }
+
+  // Inserting the arguments
+  memcpy((char*)(final + final_written), Metadata, 12);
+  free(Metadata);
+  final_written += 12; 
+
+
+
+  args = (char*)(final + final_written);
+  if(nargs> 0)
+  {
+    head = arg;
+    while(head != NULL)
+    {
+      strcat(args, head->arg);
+      
+      head = head->next;
+      
+      if(head != NULL)
+        strcat(args, UNIT_SCEPARATOR);
+      
+    }
+  }
+
+  snf_request_initial_lock();
+
+  __snf_request_initial_size = req_len;
+
+  if(__snf_request_initial != NULL)
+    free(__snf_request_initial);
+
+  __snf_request_initial = final;
+
+  snf_request_initial_unlock();
+
+}
+void snf_request_initial_get(void**request, size_t* size)
+{
+  *request  = calloc(__snf_request_initial_size+1, sizeof(char));
+  memcpy(*request, __snf_request_initial, __snf_request_initial_size);
+  *size     = __snf_request_initial_size;
+}
+
+SNF_RQST *snf_request_fetch_metadata(
+  SNF_CLT *Client)
+{
+  SNF_RQST *re = snf_request_gen();
+  char *Request;
+
+  /**
+   * Fetching OPCODE
+   */
+  snf_rcv(Client, re->OPCODE->opcode, 4);
+
+  /**
+   * Fetching Request UID
+   */
+  snf_rcv(Client, re->UID, strlen(NULLREQUEST) + 1);
+
+  snf_rcv(Client, (char*)&re->n_args, 4);
+  /**
+   * Fetching Arguments Length & handling according to it
+  */
+  char MsgSize[4];
+  snf_rcv(Client, MsgSize, 4);
+  re->s_args = snf_bytes_to_uint32(MsgSize, 4);
+
+  return re;
+}
+
+SNF_RQST_ARG *snf_request_fetch_arguments(
+  SNF_CLT *Client,
+  SNF_RQST *Rqst)
+{
+  if(Client == NULL || Rqst == NULL)
+    return NULL;
+  SNF_RQST_ARG *Top_rqst = NULL;
+  if (Rqst->s_args == 0)
+        goto end_request_fetchfrom_clt;
+  SNF_RQST_ARG *Current = NULL;
+  /**
+   * Fetching Arguments
+   */
+  char * Request = calloc(Rqst->s_args + 1, sizeof(char));
+  snf_rcv(Client, Request, Rqst->s_args);
+  /**
+   * Separating Arguments
+   */
+  while (Rqst->s_args > 0)
+  {
+    int chr = (int)(strchrnul(Request, UNIT_SCEPARATOR[0]) - Request);
+    char *tmpRqst = calloc(chr, sizeof(char));
+    strncpy(tmpRqst, Request, chr);
+    tmpRqst[chr] = '\0';
+    SNF_RQST_ARG *new = snf_request_arg_gen(tmpRqst);
+    if (Top_rqst == NULL)
+      Top_rqst = new;
+    if (Current == NULL)
+      Current = new;
+    else
+    {
+      Current->next = new;
+      Current = new;
+    }
+    char *tmp = calloc(Rqst->s_args - chr - 1, sizeof(char));
+    memcpy(tmp, Request + chr + 1, Rqst->s_args -= chr + 1);
+    free(Request);
+    Request = tmp;
+  }
+end_request_fetchfrom_clt:;
+    return Top_rqst; 
+}
 SNF_RQST *snf_request_gen()
 {
     SNF_RQST *re = calloc(1, sizeof(SNF_RQST));
