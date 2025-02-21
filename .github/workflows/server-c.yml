@@ -18,11 +18,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install Clang
-      run: sudo apt-get install -y clang
-
-    - name: Set up CMake
-      uses: lukka/get-cmake@v3.31.5
+    - name: Install Build dependencies
+      run: sudo apt-get install -y clang cmake 
 
     - name: Build project
       run: ./build.sh -fb -cc
