@@ -22,7 +22,9 @@ jobs:
       run: sudo apt-get install -y clang cmake 
 
     - name: Build project
-      run: ./build.sh -fb -cc
+      run: |
+        cd Server/C
+        ./build.sh -fb -cc
 
   test:
     needs: build
@@ -37,6 +39,7 @@ jobs:
 
     - name: Run tests
       run: |
+        cd Server/C
         for test in $(ls tests/*.c); do
           testname=$(basename $test .c)
           ./build.sh -fb -cc -t $testname
