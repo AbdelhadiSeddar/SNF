@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - snp-0.0.1
   pull_request:
     branches:
       - main
+      - snp-0.0.1
 
 jobs:
   build:
