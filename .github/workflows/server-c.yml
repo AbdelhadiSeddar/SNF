@@ -22,7 +22,7 @@ jobs:
       run: sudo apt-get install -y clang
 
     - name: Set up CMake
-      uses: lukka/get-cmake@v3
+      uses: lukka/get-cmake@v3.31.5
 
     - name: Build project
       run: ./build.sh -fb -cc
