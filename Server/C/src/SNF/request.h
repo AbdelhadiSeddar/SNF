@@ -13,7 +13,7 @@
 
 /// @brief Requests's Default Request ID
 /// @note Server Requests to client always must have this as their ID 
-#define NULLREQUEST "000000000000000"
+#define NULLREQUEST "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
 /// @brief Defines the Requests' maximum length
 /// TODO: Change into a variable
 #define SNF_REQUEST_MAXSIZE 4096
@@ -65,10 +65,13 @@ struct SNF_Request_args_t
     SNF_RQST_ARG *next;
 };
 
-extern void snf_request_initial_lock();
-extern void snf_request_initial_unlock();
+extern void snf_request_initial_init();
 extern void snf_request_initial_compile(SNF_opcode *, SNF_RQST_ARG *);
 extern void snf_request_initial_get(void**, size_t*);
+extern void snf_request_initial_rlock();
+extern void snf_request_initial_runlock();
+extern void snf_request_initial_wlock();
+extern void snf_request_initial_wunlock();
 /// @brief Frees a SNF_RQST *
 /// @param Request Pointer to be free'd
 extern void snf_request_free(SNF_RQST *Request);

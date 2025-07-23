@@ -1,6 +1,7 @@
 #include "SNF/network.h"
 #include "SNF/opcode.h"
 #include "SNF/request.h"
+#include <stdint.h>
 typedef struct epoll_event ev;
 
 _Atomic uint64_t SNF_Total_Data_Rcv = 0;
@@ -32,15 +33,7 @@ void snf_network_init()
     snf_epoll_init();
     snf_clt_init(snf_var_getv(SNF_VAR_CLTS_INITIAL, int));
     snf_opcode_init();
-
-    snf_request_initial_compile(
-      snf_opcode_getu_base(
-        SNF_OPCODE_BASE_CMD_CONNECT
-      ),
-      NULL
-    );
-
-    
+    snf_request_initial_init();    
     if (snf_thpool_inis(
             snf_var_geta(SNF_VAR_THREADPOOL, SNF_thpool),
             snf_var_getv(SNF_VAR_THREADS, int),
@@ -76,7 +69,7 @@ void *Network_Worker(void *arg)
             }
             else
             {
-                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle, (void *)snf_clt_new(sock));
+                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle, (void *)(&(uint64_t){sock}));
             }
         }
     }
@@ -99,7 +92,7 @@ int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size)
         DataSnt = send(Client->sock, Buffer, _Size, 0);
     }
 
-    if(DataSnt < 0)
+    if(DataSnt < _Size)
     {
         fprintf(stderr, "Error : %d", errno);
     }
