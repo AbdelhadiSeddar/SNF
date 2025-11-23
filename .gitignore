@@ -423,3 +423,6 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 CPack*
+*.xml
+*.iml
+*.idea
