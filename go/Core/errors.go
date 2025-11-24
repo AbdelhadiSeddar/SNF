@@ -2,6 +2,7 @@ package Core
 
 import (
 	"fmt"
+	"net"
 )
 
 // SNFErrorIntialization is the error returned when a critical component could not be initialized
@@ -15,7 +16,7 @@ func (e SNFErrorIntialization) Error() string {
 
 type SNFErrorUninitialized struct {
 	Component         string
-	RecommendedAction string `json:",omitempty"`
+	RecommendedAction string `json:"RecommendedAction,omitempty"`
 }
 
 func (e SNFErrorUninitialized) Error() string {
@@ -40,14 +41,14 @@ func (e SNFErrorAlreadyInitialized) Error() string {
 }
 
 type SNFErrorUnallowedValue struct {
-	Is       string
-	Shouldbe string `json:",omitempty"`
+	Is          string
+	ShouldvBeen string `json:",omitempty"`
 }
 
 func (e SNFErrorUnallowedValue) Error() string {
 	var str string = ""
-	if len(e.Shouldbe) > 0 {
-		str = fmt.Sprintf("\n Should've been: \n %s", e.Shouldbe)
+	if len(e.ShouldvBeen) > 0 {
+		str = fmt.Sprintf("\n Should've been %s", e.ShouldvBeen)
 	}
 	return fmt.Sprintf("Value %s is Invalid %s", e.Is, str)
 }
@@ -109,4 +110,15 @@ func (e SNFErrorOpcodeInvalid) Error() string {
 		e.OPCode[1],
 		e.OPCode[2],
 		e.OPCode[3])
+}
+
+// Client Errors
+
+// SNFErrorClientMismatch is the error when there is a mismatch between a client's true uuid anbd the oens attached to their request
+type SNFErrorClientMismatch struct {
+	Conn net.Conn
+}
+
+func (e SNFErrorClientMismatch) Error() string {
+	return fmt.Sprintf("Client on %s, Tried Spoofing their UUID", e.Conn.RemoteAddr().String())
 }

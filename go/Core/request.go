@@ -5,12 +5,12 @@ var SNFRequestUIDNull = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 type SNFRequest struct {
 	UID    [16]byte
 	OPCODE *SNFOpcode
-	args   *SNFRequestArg
+	Args   *SNFRequestArg
 }
 
 type SNFRequestArg struct {
-	arg  []byte
-	next *SNFRequestArg
+	Arg  []byte
+	Next *SNFRequestArg
 }
 
 func SNFRequestGen() *SNFRequest {
@@ -24,22 +24,22 @@ func SNFRequestGenWUID(uid [16]byte) *SNFRequest {
 }
 
 func SNFRequestArgGen(arg []byte) *SNFRequestArg {
-	return &SNFRequestArg{arg: append([]byte(nil), arg...)}
+	return &SNFRequestArg{Arg: append([]byte(nil), arg...)}
 }
 
 func SNFRequestArgInsert(req *SNFRequest, a *SNFRequestArg) {
 	if req == nil || a == nil {
 		return
 	}
-	if req.args == nil {
-		req.args = a
+	if req.Args == nil {
+		req.Args = a
 		return
 	}
-	p := req.args
-	for p.next != nil {
-		p = p.next
+	p := req.Args
+	for p.Next != nil {
+		p = p.Next
 	}
-	p.next = a
+	p.Next = a
 }
 
 func SNFRequestGenResponse(original *SNFRequest, opcode *SNFOpcode, args *SNFRequestArg) *SNFRequest {
@@ -49,7 +49,7 @@ func SNFRequestGenResponse(original *SNFRequest, opcode *SNFOpcode, args *SNFReq
 	}
 	r := SNFRequestGenWUID(uid)
 	r.OPCODE = opcode
-	r.args = args
+	r.Args = args
 	return r
 }
 
@@ -66,14 +66,14 @@ func SNFRequestGenUBase(original *SNFRequest, command byte) *SNFRequest {
 }
 
 func (req *SNFRequest) getAllArgsBytes() []byte {
-	if req == nil || req.args == nil {
+	if req == nil || req.Args == nil {
 		return nil
 	}
 	var allArgs []byte
-	p := req.args
+	p := req.Args
 	for p != nil {
-		allArgs = append(allArgs, p.arg...)
-		p = p.next
+		allArgs = append(allArgs, p.Arg...)
+		p = p.Next
 		if p != nil {
 			allArgs = append(allArgs, '|')
 		}
@@ -87,7 +87,7 @@ func (req *SNFRequest) ToBytes() []byte {
 	}
 	args := req.getAllArgsBytes()
 	var b []byte = make([]byte, 0, 4+16+1+len(args))
-	b = append(b, req.OPCODE.Category, req.OPCODE.SubCategory, req.OPCODE.Command, req.OPCODE.Detail)
+	b = append(b, req.OPCODE.Category.ref.OPmmbr, req.OPCODE.SubCategory.ref.OPmmbr, req.OPCODE.Command.ref.OPmmbr, req.OPCODE.Detail.ref.OPmmbr)
 	b = append(b, req.UID[:]...)
 	b = append(b, req.OPCODE.ToBytes()...)
 	b = append(b, args...)
