@@ -98,3 +98,15 @@ func (e SNFErrorOpcodeMemberNotFound) Error() string {
 
 	return fmt.Sprintf("Could not find Member [0x%02x] with  %s Rank %s", e.NotFoundValue, Rank, under)
 }
+
+type SNFErrorOpcodeInvalid struct {
+	OPCode [4]byte
+}
+
+func (e SNFErrorOpcodeInvalid) Error() string {
+	return fmt.Sprintf("Could not find [0x%02x][0x%02x][0x%02x][0x%02x] OPCode",
+		e.OPCode[0],
+		e.OPCode[1],
+		e.OPCode[2],
+		e.OPCode[3])
+}

@@ -37,7 +37,7 @@ func snfServerSetOpcodeCallbacks() error {
 			Component:         "Opcode Base",
 			RecommendedAction: "Never Call SNFOpcodeBaseInit()!!!",
 		}.Error())
-	} else if !core.SNFOpcodeBaseIsInit() && !core.SNFOpcodeBaseInit() {
+	} else if !core.SNFOpcodeBaseIsInit() && !core.SNFOpcodeBaseInit(snfServerDefaultCallBack) {
 		return core.SNFErrorIntialization{FailedComponent: "SNFOpcodeBase"}
 	}
 	SetVar(SNF_VAR_INITIALIZED_OPCODE, true)

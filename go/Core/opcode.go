@@ -1,17 +1,5 @@
 package Core
 
-import (
-	"errors"
-)
-
-type SNFOpcode struct {
-	Category    byte
-	SubCategory byte
-	Command     byte
-	Detail      byte
-}
-type SNFOpcodeRank int
-
 const (
 	SNFOpcodeRankCategory SNFOpcodeRank = iota
 	SNFOpcodeRankSubCategory
@@ -19,14 +7,52 @@ const (
 	SNFOpcodeRankDetail
 )
 
-func (o SNFOpcode) ToBytes() []byte {
-	return []byte{o.Category, o.SubCategory, o.Command, o.Detail}
+var opcode_def_cb SNFOpcodeCommandCallback = nil
+
+type SNFOpcodeMember struct {
+	ref *snfOpcodeLLItem
 }
-func SNFOpcodeParse(data []byte) (SNFOpcode, error) {
-	if len(data) != 4 {
-		return SNFOpcode{}, errors.New("opcode must be 4 bytes long")
+
+func (o *SNFOpcodeMember) GetValue() byte {
+	return o.ref.OPmmbr
+}
+func (o *SNFOpcodeMember) GetCallback() SNFOpcodeCommandCallback {
+	return o.ref.Func
+}
+
+type SNFOpcode struct {
+	Category    *SNFOpcodeMember
+	SubCategory *SNFOpcodeMember
+	Command     *SNFOpcodeMember
+	Detail      *SNFOpcodeMember
+}
+type SNFOpcodeRank int
+
+func (o SNFOpcode) ToBytes() []byte {
+	return []byte{
+		o.Category.ref.OPmmbr,
+		o.SubCategory.ref.OPmmbr,
+		o.Command.ref.OPmmbr,
+		o.Detail.ref.OPmmbr,
 	}
-	return SNFOpcode{data[0], data[1], data[2], data[3]}, nil
+}
+func SNFOpcodeParse(data [4]byte) (*SNFOpcode, error) {
+	var op *SNFOpcode
+
+	det, ok := SNFOpcodeGetDetail(data[0], data[1], data[2], data[3])
+	if !ok {
+		return nil, SNFErrorOpcodeInvalid{
+			OPCode: data,
+		}
+	}
+
+	op = &SNFOpcode{}
+	op.Detail = det
+	op.Command = &SNFOpcodeMember{ref: det.ref.parent}
+	op.SubCategory = &SNFOpcodeMember{ref: op.Command.ref.parent}
+	op.Category = &SNFOpcodeMember{ref: op.SubCategory.ref.parent}
+
+	return op, nil
 }
 
 const SNF_OPCODE_BASE_CAT = 0x00
@@ -66,122 +92,163 @@ type snfOpcodeLLItem struct {
 var snf_opcode_ll *snfOpcodeLLItem
 var snf_opcode_base_isinit bool = false
 
-func SNFOpcodeDefineCategory(code byte) int {
+// true -> ok | false -> EEXIST
+func SNFOpcodeDefineCategory(code byte) bool {
 	item := &snfOpcodeLLItem{OPmmbr: code}
 	re := snf_opcode_ll
 	if re == nil {
 		snf_opcode_ll = item
-		return 0
+		return true
 	}
 
 	for re != nil {
 		if re.next == nil {
 			re.next = item
-			return 0
+			return true
 		} else if re.next.OPmmbr == item.OPmmbr {
-			return 1
+			return false
 		}
 		re = re.next
 	}
-	return 0
+	return true
 }
 
-func SNFOpcodeDefineSubCategory(category byte, code byte) int {
+func SNFOpcodeDefineSubCategory(category byte, code byte) bool {
 	item := &snfOpcodeLLItem{OPmmbr: code}
 	if snf_opcode_ll == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
-	sub := SNFOpcodeGetCategory(category)
+	sub := snfOpcodeGetCategory(category)
 	if sub == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
 	item.parent = sub
 	if sub.sub == nil {
 		sub.sub = item
-		return 0
+		return true
 	}
 	s := sub.sub
 	for s != nil {
 		if s.next == nil {
 			s.next = item
-			return 0
+			return true
 		} else if s.next.OPmmbr == item.OPmmbr {
-			return 1
+			return false
 		}
 		s = s.next
 	}
-	return 0
+	return true
 }
 
-func SNFOpcodeDefineCommand(category byte, subCategory byte, code byte) int {
+func SNFOpcodeDefineCommand(category byte, subCategory byte, code byte) bool {
 	item := &snfOpcodeLLItem{OPmmbr: code}
 	item.sub = &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED, parent: item}
 	if snf_opcode_ll == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
-	sub := SNFOpcodeGetSubCategory(category, subCategory)
+	cat := snfOpcodeGetCategory(category)
+	if cat == nil {
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
+	}
+	sub := snfOpcodeGetSubCategory(cat, subCategory)
 	if sub == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
 	item.parent = sub
 	if sub.sub == nil {
 		sub.sub = item
-		return 0
+		return true
 	}
 	s := sub.sub
 	for s != nil {
 		if s.next == nil {
 			s.next = item
-			return 0
+			return true
 		} else if s.next.OPmmbr == item.OPmmbr {
-			return 1
+			return false
 		}
 		s = s.next
 	}
-	return 0
+	return true
 }
 
-func SNFOpcodeDefineDetail(category byte, subCategory byte, command byte, code byte) int {
+func SNFOpcodeDefineDetail(category byte, subCategory byte, command byte, code byte) bool {
 	item := &snfOpcodeLLItem{OPmmbr: code}
 	if snf_opcode_ll == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
-	sub := SNFOpcodeGetCommand(category, subCategory, command)
+	tmp, ok := SNFOpcodeGetSubCategory(category, subCategory)
+	if !ok {
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
+	}
+	sub := snfOpcodeGetCommand(tmp.ref, command)
 	if sub == nil {
-		return -2
+		panic(
+			SNFErrorUninitialized{
+				Component: "OPcodes Undefined",
+			}.Error(),
+		)
 	}
 	item.parent = sub
 	if sub.sub == nil {
 		sub.sub = item
-		return 0
+		return true
 	}
 	s := sub.sub
 	for s != nil {
 		if s.next == nil {
 			s.next = item
-			return 0
+			return true
 		} else if s.next.OPmmbr == item.OPmmbr {
-			return 1
+			return false
 		}
 		s = s.next
 	}
-	return 0
+	return true
 }
 
 func SNFOpcodeAddCommandCallback(category byte, subCategory byte, command byte, cb SNFOpcodeCommandCallback) error {
-	item := SNFOpcodeGetCommand(category, subCategory, command)
-	if item == nil {
+	item, ok := SNFOpcodeGetCommand(category, subCategory, command)
+	if !ok {
 		return &SNFErrorOpcodeMemberNotFound{
 			NotFoundValue: command,
 			NotFoundRank:  SNFOpcodeRankCommand,
 			Category:      category,
 			SubCategory:   subCategory}
 	}
-	item.Func = cb
+	item.ref.Func = cb
 	return nil
 }
 
-func SNFOpcodeGetCategory(category byte) *snfOpcodeLLItem {
+func snfOpcodeGetCategory(category byte) *snfOpcodeLLItem {
 	srch := snf_opcode_ll
 	for srch != nil {
 		if srch.OPmmbr == category {
@@ -191,13 +258,16 @@ func SNFOpcodeGetCategory(category byte) *snfOpcodeLLItem {
 	}
 	return srch
 }
-
-func SNFOpcodeGetSubCategory(category byte, subCategory byte) *snfOpcodeLLItem {
-	srch := SNFOpcodeGetCategory(category)
+func SNFOpcodeGetCategory(category byte) (*SNFOpcodeMember, bool) {
+	srch := snfOpcodeGetCategory(category)
 	if srch == nil {
-		return nil
+		return nil, false
 	}
-	srch = srch.sub
+	return &SNFOpcodeMember{ref: srch}, true
+}
+
+func snfOpcodeGetSubCategory(parent *snfOpcodeLLItem, subCategory byte) *snfOpcodeLLItem {
+	srch := parent.sub
 	for srch != nil {
 		if srch.OPmmbr == subCategory {
 			break
@@ -206,13 +276,19 @@ func SNFOpcodeGetSubCategory(category byte, subCategory byte) *snfOpcodeLLItem {
 	}
 	return srch
 }
-
-func SNFOpcodeGetCommand(category byte, subCategory byte, command byte) *snfOpcodeLLItem {
-	srch := SNFOpcodeGetSubCategory(category, subCategory)
-	if srch == nil {
-		return nil
+func SNFOpcodeGetSubCategory(category byte, subCategory byte) (*SNFOpcodeMember, bool) {
+	srch := snfOpcodeGetSubCategory(
+		snfOpcodeGetCategory(category),
+		subCategory,
+	)
+	if srch != nil {
+		return nil, false
 	}
-	srch = srch.sub
+	return &SNFOpcodeMember{ref: srch}, true
+}
+
+func snfOpcodeGetCommand(parent *snfOpcodeLLItem, command byte) *snfOpcodeLLItem {
+	srch := parent.sub
 	for srch != nil {
 		if srch.OPmmbr == command {
 			break
@@ -221,13 +297,20 @@ func SNFOpcodeGetCommand(category byte, subCategory byte, command byte) *snfOpco
 	}
 	return srch
 }
-
-func SNFOpcodeGetDetail(category byte, subCategory byte, command byte, detail byte) *snfOpcodeLLItem {
-	srch := SNFOpcodeGetCommand(category, subCategory, command)
-	if srch == nil {
-		return nil
+func SNFOpcodeGetCommand(category byte, subCategory byte, command byte) (*SNFOpcodeMember, bool) {
+	srch, ok := SNFOpcodeGetSubCategory(category, subCategory)
+	if !ok {
+		return nil, false
 	}
-	srch = srch.sub
+	cmd := snfOpcodeGetCommand(srch.ref, command)
+	if cmd == nil {
+		return nil, false
+	}
+	return &SNFOpcodeMember{ref: cmd}, true
+}
+
+func snfOpcodeGetDetail(parent *snfOpcodeLLItem, detail byte) *snfOpcodeLLItem {
+	srch := parent.sub
 	for srch != nil {
 		if srch.OPmmbr == detail {
 			break
@@ -236,17 +319,39 @@ func SNFOpcodeGetDetail(category byte, subCategory byte, command byte, detail by
 	}
 	return srch
 }
+func SNFOpcodeGetDetail(category byte, subCategory byte, command byte, detail byte) (*SNFOpcodeMember, bool) {
+	srch, ok := SNFOpcodeGetCommand(category, subCategory, command)
+	if !ok {
+		return nil, false
+	}
+	det := snfOpcodeGetDetail(srch.ref, detail)
+	if det == nil {
+		return nil, false
+	}
+	return &SNFOpcodeMember{ref: det}, true
+}
 
 func SNFOpcodeGet(category byte, subCategory byte, command byte, detail byte) *SNFOpcode {
-	item := SNFOpcodeGetDetail(category, subCategory, command, detail)
-	if item == nil {
+	var cat, subcat, cmd, det *snfOpcodeLLItem
+	// TODO: Make unique Errors to know which OPcodeMember is defined or not.
+	if cat = snfOpcodeGetCategory(category); cat == nil {
 		return nil
 	}
+	if subcat = snfOpcodeGetSubCategory(cat, subCategory); subcat == nil {
+		return nil
+	}
+	if cmd = snfOpcodeGetCommand(subcat, command); cmd == nil {
+		return nil
+	}
+	if det = snfOpcodeGetDetail(cmd, detail); det == nil {
+		return nil
+	}
+
 	re := &SNFOpcode{}
-	re.Category = category
-	re.SubCategory = subCategory
-	re.Command = command
-	re.Detail = detail
+	re.Category = &SNFOpcodeMember{ref: cat}
+	re.SubCategory = &SNFOpcodeMember{ref: subcat}
+	re.Command = &SNFOpcodeMember{ref: cmd}
+	re.Detail = &SNFOpcodeMember{ref: det}
 	return re
 }
 
@@ -254,33 +359,31 @@ func SNFOpcodeGetU(category byte, subCategory byte, command byte) *SNFOpcode {
 	return SNFOpcodeGet(category, subCategory, command, SNF_OPCODE_BASE_DET_UNDETAILED)
 }
 
-func SNFOpcodeIsBase(op *SNFOpcode) int {
-	if op.Category != SNF_OPCODE_BASE_CAT {
-		return 0
+// Checks if it is a Base Opcode
+func SNFOpcodeIsBase(op SNFOpcode) bool {
+	if op.Category.ref.OPmmbr == SNF_OPCODE_BASE_CAT {
+		return false
 	}
-	if op.SubCategory != SNF_OPCODE_BASE_SUBCAT {
-		return 0
+	if op.SubCategory.ref.OPmmbr != SNF_OPCODE_BASE_SUBCAT {
+		return false
 	}
-	if (op.Command < SNF_OPCODE_BASE_CMD_CONNECT || op.Command > SNF_OPCODE_BASE_CMD_REJECT) || op.Command != SNF_OPCODE_BASE_CMD_INVALID {
-		return 0
-	}
-	return 1
+	return true
 }
 
-func SNFOpcodeGetBaseCategory() snfOpcodeLLItem {
-	return *SNFOpcodeGetCategory(SNF_OPCODE_BASE_CAT)
+func SNFOpcodeGetBaseCategory() (*SNFOpcodeMember, bool) {
+	return SNFOpcodeGetCategory(SNF_OPCODE_BASE_CAT)
 }
 
-func SNFOpcodeGetBaseSubCategory() snfOpcodeLLItem {
-	return *SNFOpcodeGetSubCategory(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT)
+func SNFOpcodeGetBaseSubCategory() (*SNFOpcodeMember, bool) {
+	return SNFOpcodeGetSubCategory(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT)
 }
 
-func SNFOpcodeGetBaseCommand(command byte) snfOpcodeLLItem {
-	return *SNFOpcodeGetCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command)
+func SNFOpcodeGetBaseCommand(command byte) (*SNFOpcodeMember, bool) {
+	return SNFOpcodeGetCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command)
 }
 
-func SNFOpcodeGetBaseDetail(command byte, detail byte) snfOpcodeLLItem {
-	return *SNFOpcodeGetDetail(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command, detail)
+func SNFOpcodeGetBaseDetail(command byte, detail byte) (*SNFOpcodeMember, bool) {
+	return SNFOpcodeGetDetail(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command, detail)
 }
 
 func SNFOpcodeGetBase(command byte, detail byte) *SNFOpcode {
@@ -292,53 +395,91 @@ func SNFOpcodeGetUBase(command byte) *SNFOpcode {
 }
 
 func snfOpcodeDefineBase() bool {
-	if SNFOpcodeDefineCategory(SNF_OPCODE_BASE_CAT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineSubCategory(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_CONNECT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_RECONNECT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_DISCONNECT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_VER_INF) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_KICK) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_CONFIRM) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_REJECT) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineCommand(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_INVALID) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineDetail(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_INVALID, SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineDetail(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_INVALID, SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL) < 0 {
-		return false
-	}
-	if SNFOpcodeDefineDetail(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, SNF_OPCODE_BASE_CMD_INVALID, SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE) < 0 {
-		return false
-	}
+
+	root := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_CAT}
+	snf_opcode_ll = root
+
+	sub := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_SUBCAT, parent: root}
+	root.sub = sub
+
+	cmdConnect := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_CONNECT,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
+	sub.sub = cmdConnect
+
+	cmdRecon := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_RECONNECT,
+		parent: sub,
+		sub:    &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func:   opcode_def_cb}
+	cmdConnect.next = cmdRecon
+
+	cmdDisc := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_DISCONNECT,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
+	cmdRecon.next = cmdDisc
+
+	cmdVer := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_VER_INF,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL},
+		Func: opcode_def_cb}
+	cmdDisc.next = cmdVer
+
+	cmdKick := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_KICK,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
+	cmdVer.next = cmdKick
+
+	cmdConf := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_CONFIRM,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
+	cmdKick.next = cmdConf
+
+	cmdRej := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_REJECT,
+		parent: sub,
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
+	cmdConf.next = cmdRej
+
+	cmdInv := &snfOpcodeLLItem{
+		OPmmbr: SNF_OPCODE_BASE_CMD_INVALID,
+		parent: sub,
+		Func:   opcode_def_cb}
+	cmdRej.next = cmdInv
+
+	detUnreg := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE, parent: cmdInv}
+	cmdInv.sub = detUnreg
+
+	detErr := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL, parent: cmdInv}
+	detUnreg.next = detErr
+
+	detUnimpl := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE, parent: cmdInv}
+	detErr.next = detUnimpl
+
 	snf_opcode_base_isinit = true
 	return true
 }
-
-func SNFOpcodeBaseInit() bool {
+func SNFOpcodeBaseInit(def SNFOpcodeCommandCallback) bool {
 	if snf_opcode_base_isinit == true {
 		return true
 	}
+	opcode_def_cb = def
 	return snfOpcodeDefineBase()
 }
 
