@@ -139,7 +139,7 @@ func snfServerCBDisonnect(Original core.SNFRequest, Sender interface{}) (core.SN
 
 // snfServerCBVerInfo is the callback for the verinfo 0x03 base command
 func snfServerCBVerInfo(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	if Original.OPCODE.Detail == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
+	if Original.OPCODE.Detail.GetValue() == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
 		return *core.SNFRequestGenResponse(
 			&Original,
 			core.SNFOpcodeGetUBase(

@@ -2,6 +2,7 @@ package Server
 
 import (
 	"encoding/binary"
+	"errors"
 	"net"
 	"sync"
 
@@ -23,7 +24,8 @@ type SNFClient struct {
 	Mode      SNFClientConnectionMode
 	modeLimit uint32 // 0+ For MultiShot
 	Data      interface{}
-	Mutex     sync.Mutex
+	//TODO: Redesign this
+	Mutex sync.Mutex
 }
 
 type SNFClientHandlers struct {
@@ -115,30 +117,52 @@ func SNFClientHandleNew(conn net.Conn) {
 	var client *SNFClient = nil
 	switch opcode[2] {
 	case core.SNF_OPCODE_BASE_CMD_CONNECT:
-		client = &SNFClient{
-			Conn: conn,
-		}
 		switch opcode[3] {
 		case core.SNF_OPCODE_BASE_DET_UNDETAILED:
+			client = SNFClientAdd(uuid.NewString(), conn, nil)
 			client.Mode = SNFClientConnectionModeRegular
-			client.UUID = uuid.New().String()
-			// Read 4-byte big-endian request count
 		case core.SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT:
+			client = SNFClientAdd(uuid.NewString(), conn, nil)
 			client.Mode = SNFClientConnectionModeMultishot
-			client.UUID = uuid.New().String()
 			var reqCount uint32
 
 			if err := binary.Read(conn, binary.BigEndian, &reqCount); err != nil {
 				return
 			}
 			client.modeLimit = reqCount
+		case core.SNF_OPCODE_BASE_DET_CONNECT_ONESHOT:
+			client = &SNFClient{
+				Conn:      conn,
+				Mode:      SNFClientConnectionModeOneshot,
+				modeLimit: 1,
+			}
+		default:
+			Send(conn,
+				[]byte{
+					0x00,                             /*OPC Cat*/
+					0x00,                             /*OPC SubCat*/
+					core.SNF_OPCODE_BASE_CMD_INVALID, /*OPC CMD*/
+					core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL, /*OPC DET*/
+					0x00, 0x00, 0x00, 0x00, /*N Args*/
+					0x00, 0x00, 0x00, 0x00 /*S Args*/},
+			)
 		}
 
 	case core.SNF_OPCODE_BASE_CMD_RECONNECT:
-		//TODO: Handle Reconnect
+		// Temporary
+		Send(conn,
+			[]byte{
+				0x00,                             /*OPC Cat*/
+				0x00,                             /*OPC SubCat*/
+				core.SNF_OPCODE_BASE_CMD_INVALID, /*OPC CMD*/
+				core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE, /*OPC DET*/
+				0x00, 0x00, 0x00, 0x00, /*N Args*/
+				0x00, 0x00, 0x00, 0x00 /*S Args*/},
+		)
+		return
 	case core.SNF_OPCODE_BASE_CMD_DISCONNECT:
 	default:
-		//Invalid Opcode
+		//Temporary Different just to know they are different thatn reconnect
 		Send(conn,
 			[]byte{
 				0x00,                             /*OPC Cat*/
@@ -154,5 +178,45 @@ func SNFClientHandleNew(conn net.Conn) {
 }
 
 func SNFClientHandle(client *SNFClient) {
-	// TODO: Create CLient Handling after finishing properly Handling NewClients
+
+	for {
+		req, err := SNFRequestFetch(client)
+		if err != nil {
+			switch {
+			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
+				//Error handling comes later.
+				SNFRequestRespond(
+					client,
+					req,
+					core.SNFRequestGenResponse(
+						req,
+						core.SNFOpcodeGetBase(
+							core.SNF_OPCODE_BASE_CMD_INVALID,
+							core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
+						),
+						nil,
+					),
+				)
+				return
+			default:
+				// Respond with the value of the error/ Debug only
+				SNFRequestRespond(
+					client,
+					req,
+					core.SNFRequestGenResponse(
+						req,
+						core.SNFOpcodeGetBase(
+							core.SNF_OPCODE_BASE_CMD_INVALID,
+							core.SNF_OPCODE_BASE_DET_UNDETAILED,
+						),
+						&core.SNFRequestArg{
+							Arg: []byte(err.Error()),
+						},
+					),
+				)
+				return
+			}
+		}
+
+	}
 }
