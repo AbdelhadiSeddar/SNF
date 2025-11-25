@@ -1,5 +1,7 @@
 package Core
 
+import "fmt"
+
 const (
 	SNFOpcodeRankCategory SNFOpcodeRank = iota
 	SNFOpcodeRankSubCategory
@@ -254,6 +256,7 @@ func snfOpcodeGetCategory(category byte) *snfOpcodeLLItem {
 		if srch.OPmmbr == category {
 			break
 		}
+
 		srch = srch.next
 	}
 	return srch
@@ -277,11 +280,15 @@ func snfOpcodeGetSubCategory(parent *snfOpcodeLLItem, subCategory byte) *snfOpco
 	return srch
 }
 func SNFOpcodeGetSubCategory(category byte, subCategory byte) (*SNFOpcodeMember, bool) {
+	cat, ok := SNFOpcodeGetCategory(category)
+	if !ok {
+		return nil, false
+	}
 	srch := snfOpcodeGetSubCategory(
-		snfOpcodeGetCategory(category),
+		cat.ref,
 		subCategory,
 	)
-	if srch != nil {
+	if srch == nil {
 		return nil, false
 	}
 	return &SNFOpcodeMember{ref: srch}, true
@@ -398,7 +405,6 @@ func snfOpcodeDefineBase() bool {
 
 	root := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_CAT}
 	snf_opcode_ll = root
-
 	sub := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_SUBCAT, parent: root}
 	root.sub = sub
 
@@ -460,11 +466,13 @@ func snfOpcodeDefineBase() bool {
 	cmdInv := &snfOpcodeLLItem{
 		OPmmbr: SNF_OPCODE_BASE_CMD_INVALID,
 		parent: sub,
-		Func:   opcode_def_cb}
+		sub: &snfOpcodeLLItem{
+			OPmmbr: SNF_OPCODE_BASE_DET_UNDETAILED},
+		Func: opcode_def_cb}
 	cmdRej.next = cmdInv
 
 	detUnreg := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE, parent: cmdInv}
-	cmdInv.sub = detUnreg
+	cmdInv.sub.next = detUnreg
 
 	detErr := &snfOpcodeLLItem{OPmmbr: SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL, parent: cmdInv}
 	detUnreg.next = detErr
@@ -474,6 +482,29 @@ func snfOpcodeDefineBase() bool {
 
 	snf_opcode_base_isinit = true
 	return true
+}
+func SNFOpcodePrint() string {
+	var out string
+	for cat := snf_opcode_ll; cat != nil; cat = cat.next {
+		out += fmt.Sprintf("+Category [0x%02x]\n", cat.OPmmbr)
+
+		for scat := cat.sub; scat != nil; scat = scat.next {
+			out += fmt.Sprintf("|+-+ Sub-Category [0x%02x]\n", scat.OPmmbr)
+
+			for cmd := scat.sub; cmd != nil; cmd = cmd.next {
+				out += fmt.Sprintf("||  +-+ Command [0x%02x]\n", cmd.OPmmbr)
+
+				for det := cmd.sub; det != nil; det = det.next {
+					out += fmt.Sprintf("||  | +-- Detail [0x%02x]\n", det.OPmmbr)
+				}
+				out += "||  +--\n"
+			}
+			out += "|+--\n"
+		}
+		out += "+--\n"
+	}
+
+	return out
 }
 func SNFOpcodeBaseInit(def SNFOpcodeCommandCallback) bool {
 	if snf_opcode_base_isinit == true {

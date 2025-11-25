@@ -15,17 +15,20 @@ const (
 	SNFServerRefusing
 )
 
-var snfServerStatus SNFServerStatus
+var snfServerStatus *SNFServerStatus = nil
 
 func SNFGetStatus() SNFServerStatus {
-	return snfServerStatus
+	if snfServerStatus == nil {
+		panic("ISR is not compiled.")
+	}
+	return *snfServerStatus
 }
 
 func SNFSetStatus(status SNFServerStatus) {
-	if snfServerStatus == status {
+	if snfServerStatus != nil {
 		return
 	}
-	snfServerStatus = status
+	snfServerStatus = &status
 	if err := SNFServerInitialRequestCompile(byte(status)); err != nil {
 		panic(err.Error())
 	}
@@ -35,9 +38,7 @@ func SNFServerInit() {
 		return
 	}
 	if err := snfInitServerVars(); err != nil {
-		panic(err.Error())
-	}
-	if err := snfServerSetOpcodeCallbacks(); err != nil {
+		//println(core.SNFOpcodePrint())
 		panic(err.Error())
 	}
 	if clients == nil {
@@ -70,7 +71,7 @@ func SNFServerStart() error {
 
 	for {
 		conn, err := listener.Accept()
-		if err != nil {
+		if err == nil {
 			go SNFClientHandleNew(conn)
 		}
 	}

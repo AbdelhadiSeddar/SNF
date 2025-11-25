@@ -163,26 +163,26 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 
 	return &req, nil
 }
-func SNFRequestRespond(client *SNFClient, original *core.SNFRequest, Response *core.SNFRequest) error {
+func SNFRequestSend(client *SNFClient, Request *core.SNFRequest) error {
 	if client.Mode != SNFClientConnectionModeOneshot {
 		if _, err := client.Conn.Write([]byte(client.UUID)); err != nil {
 			return err
 		}
 	}
 	// OPCODE
-	if _, err := client.Conn.Write(Response.OPCODE.ToBytes()); err != nil {
+	if _, err := client.Conn.Write(Request.OPCODE.ToBytes()); err != nil {
 		return err
 	}
 	// REQUID (echo original UID)
-	if _, err := client.Conn.Write(original.UID[:]); err != nil {
+	if _, err := client.Conn.Write(Request.UID[:]); err != nil {
 		return err
 	}
 	// Args
 	var argCount uint32
 	var argSize uint32
 	var argBuf []byte
-	if Response.Args != nil {
-		for arg := Response.Args; arg != nil; arg = arg.Next {
+	if Request.Args != nil {
+		for arg := Request.Args; arg != nil; arg = arg.Next {
 			argCount++
 			argBuf = append(argBuf, arg.Arg...)
 			if arg.Next != nil {

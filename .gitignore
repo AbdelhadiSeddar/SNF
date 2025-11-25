@@ -426,3 +426,4 @@ CPack*
 *.xml
 *.iml
 *.idea
+.vscode/*

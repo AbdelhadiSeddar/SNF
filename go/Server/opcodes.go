@@ -22,6 +22,22 @@ func snfServerInvalidProtocolCallBack(Original core.SNFRequest, Sender interface
 		),
 	}, nil
 }
+func snfServerConfirmCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
+	return core.SNFRequest{
+		UID: Original.UID,
+		OPCODE: core.SNFOpcodeGetUBase(
+			core.SNF_OPCODE_BASE_CMD_CONFIRM,
+		),
+	}, nil
+}
+func snfServerRejectCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
+	return core.SNFRequest{
+		UID: Original.UID,
+		OPCODE: core.SNFOpcodeGetUBase(
+			core.SNF_OPCODE_BASE_CMD_REJECT,
+		),
+	}, nil
+}
 
 func snfServerSetOpcodeCallbacks() error {
 	if !SNFServerVarsIsInit() {
@@ -37,7 +53,7 @@ func snfServerSetOpcodeCallbacks() error {
 			Component:         "Opcode Base",
 			RecommendedAction: "Never Call SNFOpcodeBaseInit()!!!",
 		}.Error())
-	} else if !core.SNFOpcodeBaseIsInit() && !core.SNFOpcodeBaseInit(snfServerDefaultCallBack) {
+	} else if !core.SNFOpcodeBaseInit(snfServerDefaultCallBack) {
 		return core.SNFErrorIntialization{FailedComponent: "SNFOpcodeBase"}
 	}
 	SetVar(SNF_VAR_INITIALIZED_OPCODE, true)
@@ -127,7 +143,7 @@ func snfServerCBConnect(Original core.SNFRequest, Sender interface{}) (core.SNFR
 
 // snfServerCBReconnect is the callback for the reconnect 0x01 base command
 func snfServerCBReconnect(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	result, err := snfServerInvalidProtocolCallBack(Original, Sender)
+	result, err := snfServerConfirmCallBack(Original, Sender)
 	return result, err
 }
 

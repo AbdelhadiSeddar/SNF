@@ -3,6 +3,7 @@ package Server
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 
@@ -84,15 +85,26 @@ func SNFClientRemove(uuid string) {
 
 func SNFClientHandleNew(conn net.Conn) {
 	defer conn.Close()
+
+	fmt.Println("Handling", conn.RemoteAddr().String())
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
 			RecommendedAction: "Call SNFServerInit() first!",
 		})
 	}
+
+	// Send the appropriate stuff
+	isr, err := SNFServerInitialRequestGet()
+	if err != nil {
+		panic(err.Error())
+	}
+	Send(conn, isr)
+
 	var opcode []byte = make([]byte, 4)
 
 	n, err := conn.Read(opcode)
+
 	if err != nil || n < 4 {
 		return
 	}
@@ -146,8 +158,20 @@ func SNFClientHandleNew(conn net.Conn) {
 					0x00, 0x00, 0x00, 0x00, /*N Args*/
 					0x00, 0x00, 0x00, 0x00 /*S Args*/},
 			)
+			return
 		}
-
+		if client.Mode != SNFClientConnectionModeOneshot {
+			snd := []byte{
+				0x00,                                /*OPC Cat*/
+				0x00,                                /*OPC SubCat*/
+				core.SNF_OPCODE_BASE_CMD_CONFIRM,    /*OPC CMD*/
+				core.SNF_OPCODE_BASE_DET_UNDETAILED, /*OPC DET*/
+				0x00, 0x00, 0x00, 0x01,              /*N Args*/
+				0x00, 0x00, 0x00, 0x24, /*S Args*/
+			}
+			snd = append(snd, client.UUID...)
+			Send(conn, snd)
+		}
 	case core.SNF_OPCODE_BASE_CMD_RECONNECT:
 		// Temporary
 		Send(conn,
@@ -178,16 +202,18 @@ func SNFClientHandleNew(conn net.Conn) {
 }
 
 func SNFClientHandle(client *SNFClient) {
-
+	defer func(client *SNFClient) {
+		client.Conn.Close()
+		client.Conn = nil
+	}(client)
 	for {
 		req, err := SNFRequestFetch(client)
 		if err != nil {
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
 				//Error handling comes later.
-				SNFRequestRespond(
+				SNFRequestSend(
 					client,
-					req,
 					core.SNFRequestGenResponse(
 						req,
 						core.SNFOpcodeGetBase(
@@ -200,9 +226,8 @@ func SNFClientHandle(client *SNFClient) {
 				return
 			default:
 				// Respond with the value of the error/ Debug only
-				SNFRequestRespond(
+				SNFRequestSend(
 					client,
-					req,
 					core.SNFRequestGenResponse(
 						req,
 						core.SNFOpcodeGetBase(
@@ -217,6 +242,42 @@ func SNFClientHandle(client *SNFClient) {
 				return
 			}
 		}
+		// Calling the function
+		f := req.OPCODE.Category.GetCallback()
+		if f == nil {
+			err = SNFRequestSend(
+				client,
+				core.SNFRequestGenResponse(
+					req,
+					core.SNFOpcodeGetBase(
+						core.SNF_OPCODE_BASE_CMD_INVALID,
+						core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
+					),
+					nil,
+				),
+			)
+			if err != nil {
+				return
+			}
+		}
 
+		//FIXME: This sounds so wrong!
+		res, err := f(*req, client)
+		if err != nil {
+			res = *core.SNFRequestGenResponse(
+				req,
+				core.SNFOpcodeGetBase(
+					core.SNF_OPCODE_BASE_CMD_INVALID,
+					core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
+				),
+				nil,
+			)
+		}
+
+		SNFRequestSend(client, &res)
+		if core.SNFOpcodeIsBase(*req.OPCODE) && req.OPCODE.Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+			SNFClientRemove(client.UUID)
+			return
+		}
 	}
 }
