@@ -93,7 +93,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 	var req core.SNFRequest
 	{ //OPCODE
 		var buf [4]byte
-		op, err := core.SNFOpcodeParse([4]byte(buf))
+		op, err := snfOPStruct.SNFOpcodeParse([4]byte(buf))
 		if err != nil {
 			return nil, core.SNFErrorOpcodeInvalid{
 				OPCode: [4]byte(buf),
