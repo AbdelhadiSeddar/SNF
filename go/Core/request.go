@@ -57,14 +57,6 @@ func SNFRequestGenServerOpcode(opcode *SNFOpcode) *SNFRequest {
 	return SNFRequestGenResponse(SNFRequestGenWUID(SNFRequestUIDNull), opcode, nil)
 }
 
-func SNFRequestGenBase(original *SNFRequest, command byte, detail byte) *SNFRequest {
-	return SNFRequestGenResponse(original, SNFOpcodeGetBase(command, detail), nil)
-}
-
-func SNFRequestGenUBase(original *SNFRequest, command byte) *SNFRequest {
-	return SNFRequestGenResponse(original, SNFOpcodeGetUBase(command), nil)
-}
-
 func (req *SNFRequest) getAllArgsBytes() []byte {
 	if req == nil || req.Args == nil {
 		return nil
@@ -87,7 +79,12 @@ func (req *SNFRequest) ToBytes() []byte {
 	}
 	args := req.getAllArgsBytes()
 	var b []byte = make([]byte, 0, 4+16+1+len(args))
-	b = append(b, req.OPCODE.Category.ref.OPmmbr, req.OPCODE.SubCategory.ref.OPmmbr, req.OPCODE.Command.ref.OPmmbr, req.OPCODE.Detail.ref.OPmmbr)
+	b = append(b,
+		req.OPCODE.Category.GetValue(),
+		req.OPCODE.SubCategory.GetValue(),
+		req.OPCODE.Command.GetValue(),
+		req.OPCODE.Detail.GetValue(),
+	)
 	b = append(b, req.UID[:]...)
 	b = append(b, req.OPCODE.ToBytes()...)
 	b = append(b, args...)
