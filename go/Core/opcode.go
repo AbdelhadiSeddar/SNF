@@ -135,6 +135,10 @@ func (p *SNFOpcodeSubCategoryMember) DefineCommand(code byte, callback SNFOpcode
 		item := SNFOpcodeCommandMember{}
 		item.SetValue(code)
 		item.parent = p
+		item.details[byte(0)] = &SNFOpcodeDetailMember{
+			parent: &item,
+		}
+		item.details[byte(0)].SetValue(byte(0))
 		if callback == nil {
 			item.f = p.parent.root.defaultCB
 		} else {
@@ -165,6 +169,9 @@ func (p *SNFOpcodeCommandMember) DefineDetail(code byte) *SNFOpcodeDetailMember 
 		return &item
 	}
 	return nil
+}
+func (o *SNFOpcodeCommandMember) SetCallback(cb SNFOpcodeCommandCallback) {
+	o.f = cb
 }
 func (o *SNFOpcodeCommandMember) GetCallback() SNFOpcodeCommandCallback {
 	return o.f
@@ -218,7 +225,7 @@ func (st *SNFOpcodeRootStructure) GetBaseOpcode(command byte, detail byte) *SNFO
 	return st.GetOpcode(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command, detail)
 }
 
-func (st *SNFOpcodeRootStructure) SNFOpcodeGetUBase(command byte) *SNFOpcode {
+func (st *SNFOpcodeRootStructure) GetUBaseOpcode(command byte) *SNFOpcode {
 	return st.GetBaseOpcode(command, SNF_OPCODE_BASE_DET_UNDETAILED)
 }
 
