@@ -1,13 +1,17 @@
 package Server
 
 import (
+	"fmt"
+
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
+
+var snfOPStruct *core.SNFOpcodeRootStructure
 
 func snfServerDefaultCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
 	return core.SNFRequest{
 		UID: Original.UID,
-		OPCODE: core.SNFOpcodeGetBase(
+		OPCODE: snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
 			core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
 		),
@@ -16,7 +20,7 @@ func snfServerDefaultCallBack(Original core.SNFRequest, Sender interface{}) (cor
 func snfServerInvalidProtocolCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
 	return core.SNFRequest{
 		UID: Original.UID,
-		OPCODE: core.SNFOpcodeGetBase(
+		OPCODE: snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
 			core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
 		),
@@ -25,7 +29,7 @@ func snfServerInvalidProtocolCallBack(Original core.SNFRequest, Sender interface
 func snfServerConfirmCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
 	return core.SNFRequest{
 		UID: Original.UID,
-		OPCODE: core.SNFOpcodeGetUBase(
+		OPCODE: snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
 		),
 	}, nil
@@ -33,7 +37,7 @@ func snfServerConfirmCallBack(Original core.SNFRequest, Sender interface{}) (cor
 func snfServerRejectCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
 	return core.SNFRequest{
 		UID: Original.UID,
-		OPCODE: core.SNFOpcodeGetUBase(
+		OPCODE: snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_REJECT,
 		),
 	}, nil
@@ -48,89 +52,124 @@ func snfServerSetOpcodeCallbacks() error {
 	}
 	SetVar(SNF_VAR_CLTS_DEFAULTCB, snfServerDefaultCallBack)
 
-	if core.SNFOpcodeBaseIsInit() {
+	if snfOPStruct != nil {
 		panic(core.SNFErrorAlreadyInitialized{
 			Component:         "Opcode Base",
 			RecommendedAction: "Never Call SNFOpcodeBaseInit()!!!",
 		}.Error())
-	} else if !core.SNFOpcodeBaseInit(snfServerDefaultCallBack) {
-		return core.SNFErrorIntialization{FailedComponent: "SNFOpcodeBase"}
 	}
+	snfOPStruct = core.SNFNewOpodeStructure(snfServerDefaultCallBack)
 	SetVar(SNF_VAR_INITIALIZED_OPCODE, true)
-	var err error
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+	cmd := snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_CONNECT,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_CONNECT),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBConnect,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_RECONNECT,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_RECONNECT),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBReconnect,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_DISCONNECT,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_DISCONNECT),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBDisonnect,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_VER_INF,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_VER_INF),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBVerInfo,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_KICK,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_KICK),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBKick,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_CONFIRM,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_CONFIRM),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBConfirm,
 	)
-	if err != nil {
-		return err
-	}
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_REJECT,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_REJECT),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBReject,
 	)
-	if err != nil {
-		return err
-	}
 
-	err = core.SNFOpcodeAddCommandCallback(
-		core.SNF_OPCODE_BASE_CAT,
-		core.SNF_OPCODE_BASE_SUBCAT,
+	cmd = snfOPStruct.GetBaseCommand(
 		core.SNF_OPCODE_BASE_CMD_INVALID,
+	)
+	if cmd == nil {
+		panic(
+			core.SNFErrorUninitializedValue{
+				OfWhat: fmt.Sprintf("Command [0x%02x]", core.SNF_OPCODE_BASE_CMD_INVALID),
+			}.Error(),
+		)
+	}
+	cmd.SetCallback(
 		snfServerCBInvalid,
 	)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -158,7 +197,7 @@ func snfServerCBVerInfo(Original core.SNFRequest, Sender interface{}) (core.SNFR
 	if Original.OPCODE.Detail.GetValue() == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
 		return *core.SNFRequestGenResponse(
 			&Original,
-			core.SNFOpcodeGetUBase(
+			snfOPStruct.GetUBaseOpcode(
 				core.SNF_OPCODE_BASE_CMD_CONFIRM,
 			),
 			core.SNFRequestArgGen(
@@ -167,7 +206,7 @@ func snfServerCBVerInfo(Original core.SNFRequest, Sender interface{}) (core.SNFR
 
 	return *core.SNFRequestGenResponse(
 		&Original,
-		core.SNFOpcodeGetUBase(
+		snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
 		),
 		core.SNFRequestArgGen(

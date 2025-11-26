@@ -216,7 +216,7 @@ func SNFClientHandle(client *SNFClient) {
 					client,
 					core.SNFRequestGenResponse(
 						req,
-						core.SNFOpcodeGetBase(
+						snfOPStruct.GetBaseOpcode(
 							core.SNF_OPCODE_BASE_CMD_INVALID,
 							core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
 						),
@@ -230,7 +230,7 @@ func SNFClientHandle(client *SNFClient) {
 					client,
 					core.SNFRequestGenResponse(
 						req,
-						core.SNFOpcodeGetBase(
+						snfOPStruct.GetBaseOpcode(
 							core.SNF_OPCODE_BASE_CMD_INVALID,
 							core.SNF_OPCODE_BASE_DET_UNDETAILED,
 						),
@@ -243,13 +243,13 @@ func SNFClientHandle(client *SNFClient) {
 			}
 		}
 		// Calling the function
-		f := req.OPCODE.Category.GetCallback()
+		f := req.OPCODE.Command.GetCallback()
 		if f == nil {
 			err = SNFRequestSend(
 				client,
 				core.SNFRequestGenResponse(
 					req,
-					core.SNFOpcodeGetBase(
+					snfOPStruct.GetBaseOpcode(
 						core.SNF_OPCODE_BASE_CMD_INVALID,
 						core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
 					),
@@ -266,7 +266,7 @@ func SNFClientHandle(client *SNFClient) {
 		if err != nil {
 			res = *core.SNFRequestGenResponse(
 				req,
-				core.SNFOpcodeGetBase(
+				snfOPStruct.GetBaseOpcode(
 					core.SNF_OPCODE_BASE_CMD_INVALID,
 					core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
 				),
@@ -275,7 +275,7 @@ func SNFClientHandle(client *SNFClient) {
 		}
 
 		SNFRequestSend(client, &res)
-		if core.SNFOpcodeIsBase(*req.OPCODE) && req.OPCODE.Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+		if (*req).OPCODE.IsBase() && req.OPCODE.Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
 			SNFClientRemove(client.UUID)
 			return
 		}

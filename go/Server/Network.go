@@ -47,7 +47,7 @@ func SNFServerInit() {
 	SNFSetStatus(SNFServerAccepting)
 }
 func SNFServerIsInit() bool {
-	return SNFServerVarsIsInit() && core.SNFOpcodeBaseIsInit() && clients != nil
+	return SNFServerVarsIsInit() && snfOPStruct != nil && clients != nil
 }
 func SNFServerStart() error {
 	if err := SNFServerVarsIsInit(); err == false {
