@@ -17,7 +17,9 @@ type SNFOpcodeRootStructure struct {
 
 func (root *SNFOpcodeRootStructure) DefineCategory(code byte) *SNFOpcodeCategoryMember {
 	if _, ok := root.categories[code]; !ok {
-		item := SNFOpcodeCategoryMember{}
+		item := SNFOpcodeCategoryMember{
+			subCategories: make(map[byte]*SNFOpcodeSubCategoryMember),
+		}
 		item.SetValue(code)
 		item.root = root
 		root.categories[code] = &item
@@ -112,7 +114,9 @@ type SNFOpcodeCategoryMember struct {
 
 func (p *SNFOpcodeCategoryMember) DefineSubCategory(code byte) *SNFOpcodeSubCategoryMember {
 	if _, ok := p.subCategories[code]; !ok {
-		item := SNFOpcodeSubCategoryMember{}
+		item := SNFOpcodeSubCategoryMember{
+			commands: make(map[byte]*SNFOpcodeCommandMember),
+		}
 		item.SetValue(code)
 		item.parent = p
 		p.subCategories[code] = &item
@@ -132,7 +136,9 @@ type SNFOpcodeSubCategoryMember struct {
 
 func (p *SNFOpcodeSubCategoryMember) DefineCommand(code byte, callback SNFOpcodeCommandCallback) *SNFOpcodeCommandMember {
 	if _, ok := p.commands[code]; !ok {
-		item := SNFOpcodeCommandMember{}
+		item := SNFOpcodeCommandMember{
+			details: make(map[byte]*SNFOpcodeDetailMember),
+		}
 		item.SetValue(code)
 		item.parent = p
 		item.details[byte(0)] = &SNFOpcodeDetailMember{

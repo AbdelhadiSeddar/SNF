@@ -48,13 +48,14 @@ func SNFServerInitialRequestCompile(Command byte) error {
 		appname.(string),
 	)
 
-	temp_isr = append(temp_isr, temp_server_info...)
-
 	// Define the opcode
 	temp_isr = append(temp_isr, 0x00, 0x00, Command, 0x00)
-	/// Defining Needed stuff |4B_Amounts of Arguments|4B__Size of Arguments__|
-	temp_isr = append(temp_isr, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00)
-	//TODO: Allow for TimeOut for not accepting Clients.
+	// Append the Amount
+	temp_isr = binary.BigEndian.AppendUint32(temp_isr, uint32(1))
+	// Append the Size
+	temp_isr = binary.BigEndian.AppendUint32(temp_isr, uint32(len(temp_server_info)))
+
+	temp_isr = append(temp_isr, temp_server_info...)
 
 	snfISRRWMutex.Lock()
 	snfInitialServerRequest = &temp_isr
