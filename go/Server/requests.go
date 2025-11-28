@@ -16,7 +16,7 @@ var snfInitialServerRequest *[]byte
 //
 // Parameters:
 //
-//	Command: Values SNF_OPCODE_BASE_CMD_[CONNECT/RECONNECT/DISCONNECT]
+//	Command: Accepted values SNF_OPCODE_BASE_CMD_[CONNECT/RECONNECT/DISCONNECT]
 func SNFServerInitialRequestCompile(Command byte) error {
 	if !SNFServerIsInit() {
 		return core.SNFErrorUninitialized{
@@ -99,7 +99,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 				OPCode: [4]byte(buf),
 			}
 		}
-		req.OPCODE = op
+		req.SetOpcode(op)
 	}
 	{ //REQUID
 		buf := make([]byte, 16)
@@ -107,7 +107,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 		if err != nil {
 			return nil, err
 		}
-		req.UID = [16]byte(buf)
+		req.SetUID([16]byte(buf))
 	}
 	//Args
 	{
@@ -137,26 +137,12 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 			args_s_split := strings.Split(args_s, "\x1F")
 			if len(args_s_split) != int(reqArgsCount) {
 				return nil, core.SNFErrorUnallowedValue{
-					Is:          fmt.Sprintf("of the number of arguments in Request %x is %d", req.UID, len(args_s_split)),
+					Is:          fmt.Sprintf("of the number of arguments in Request %x is %d", req.GetUID(), len(args_s_split)),
 					ShouldvBeen: fmt.Sprintf("%d", reqArgsCount),
 				}
 			}
-			var args_h *core.SNFRequestArg = nil
-			var args_c *core.SNFRequestArg = nil
-			for i := 0; i < int(reqArgsCount); i++ {
-				arg := &core.SNFRequestArg{
-					Arg: []byte(args_s_split[i]),
-				}
-				if args_h == nil {
-					args_h = arg
-				}
-				if args_c == nil {
-					args_c = arg
-				} else {
-					args_c.Next = arg
-					args_c = args_c.Next
-				}
-			}
+
+			req.ArgsAdd(args_s_split)
 		}
 
 	}
@@ -164,43 +150,15 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 	return &req, nil
 }
 func SNFRequestSend(client *SNFClient, Request *core.SNFRequest) error {
+	var content []byte
 	if client.Mode != SNFClientConnectionModeOneshot {
-		if _, err := client.Conn.Write([]byte(client.UUID)); err != nil {
-			return err
-		}
+		content = append(content, []byte(client.UUID)...)
 	}
-	// OPCODE
-	if _, err := client.Conn.Write(Request.OPCODE.ToBytes()); err != nil {
+
+	content = append(content, Request.ToBytes()...)
+
+	if _, err := client.Conn.Write(content); err != nil {
 		return err
-	}
-	// REQUID (echo original UID)
-	if _, err := client.Conn.Write(Request.UID[:]); err != nil {
-		return err
-	}
-	// Args
-	var argCount uint32
-	var argSize uint32
-	var argBuf []byte
-	if Request.Args != nil {
-		for arg := Request.Args; arg != nil; arg = arg.Next {
-			argCount++
-			argBuf = append(argBuf, arg.Arg...)
-			if arg.Next != nil {
-				argBuf = append(argBuf, 0x1F)
-			}
-		}
-		argSize = uint32(len(argBuf))
-	}
-	if err := binary.Write(client.Conn, binary.BigEndian, argCount); err != nil {
-		return err
-	}
-	if err := binary.Write(client.Conn, binary.BigEndian, argSize); err != nil {
-		return err
-	}
-	if argSize > 0 {
-		if _, err := client.Conn.Write(argBuf); err != nil {
-			return err
-		}
 	}
 	return nil
 }

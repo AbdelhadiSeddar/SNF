@@ -9,38 +9,36 @@ import (
 var snfOPStruct *core.SNFOpcodeRootStructure
 
 func snfServerDefaultCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	return core.SNFRequest{
-		UID: Original.UID,
-		OPCODE: snfOPStruct.GetBaseOpcode(
+	return *core.SNFRequestGen().
+		RespondsTo(&Original).
+		SetOpcode(snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
 			core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
-		),
-	}, nil
+		)), nil
+
 }
 func snfServerInvalidProtocolCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	return core.SNFRequest{
-		UID: Original.UID,
-		OPCODE: snfOPStruct.GetBaseOpcode(
+	return *core.SNFRequestGen().
+		RespondsTo(&Original).
+		SetOpcode(snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
 			core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
-		),
-	}, nil
+		)), nil
 }
-func snfServerConfirmCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	return core.SNFRequest{
-		UID: Original.UID,
-		OPCODE: snfOPStruct.GetUBaseOpcode(
+func SNFServerConfirmCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
+	return *core.SNFRequestGen().
+		RespondsTo(&Original).
+		SetOpcode(snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
-		),
-	}, nil
+		)), nil
 }
-func snfServerRejectCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	return core.SNFRequest{
-		UID: Original.UID,
-		OPCODE: snfOPStruct.GetUBaseOpcode(
-			core.SNF_OPCODE_BASE_CMD_REJECT,
-		),
-	}, nil
+func SNFServerRejectCallBack(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
+	return *core.SNFRequestGen().
+			RespondsTo(&Original).
+			SetOpcode(snfOPStruct.GetUBaseOpcode(
+				core.SNF_OPCODE_BASE_CMD_REJECT,
+			)),
+		nil
 }
 
 func snfServerSetOpcodeCallbacks() error {
@@ -182,7 +180,7 @@ func snfServerCBConnect(Original core.SNFRequest, Sender interface{}) (core.SNFR
 
 // snfServerCBReconnect is the callback for the reconnect 0x01 base command
 func snfServerCBReconnect(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	result, err := snfServerConfirmCallBack(Original, Sender)
+	result, err := SNFServerConfirmCallBack(Original, Sender)
 	return result, err
 }
 
@@ -194,23 +192,21 @@ func snfServerCBDisonnect(Original core.SNFRequest, Sender interface{}) (core.SN
 
 // snfServerCBVerInfo is the callback for the verinfo 0x03 base command
 func snfServerCBVerInfo(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
-	if Original.OPCODE.Detail.GetValue() == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
-		return *core.SNFRequestGenResponse(
-			&Original,
-			snfOPStruct.GetUBaseOpcode(
+	if Original.GetOpcode().Detail.GetValue() == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
+		return *core.SNFRequestGen().
+			RespondsTo(&Original).
+			SetOpcode(snfOPStruct.GetUBaseOpcode(
 				core.SNF_OPCODE_BASE_CMD_CONFIRM,
-			),
-			core.SNFRequestArgGen(
-				[]byte(core.SNFVersion))), nil
+			)).
+			ArgAdd(core.SNPVersion), nil
 	}
 
-	return *core.SNFRequestGenResponse(
-		&Original,
-		snfOPStruct.GetUBaseOpcode(
+	return *core.SNFRequestGen().
+		RespondsTo(&Original).
+		SetOpcode(snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
-		),
-		core.SNFRequestArgGen(
-			[]byte(core.SNFVersion))), nil
+		)).
+		ArgAdd(core.SNFVersion), nil
 }
 
 // snfServerCBKick is the callback for the kick 0x04 base command

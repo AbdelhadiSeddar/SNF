@@ -212,49 +212,41 @@ func SNFClientHandle(client *SNFClient) {
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
 				//Error handling comes later.
-				SNFRequestSend(
-					client,
-					core.SNFRequestGenResponse(
-						req,
-						snfOPStruct.GetBaseOpcode(
-							core.SNF_OPCODE_BASE_CMD_INVALID,
-							core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
-						),
-						nil,
-					),
+				SNFRequestSend(client,
+					core.SNFRequestGen().
+						RespondsTo(req).
+						SetOpcode(
+							snfOPStruct.GetBaseOpcode(
+								core.SNF_OPCODE_BASE_CMD_INVALID,
+								core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
+							)),
 				)
 				return
 			default:
 				// Respond with the value of the error/ Debug only
-				SNFRequestSend(
-					client,
-					core.SNFRequestGenResponse(
-						req,
-						snfOPStruct.GetBaseOpcode(
-							core.SNF_OPCODE_BASE_CMD_INVALID,
-							core.SNF_OPCODE_BASE_DET_UNDETAILED,
-						),
-						&core.SNFRequestArg{
-							Arg: []byte(err.Error()),
-						},
-					),
+				SNFRequestSend(client,
+					core.SNFRequestGen().
+						RespondsTo(req).
+						SetOpcode(
+							snfOPStruct.GetBaseOpcode(
+								core.SNF_OPCODE_BASE_CMD_INVALID,
+								core.SNF_OPCODE_BASE_DET_UNDETAILED,
+							)),
 				)
 				return
 			}
 		}
 		// Calling the function
-		f := req.OPCODE.Command.GetCallback()
+		f := req.GetOpcode().Command.GetCallback()
 		if f == nil {
-			err = SNFRequestSend(
-				client,
-				core.SNFRequestGenResponse(
-					req,
-					snfOPStruct.GetBaseOpcode(
-						core.SNF_OPCODE_BASE_CMD_INVALID,
-						core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
-					),
-					nil,
-				),
+			err = SNFRequestSend(client,
+				core.SNFRequestGen().
+					RespondsTo(req).
+					SetOpcode(
+						snfOPStruct.GetBaseOpcode(
+							core.SNF_OPCODE_BASE_CMD_INVALID,
+							core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
+						)),
 			)
 			if err != nil {
 				return
@@ -264,18 +256,18 @@ func SNFClientHandle(client *SNFClient) {
 		//FIXME: This sounds so wrong!
 		res, err := f(*req, client)
 		if err != nil {
-			res = *core.SNFRequestGenResponse(
-				req,
-				snfOPStruct.GetBaseOpcode(
-					core.SNF_OPCODE_BASE_CMD_INVALID,
-					core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
-				),
-				nil,
-			)
+			res = *core.SNFRequestGen().
+				RespondsTo(req).
+				SetOpcode(
+					snfOPStruct.GetBaseOpcode(
+						core.SNF_OPCODE_BASE_CMD_INVALID,
+						core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
+					),
+				)
 		}
 
 		SNFRequestSend(client, &res)
-		if (*req).OPCODE.IsBase() && req.OPCODE.Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+		if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
 			SNFClientRemove(client.UUID)
 			return
 		}
