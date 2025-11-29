@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"io"
 	"net"
 	"sync"
 	"time"
@@ -11,23 +12,18 @@ import (
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
 
-// Default Time Duration a Client should wait between each interactions before timing out and re-trying out
 var SNFConnectionDefaultTimeOut time.Duration = time.Minute
-
-// Amount of times a connection is retried before giving up. (0 means no re-tries)
 var SNFConnectionDefaultRetries int = 0
 
-type OnResponseCallback func(SNFRequest, error)
 type OnConnectCallback func()
 type OnSNFFailCallback func(error)
 type OnSocketFailCallback func(error)
 type OnExceptionCallback func(error)
 type OnTimeoutCallback func()
 
-// SNFConnection represents a client connection to the SNF server.
 type SNFConnectionInfo struct {
 	once         bool
-	once_d       bool
+	once_done    bool
 	conn         net.Conn
 	address      string
 	uuid         string
@@ -37,26 +33,27 @@ type SNFConnectionInfo struct {
 	requestQueue chan *SNFRequest
 	requestsSent map[[16]byte]*SNFRequest
 }
+
 type SNFConnectionCallbacks struct {
-	onResponseCallback  OnResponseCallback
 	onConnectCallback   OnConnectCallback
 	onExceptionCallback OnExceptionCallback
 	onTimeoutCallback   OnTimeoutCallback
 }
+
 type SNFConnection struct {
 	SNFConnectionInfo
 	SNFConnectionCallbacks
 	opcodes *core.SNFOpcodeRootStructure
-
-	mu sync.Mutex
+	mapLock sync.RWMutex
+	mu      sync.Mutex
 }
 
 func SNFNewConnection() *SNFConnection {
 	ret := &SNFConnection{}
-
 	ret.timeOut = SNFConnectionDefaultTimeOut
 	ret.retries = SNFConnectionDefaultRetries
-
+	ret.requestQueue = make(chan *SNFRequest, 100)
+	ret.requestsSent = make(map[[16]byte]*SNFRequest)
 	return ret
 }
 
@@ -64,54 +61,43 @@ func (r *SNFConnection) SetAddress(address string) *SNFConnection {
 	r.address = address
 	return r
 }
+
 func (r *SNFConnection) SetOpcodeStruct(op *core.SNFOpcodeRootStructure) *SNFConnection {
 	r.opcodes = op
 	return r
 }
 
-// If r.Once() was not called. This will be ignored.
-func (r *SNFConnection) OnResponse(cb OnResponseCallback) *SNFConnection {
-	r.onResponseCallback = cb
-	return r
-}
 func (r *SNFConnection) OnConnect(cb OnConnectCallback) *SNFConnection {
 	r.onConnectCallback = cb
 	return r
 }
 
-// If this connection's retries are > 0 it will retry after returning this function if set
-func (r *SNFConnection) OnException(cb OnConnectCallback) *SNFConnection {
-	r.onConnectCallback = cb
+func (r *SNFConnection) OnException(cb OnExceptionCallback) *SNFConnection {
+	r.onExceptionCallback = cb
 	return r
 }
 
-// If this connection's retries are > 0 it will retry after returning this function if set
-func (r *SNFConnection) OnTimeout(cb OnConnectCallback) *SNFConnection {
-	r.onConnectCallback = cb
+func (r *SNFConnection) OnTimeout(cb OnTimeoutCallback) *SNFConnection {
+	r.onTimeoutCallback = cb
 	return r
 }
 
-// Note Oneshot will note be implemented yet.
 func (r *SNFConnection) Once(req *SNFRequest) *SNFConnection {
 	r.once = true
 	r.requestQueue <- req
-
 	return r
 }
 
 func (r *SNFConnection) Connect() *SNFConnection {
 	var err error
 	dialer := net.Dialer{
-		Timeout: r.timeOut,
+		KeepAlive: 30 * time.Second,
 	}
 	retries := r.retries
 	for {
-		if retries == 0 {
-			return nil
-		}
 		r.conn, err = dialer.Dial("tcp", r.address)
 		if err != nil {
-			if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, net.ErrClosed) && err.Error() == "i/o timeout" {
+			if errors.Is(err, context.DeadlineExceeded) || (errors.Is(err, net.ErrClosed) && err.Error() == "i/o timeout") {
 				if r.onTimeoutCallback != nil {
 					r.onTimeoutCallback()
 				}
@@ -120,29 +106,19 @@ func (r *SNFConnection) Connect() *SNFConnection {
 					r.onExceptionCallback(err)
 				}
 			}
-			retries--
-			continue
+			if retries > 0 {
+				retries--
+				time.Sleep(time.Second)
+				continue
+			}
 		}
 		break
 	}
 	{
-		buf := make([]byte, 16)
+		buf := make([]byte, 12)
 
-		n, err := r.conn.Read(buf)
-		if err != nil {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(err)
-			}
-			r.conn.Close()
-			return nil
-		} else if n < 16 {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(core.SNFErrorUninitialized{
-					Component:         "\"Connection\"",
-					RecommendedAction: "Communication failure with the server. Verify Server and re-try.",
-				})
-			}
-			r.conn.Close()
+		if _, err := io.ReadFull(r.conn, buf); err != nil {
+			r.handleError(err)
 			return nil
 		}
 
@@ -152,61 +128,95 @@ func (r *SNFConnection) Connect() *SNFConnection {
 			buf[2],
 			buf[3],
 		)
-		if op == nil || op.Category.GetValue() != op.SubCategory.GetValue() ||
-			op.Category.GetValue() != 0 ||
-			op.Command.GetValue() != core.SNF_OPCODE_BASE_CMD_CONFIRM ||
-			op.Detail.GetValue() != core.SNF_OPCODE_BASE_DET_UNDETAILED {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(core.SNFErrorUninitialized{
-					Component:         "\"Connection\"",
-					RecommendedAction: "Communication failure with the server. Verify compatibility with the Server and re-try.",
-				})
-			}
-			r.conn.Close()
+		if op == nil || !op.IsBase() ||
+			op.Command.GetValue() != core.SNF_OPCODE_BASE_CMD_CONNECT {
+			r.handleError(core.SNFErrorUninitialized{
+				Component:         "\"Connection\"",
+				RecommendedAction: "Communication failure with the server. Verify compatibility with the Server and re-try.",
+			})
 			return nil
 		}
 		buf = buf[4:]
 
 		args_amount := binary.BigEndian.Uint32(buf[:4])
-		buf = buf[4:] // Advance the buffer again
+		buf = buf[4:]
 
-		// Read the second uint32 (next 4 bytes)
 		args_size := binary.BigEndian.Uint32(buf[:4])
 
 		if args_amount != 1 || args_size == 0 {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(core.SNFErrorUninitialized{
-					Component:         "\"Connection\"",
-					RecommendedAction: "Communication mixup failure with the server. Verify compatibility with the Server and re-try.",
-				})
-			}
-			r.conn.Close()
+			r.handleError(core.SNFErrorUninitialized{
+				Component:         "\"Connection\"",
+				RecommendedAction: "Communication mixup failure with the server. Verify compatibility with the Server and re-try.",
+			})
 			return nil
 		}
 
 		arg := make([]byte, args_size)
-		n, err = r.conn.Read(arg)
-		if err != nil {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(err)
-			}
-			r.conn.Close()
-			return nil
-		} else if n < int(args_size) {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(core.SNFErrorUninitialized{
-					Component:         "\"Connection\"",
-					RecommendedAction: "Communication failure with the server. Verify Server and re-try.",
-				})
-			}
-			r.conn.Close()
+		if _, err = io.ReadFull(r.conn, arg); err != nil {
+			r.handleError(err)
 			return nil
 		}
 
-		//FIXME Handle versioning correctly. Currwent anyversion is accepted.
+		var confirmConnection []byte = []byte{
+			0x00,
+			0x00,
+			core.SNF_OPCODE_BASE_CMD_CONNECT,
+			0x00,
+		}
+		if _, err := r.conn.Write(confirmConnection); err != nil {
+			r.handleError(err)
+			return nil
+		}
+
+		opcodeBuf := make([]byte, 4)
+		if _, err := io.ReadFull(r.conn, opcodeBuf); err != nil {
+			r.handleError(err)
+			return nil
+		}
+		opcode := r.Opcodes().GetOpcode(opcodeBuf[0], opcodeBuf[1], opcodeBuf[2], opcodeBuf[3])
+		if opcode == nil || !opcode.IsBase() || opcode.Command.GetValue() != core.SNF_OPCODE_BASE_CMD_CONFIRM {
+			r.handleError(core.SNFErrorUninitialized{
+				Component:         "\"Connection\"",
+				RecommendedAction: "Communication failure with the server. Verify compatibility with the Server and re-try.",
+			})
+			return nil
+		}
+		metaBuf := make([]byte, 8)
+		if _, err := io.ReadFull(r.conn, metaBuf); err != nil {
+			r.handleError(err)
+			return nil
+		}
+
+		serverArgsCount := binary.BigEndian.Uint32(metaBuf[:4])
+		serverArgsSize := binary.BigEndian.Uint32(metaBuf[4:])
+
+		if serverArgsCount != 1 || serverArgsSize != 36 {
+			r.handleError(core.SNFErrorUninitialized{
+				Component:         "\"Connection\"",
+				RecommendedAction: "Server protocol mismatch. Expected 1 Argument of size 36 (UUID).",
+			})
+			return nil
+		}
+
+		uuidBuf := make([]byte, 36)
+		if _, err := io.ReadFull(r.conn, uuidBuf); err != nil {
+			r.handleError(err)
+			return nil
+		}
+		r.uuid = string(uuidBuf)
+		if r.onConnectCallback != nil {
+			r.onConnectCallback()
+		}
 		go r.handleRequests()
 	}
 	return r
+}
+
+func (r *SNFConnection) handleError(err error) {
+	if r.onExceptionCallback != nil {
+		r.onExceptionCallback(err)
+	}
+	r.conn.Close()
 }
 
 func (r *SNFConnection) Opcodes() *core.SNFOpcodeRootStructure {
@@ -215,30 +225,28 @@ func (r *SNFConnection) Opcodes() *core.SNFOpcodeRootStructure {
 
 func (r *SNFConnection) SendRequest(req *SNFRequest) bool {
 	if r.once {
-		return false
+		if r.once_done {
+			return false
+		}
+		r.once_done = true
 	}
+	req.cr.SetUID(generateUID())
 	r.requestQueue <- req
+
 	return true
 }
 
 func (r *SNFConnection) handleRequestsincoming() {
 	var header_buffer [28]byte
 	for {
-		n, err := r.conn.Read(header_buffer[:])
-		if err != nil {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(err)
-			}
-			r.conn.Close()
+		if err := r.conn.SetReadDeadline(time.Time{}); err != nil {
+			r.handleError(err)
 			return
-		} else if n < 28 {
-			if r.onExceptionCallback != nil {
-				r.onExceptionCallback(core.SNFErrorUninitialized{
-					Component:         "\"Connection\"",
-					RecommendedAction: "Communication failure with the server. Verify Server and re-try.",
-				})
-			}
-			r.conn.Close()
+		}
+
+		_, err := io.ReadFull(r.conn, header_buffer[:])
+		if err != nil {
+			r.handleError(err)
 			return
 		}
 
@@ -251,15 +259,29 @@ func (r *SNFConnection) handleRequestsincoming() {
 			op[3],
 		)
 		if opcode == nil {
-			// FIXME handle invalid opcode better
+			if args_size > 0 {
+				io.CopyN(io.Discard, r.conn, int64(args_size))
+			}
 			continue
 		}
 		argsbuff := make([]byte, args_size)
+
+		_, err = io.ReadFull(r.conn, argsbuff)
+		if err != nil {
+			r.handleError(err)
+			return
+		}
+
 		true_args_amount := rq.snfRequestParseArguments(argsbuff)
 		if true_args_amount != args_amount {
 			continue
 		}
-		if item, ok := r.requestsSent[rq.cr.GetUID()]; ok {
+
+		r.mapLock.RLock()
+		item, ok := r.requestsSent[rq.cr.GetUID()]
+		r.mapLock.RUnlock()
+
+		if ok {
 			if item.onResponse != nil {
 				go item.onResponse(*rq)
 			}
@@ -272,7 +294,9 @@ func (r *SNFConnection) handleRequests() {
 
 	for {
 		rq := <-r.requestQueue
-		if _, err := r.conn.Write(rq.cr.ToBytes()); err != nil {
+		ToSend := append([]byte(r.uuid), rq.cr.ToBytes()...)
+
+		if _, err := r.conn.Write(ToSend); err != nil {
 			if r.onExceptionCallback != nil {
 				r.onExceptionCallback(err)
 			}
@@ -280,7 +304,8 @@ func (r *SNFConnection) handleRequests() {
 			return
 		}
 
+		r.mapLock.Lock()
 		r.requestsSent[rq.cr.GetUID()] = rq
-
+		r.mapLock.Unlock()
 	}
 }

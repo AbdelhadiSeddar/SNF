@@ -29,6 +29,13 @@ func (r *SNFRequest) SetResponseFailureCallback(cb SNFRequestFailureCB) *SNFRequ
 func (r *SNFRequest) Core() *core.SNFRequest {
 	return &r.cr
 }
+func (r *SNFRequest) SetCore(cr core.SNFRequest) *SNFRequest {
+	r.cr = cr
+	return r
+}
+func (r *SNFRequest) GetArgs() []string {
+	return r.cr.GetArgs()
+}
 
 func generateUID() [16]byte {
 	var uid []byte
