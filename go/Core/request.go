@@ -38,6 +38,9 @@ func (r *SNFRequest) ArgAdd(arg string) *SNFRequest {
 func (r *SNFRequest) ArgsAdd(args []string) {
 	r.args = append(r.args, args...)
 }
+func (r *SNFRequest) GetArgs() []string {
+	return r.args
+}
 
 // Similair to r.SetUID(original.GetUID())
 func (r *SNFRequest) RespondsTo(original *SNFRequest) *SNFRequest {
@@ -70,8 +73,8 @@ func (r *SNFRequest) argsToBytes() []byte {
 
 func (r *SNFRequest) ToBytes() []byte {
 	var ret []byte
-	ret = append(ret, r.uid[:]...)
 	ret = append(ret, r.op.ToBytes()...)
+	ret = append(ret, r.uid[:]...)
 	ret = binary.BigEndian.AppendUint32(ret, uint32(len(r.args)))
 	args_bytes := r.argsToBytes()
 	ret = binary.BigEndian.AppendUint32(ret, uint32(len(args_bytes)))
@@ -81,13 +84,12 @@ func (r *SNFRequest) ToBytes() []byte {
 func FromBytes(data []byte) ([4]byte, uint32, *SNFRequest) {
 	r := &SNFRequest{}
 
-	// UID (16 bytes)
-	copy(r.uid[:], data[:16])
-	data = data[16:]
-
 	// Opcode
 	opDat := [4]byte(data[:4])
 	data = data[4:]
+	// UID (16 bytes)
+	copy(r.uid[:], data[:16])
+	data = data[16:]
 
 	// Args count (4 bytes)
 	argsCount := binary.BigEndian.Uint32(data[:4])

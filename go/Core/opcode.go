@@ -1,5 +1,10 @@
 package Core
 
+import (
+	"fmt"
+	"strings"
+)
+
 const (
 	SNFOpcodeRankCategory SNFOpcodeRank = iota
 	SNFOpcodeRankSubCategory
@@ -199,7 +204,7 @@ type SNFOpcodeCommandCallback func(Original SNFRequest, Sender interface{}) (SNF
 // if already defined return nil
 // Checks if it is a Base Opcode
 func (op SNFOpcode) IsBase() bool {
-	if op.Category.GetValue() == SNF_OPCODE_BASE_CAT {
+	if op.Category.GetValue() != SNF_OPCODE_BASE_CAT {
 		return false
 	}
 	if op.SubCategory.GetValue() != SNF_OPCODE_BASE_SUBCAT {
@@ -305,7 +310,42 @@ func SNFNewOpodeStructure(def_cb SNFOpcodeCommandCallback) *SNFOpcodeRootStructu
 	return root
 }
 func SNFOpcodePrint(root SNFOpcodeRootStructure) string {
-	return "" //FIXME: Fix prinoutS
+	var sb strings.Builder
+	sb.WriteString("SNFOpcodeRootStructure{\n")
+	sb.WriteString(fmt.Sprintf("  isInit: %v\n", root.isInit))
+	sb.WriteString("  categories: {\n")
+	for catCode, cat := range root.categories {
+		sb.WriteString(fmt.Sprintf("    0x%02X: SNFOpcodeCategoryMember{\n", catCode))
+		sb.WriteString(fmt.Sprintf("      val: 0x%02X\n", cat.val))
+		sb.WriteString("      subCategories: {\n")
+		for scCode, sc := range cat.subCategories {
+			sb.WriteString(fmt.Sprintf("        0x%02X: SNFOpcodeSubCategoryMember{\n", scCode))
+			sb.WriteString(fmt.Sprintf("          val: 0x%02X\n", sc.val))
+			sb.WriteString("          commands: {\n")
+			for cmdCode, cmd := range sc.commands {
+				sb.WriteString(fmt.Sprintf("            0x%02X: SNFOpcodeCommandMember{\n", cmdCode))
+				sb.WriteString(fmt.Sprintf("              val: 0x%02X\n", cmd.val))
+				if cmd.f != nil {
+					sb.WriteString("              callback: <set>\n")
+				} else {
+					sb.WriteString("              callback: <nil>\n")
+				}
+				sb.WriteString("              details: {\n")
+				for detCode, det := range cmd.details {
+					sb.WriteString(fmt.Sprintf("                0x%02X: SNFOpcodeDetailMember{ val: 0x%02X }\n", detCode, det.val))
+				}
+				sb.WriteString("              }\n")
+				sb.WriteString("            }\n")
+			}
+			sb.WriteString("          }\n")
+			sb.WriteString("        }\n")
+		}
+		sb.WriteString("      }\n")
+		sb.WriteString("    }\n")
+	}
+	sb.WriteString("  }\n")
+	sb.WriteString("}")
+	return sb.String()
 }
 
 const SNF_OPCODE_BASE_CAT = 0x00
