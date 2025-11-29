@@ -86,6 +86,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 			return nil, err
 		}
 		if string(buf) != client.UUID {
+			println("Server: Received ", string(buf), " Expected ", client.UUID)
 			return nil, core.SNFErrorClientMismatch{
 				Conn: client.Conn,
 			}
@@ -94,6 +95,9 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 	var req core.SNFRequest
 	{ //OPCODE
 		var buf [4]byte
+		if _, err := Receive(client.Conn, buf[:]); err != nil {
+			return nil, err
+		}
 		op, err := snfOPStruct.SNFOpcodeParse([4]byte(buf))
 		if err != nil {
 			return nil, core.SNFErrorOpcodeInvalid{
@@ -102,7 +106,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 		}
 		req.SetOpcode(op)
 	}
-	{ //REQUID
+	if client.Mode != SNFClientConnectionModeOneshot { //REQUID
 		buf := make([]byte, 16)
 		_, err := Receive(client.Conn, buf)
 		if err != nil {
@@ -152,9 +156,6 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 }
 func SNFRequestSend(client *SNFClient, Request *core.SNFRequest) error {
 	var content []byte
-	if client.Mode != SNFClientConnectionModeOneshot {
-		content = append(content, []byte(client.UUID)...)
-	}
 
 	content = append(content, Request.ToBytes()...)
 

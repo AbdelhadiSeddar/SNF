@@ -3,7 +3,6 @@ package Server
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"net"
 	"sync"
 
@@ -86,7 +85,6 @@ func SNFClientRemove(uuid string) {
 func SNFClientHandleNew(conn net.Conn) {
 	defer conn.Close()
 
-	fmt.Println("Handling", conn.RemoteAddr().String())
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
