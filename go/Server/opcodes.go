@@ -228,3 +228,8 @@ func snfServerCBReject(Original core.SNFRequest, Sender interface{}) (core.SNFRe
 func snfServerCBInvalid(Original core.SNFRequest, Sender interface{}) (core.SNFRequest, error) {
 	return snfServerInvalidProtocolCallBack(Original, Sender)
 }
+
+
+func OPCodes() *core.SNFOpcodeRootStructure {
+  return snfOPStruct
+}

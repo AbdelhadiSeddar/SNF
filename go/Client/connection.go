@@ -67,6 +67,10 @@ func (r *SNFConnection) SetOpcodeStruct(op *core.SNFOpcodeRootStructure) *SNFCon
 	return r
 }
 
+func (r *SNFConnection) OPCodes() *core.SNFOpcodeRootStructure {
+  return r.opcodes
+}
+
 func (r *SNFConnection) OnConnect(cb OnConnectCallback) *SNFConnection {
 	r.onConnectCallback = cb
 	return r
