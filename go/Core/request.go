@@ -2,50 +2,50 @@ package Core
 
 import "encoding/binary"
 
-var SNFRequestUIDNull = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+var RequestUIDNull = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
 
-type SNFRequest struct {
+type Request struct {
 	uid  [16]byte
-	op   *SNFOpcode
+	op   *Opcode
 	args []string
 }
 
-func SNFRequestGen() *SNFRequest {
-	return &SNFRequest{}
+func RequestGen() *Request {
+	return &Request{}
 }
 
-func (r *SNFRequest) SetUID(uid [16]byte) *SNFRequest {
+func (r *Request) SetUID(uid [16]byte) *Request {
 	r.uid = uid
 	return r
 }
-func (r *SNFRequest) GetUID() [16]byte {
+func (r *Request) GetUID() [16]byte {
 	return r.uid
 }
 
-func (r *SNFRequest) SetOpcode(op *SNFOpcode) *SNFRequest {
+func (r *Request) SetOpcode(op *Opcode) *Request {
 	r.op = op
 	return r
 }
-func (r *SNFRequest) GetOpcode() *SNFOpcode {
+func (r *Request) GetOpcode() *Opcode {
 	return r.op
 }
 
-func (r *SNFRequest) ArgAdd(arg string) *SNFRequest {
+func (r *Request) ArgAdd(arg string) *Request {
 	r.args = append(r.args, arg)
 	return r
 }
 
-func (r *SNFRequest) ArgsAdd(args []string) {
+func (r *Request) ArgsAdd(args []string) {
 	r.args = append(r.args, args...)
 }
-func (r *SNFRequest) GetArgs() []string {
+func (r *Request) GetArgs() []string {
 	return r.args
 }
 
 // Similair to r.SetUID(original.GetUID())
-func (r *SNFRequest) RespondsTo(original *SNFRequest) *SNFRequest {
+func (r *Request) RespondsTo(original *Request) *Request {
 	if original == nil {
-		r.uid = SNFRequestUIDNull
+		r.uid = RequestUIDNull
 	} else {
 		r.uid = original.GetUID()
 	}
@@ -53,11 +53,11 @@ func (r *SNFRequest) RespondsTo(original *SNFRequest) *SNFRequest {
 }
 
 // Similair to r.SetUID(SNFRequestUIDNull) or r.RespondsTo(nil)
-func (r *SNFRequest) ServerRequest() *SNFRequest {
+func (r *Request) ServerRequest() *Request {
 	return r.RespondsTo(nil)
 }
 
-func (r *SNFRequest) argsToBytes() []byte {
+func (r *Request) argsToBytes() []byte {
 	var allArgs []byte
 	last_index := len(r.args) - 1
 
@@ -71,7 +71,7 @@ func (r *SNFRequest) argsToBytes() []byte {
 	return allArgs
 }
 
-func (r *SNFRequest) ToBytes() []byte {
+func (r *Request) ToBytes() []byte {
 	var ret []byte
 	ret = append(ret, r.op.ToBytes()...)
 	ret = append(ret, r.uid[:]...)
@@ -81,8 +81,8 @@ func (r *SNFRequest) ToBytes() []byte {
 	ret = append(ret, args_bytes...)
 	return ret
 }
-func FromBytes(data []byte) ([4]byte, uint32, *SNFRequest) {
-	r := &SNFRequest{}
+func FromBytes(data []byte) ([4]byte, uint32, *Request) {
+	r := &Request{}
 
 	// Opcode
 	opDat := [4]byte(data[:4])

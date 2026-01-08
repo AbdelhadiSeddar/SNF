@@ -10,27 +10,27 @@ import (
 	"github.com/google/uuid"
 )
 
-type SNFClientConnectionMode int
+type ClientConnectionMode int
 
 const (
-	SNFClientConnectionModeOneshot SNFClientConnectionMode = iota
-	SNFClientConnectionModeRegular
-	SNFClientConnectionModeMultishot
+	ClientConnectionModeOneshot ClientConnectionMode = iota
+	ClientConnectionModeRegular
+	ClientConnectionModeMultishot
 )
 
-type SNFClient struct {
+type Client struct {
 	UUID      string
 	Conn      net.Conn
-	Mode      SNFClientConnectionMode
+	Mode      ClientConnectionMode
 	modeLimit uint32 // 0+ For MultiShot
-	Data      interface{}
+	Data      any
 	//TODO: Redesign this
 	Mutex sync.Mutex
 }
 
-type SNFClientHandlers struct {
-	OnConnect func(*SNFClient) int
-	OnAccept  func(*SNFClient)
+type ClientHandlers struct {
+	OnConnect func(*Client) int
+	OnAccept  func(*Client)
 }
 
 var clients *sync.Map = nil
@@ -42,7 +42,7 @@ func snfClientInit() {
 	clients = new(sync.Map)
 }
 
-func SNFClientAdd(uuid string, conn net.Conn, data interface{}) *SNFClient {
+func ClientAdd(uuid string, conn net.Conn, data any) *Client {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -52,12 +52,12 @@ func SNFClientAdd(uuid string, conn net.Conn, data interface{}) *SNFClient {
 	if _, ok := clients.Load(uuid); ok {
 		return nil
 	}
-	client := &SNFClient{UUID: uuid, Conn: conn, Data: data}
+	client := &Client{UUID: uuid, Conn: conn, Data: data}
 	clients.Store(uuid, client)
 	return client
 }
 
-func SNFClientGet(uuid string) (*SNFClient, bool) {
+func ClientGet(uuid string) (*Client, bool) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -69,10 +69,10 @@ func SNFClientGet(uuid string) (*SNFClient, bool) {
 	if !ok {
 		return nil, false
 	}
-	return v.(*SNFClient), true
+	return v.(*Client), true
 }
 
-func SNFClientRemove(uuid string) {
+func ClientRemove(uuid string) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -82,7 +82,7 @@ func SNFClientRemove(uuid string) {
 	clients.Delete(uuid)
 }
 
-func SNFClientHandleNew(conn net.Conn) {
+func ClientHandleNew(conn net.Conn) {
 	defer conn.Close()
 
 	if clients == nil {
@@ -93,7 +93,7 @@ func SNFClientHandleNew(conn net.Conn) {
 	}
 
 	// Send the appropriate stuff
-	isr, err := SNFServerInitialRequestGet()
+	isr, err := InitialRequestGet()
 	if err != nil {
 		panic(err.Error())
 	}
@@ -124,16 +124,16 @@ func SNFClientHandleNew(conn net.Conn) {
 			return
 		}
 	}
-	var client *SNFClient = nil
+	var client *Client = nil
 	switch opcode[2] {
 	case core.SNF_OPCODE_BASE_CMD_CONNECT:
 		switch opcode[3] {
 		case core.SNF_OPCODE_BASE_DET_UNDETAILED:
-			client = SNFClientAdd(uuid.NewString(), conn, nil)
-			client.Mode = SNFClientConnectionModeRegular
+			client = ClientAdd(uuid.NewString(), conn, nil)
+			client.Mode = ClientConnectionModeRegular
 		case core.SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT:
-			client = SNFClientAdd(uuid.NewString(), conn, nil)
-			client.Mode = SNFClientConnectionModeMultishot
+			client = ClientAdd(uuid.NewString(), conn, nil)
+			client.Mode = ClientConnectionModeMultishot
 			var reqCount uint32
 
 			if err := binary.Read(conn, binary.BigEndian, &reqCount); err != nil {
@@ -141,9 +141,9 @@ func SNFClientHandleNew(conn net.Conn) {
 			}
 			client.modeLimit = reqCount
 		case core.SNF_OPCODE_BASE_DET_CONNECT_ONESHOT:
-			client = &SNFClient{
+			client = &Client{
 				Conn:      conn,
-				Mode:      SNFClientConnectionModeOneshot,
+				Mode:      ClientConnectionModeOneshot,
 				modeLimit: 1,
 			}
 		default:
@@ -158,7 +158,7 @@ func SNFClientHandleNew(conn net.Conn) {
 			)
 			return
 		}
-		if client.Mode != SNFClientConnectionModeOneshot {
+		if client.Mode != ClientConnectionModeOneshot {
 			snd := []byte{
 				0x00,                                /*OPC Cat*/
 				0x00,                                /*OPC SubCat*/
@@ -196,22 +196,22 @@ func SNFClientHandleNew(conn net.Conn) {
 		)
 		return
 	}
-	SNFClientHandle(client)
+	ClientHandle(client)
 }
 
-func SNFClientHandle(client *SNFClient) {
-	defer func(client *SNFClient) {
+func ClientHandle(client *Client) {
+	defer func(client *Client) {
 		client.Conn.Close()
 		client.Conn = nil
 	}(client)
 	for {
-		req, err := SNFRequestFetch(client)
+		req, err := RequestFetch(client)
 		if err != nil {
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
 				//Error handling comes later.
-				SNFRequestSend(client,
-					core.SNFRequestGen().
+				RequestSend(client,
+					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
 							snfOPStruct.GetBaseOpcode(
@@ -222,8 +222,8 @@ func SNFClientHandle(client *SNFClient) {
 				return
 			default:
 				// Respond with the value of the error/ Debug only
-				SNFRequestSend(client,
-					core.SNFRequestGen().
+				RequestSend(client,
+					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
 							snfOPStruct.GetBaseOpcode(
@@ -237,8 +237,8 @@ func SNFClientHandle(client *SNFClient) {
 		// Calling the function
 		f := req.GetOpcode().Command.GetCallback()
 		if f == nil {
-			err = SNFRequestSend(client,
-				core.SNFRequestGen().
+			err = RequestSend(client,
+				core.RequestGen().
 					RespondsTo(req).
 					SetOpcode(
 						snfOPStruct.GetBaseOpcode(
@@ -254,7 +254,7 @@ func SNFClientHandle(client *SNFClient) {
 		//FIXME: This sounds so wrong!
 		res, err := f(*req, client)
 		if err != nil {
-			res = *core.SNFRequestGen().
+			res = *core.RequestGen().
 				RespondsTo(req).
 				SetOpcode(
 					snfOPStruct.GetBaseOpcode(
@@ -264,9 +264,9 @@ func SNFClientHandle(client *SNFClient) {
 				)
 		}
 
-		SNFRequestSend(client, &res)
+		RequestSend(client, &res)
 		if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
-			SNFClientRemove(client.UUID)
+			ClientRemove(client.UUID)
 			return
 		}
 	}

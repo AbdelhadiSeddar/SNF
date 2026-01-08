@@ -17,8 +17,8 @@ var snfInitialServerRequest *[]byte
 // Parameters:
 //
 //	Command: Accepted values SNF_OPCODE_BASE_CMD_[CONNECT/RECONNECT/DISCONNECT]
-func SNFServerInitialRequestCompile(Command byte) error {
-	if !SNFServerIsInit() {
+func InitialRequestCompile(Command byte) error {
+	if !IsInit() {
 		return core.SNFErrorUninitialized{
 			Component:         "\"All\"",
 			RecommendedAction: "Call SNFServerInit() first!",
@@ -64,8 +64,8 @@ func SNFServerInitialRequestCompile(Command byte) error {
 	return nil
 }
 
-func SNFServerInitialRequestGet() ([]byte, error) {
-	if !SNFServerIsInit() {
+func InitialRequestGet() ([]byte, error) {
+	if !IsInit() {
 		return nil, core.SNFErrorUninitialized{
 			Component:         "\"All\"",
 			RecommendedAction: "Call SNFServerInit() first!",
@@ -78,8 +78,8 @@ func SNFServerInitialRequestGet() ([]byte, error) {
 	return ret, nil
 }
 
-func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
-	if client.Mode != SNFClientConnectionModeOneshot {
+func RequestFetch(client *Client) (*core.Request, error) {
+	if client.Mode != ClientConnectionModeOneshot {
 		buf := make([]byte, 36)
 		_, err := Receive(client.Conn, buf)
 		if err != nil {
@@ -92,13 +92,13 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 			}
 		}
 	}
-	var req core.SNFRequest
+	var req core.Request
 	{ //OPCODE
 		var buf [4]byte
 		if _, err := Receive(client.Conn, buf[:]); err != nil {
 			return nil, err
 		}
-		op, err := snfOPStruct.SNFOpcodeParse([4]byte(buf))
+		op, err := snfOPStruct.OpcodeParse([4]byte(buf))
 		if err != nil {
 			return nil, core.SNFErrorOpcodeInvalid{
 				OPCode: [4]byte(buf),
@@ -106,7 +106,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 		}
 		req.SetOpcode(op)
 	}
-	if client.Mode != SNFClientConnectionModeOneshot { //REQUID
+	if client.Mode != ClientConnectionModeOneshot { //REQUID
 		buf := make([]byte, 16)
 		_, err := Receive(client.Conn, buf)
 		if err != nil {
@@ -154,7 +154,7 @@ func SNFRequestFetch(client *SNFClient) (*core.SNFRequest, error) {
 
 	return &req, nil
 }
-func SNFRequestSend(client *SNFClient, Request *core.SNFRequest) error {
+func RequestSend(client *Client, Request *core.Request) error {
 	var content []byte
 
 	content = append(content, Request.ToBytes()...)

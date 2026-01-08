@@ -6,24 +6,24 @@ import (
 )
 
 const (
-	SNFOpcodeRankCategory SNFOpcodeRank = iota
-	SNFOpcodeRankSubCategory
-	SNFOpcodeRankCommand
-	SNFOpcodeRankDetail
+	OpcodeRankCategory OpcodeRank = iota
+	OpcodeRankSubCategory
+	OpcodeRankCommand
+	OpcodeRankDetail
 )
 
-var opcode_def_cb SNFOpcodeCommandCallback = nil
+var opcode_def_cb OpcodeCommandCallback = nil
 
-type SNFOpcodeRootStructure struct {
-	categories map[byte]*SNFOpcodeCategoryMember
+type OpcodeRootStructure struct {
+	categories map[byte]*OpcodeCategoryMember
 	isInit     bool
-	defaultCB  SNFOpcodeCommandCallback
+	defaultCB  OpcodeCommandCallback
 }
 
-func (root *SNFOpcodeRootStructure) DefineCategory(code byte) *SNFOpcodeCategoryMember {
+func (root *OpcodeRootStructure) DefineCategory(code byte) *OpcodeCategoryMember {
 	if _, ok := root.categories[code]; !ok {
-		item := SNFOpcodeCategoryMember{
-			subCategories: make(map[byte]*SNFOpcodeSubCategoryMember),
+		item := OpcodeCategoryMember{
+			subCategories: make(map[byte]*OpcodeSubCategoryMember),
 		}
 		item.SetValue(code)
 		item.root = root
@@ -32,18 +32,18 @@ func (root *SNFOpcodeRootStructure) DefineCategory(code byte) *SNFOpcodeCategory
 	}
 	return nil
 }
-func (root *SNFOpcodeRootStructure) GetCategory(code byte) *SNFOpcodeCategoryMember {
+func (root *OpcodeRootStructure) GetCategory(code byte) *OpcodeCategoryMember {
 	return root.categories[code]
 }
 
-func (root *SNFOpcodeRootStructure) DefineDefaultCallback(cb SNFOpcodeCommandCallback) {
+func (root *OpcodeRootStructure) DefineDefaultCallback(cb OpcodeCommandCallback) {
 	root.defaultCB = cb
 }
-func (st *SNFOpcodeRootStructure) GetOpcode(category byte, subCategory byte, command byte, detail byte) *SNFOpcode {
-	var cat *SNFOpcodeCategoryMember
-	var scat *SNFOpcodeSubCategoryMember
-	var cmd *SNFOpcodeCommandMember
-	var det *SNFOpcodeDetailMember
+func (st *OpcodeRootStructure) GetOpcode(category byte, subCategory byte, command byte, detail byte) *Opcode {
+	var cat *OpcodeCategoryMember
+	var scat *OpcodeSubCategoryMember
+	var cmd *OpcodeCommandMember
+	var det *OpcodeDetailMember
 	// TODO: Make unique Errors to know which OPcodeMember is defined or not.
 	if cat = st.GetCategory(category); cat == nil {
 		return nil
@@ -58,7 +58,7 @@ func (st *SNFOpcodeRootStructure) GetOpcode(category byte, subCategory byte, com
 		return nil
 	}
 
-	re := &SNFOpcode{}
+	re := &Opcode{}
 	re.Category = cat
 	re.SubCategory = scat
 	re.Command = cmd
@@ -67,15 +67,15 @@ func (st *SNFOpcodeRootStructure) GetOpcode(category byte, subCategory byte, com
 	return re
 }
 
-type SNFOpcode struct {
-	parentStruct *SNFOpcodeRootStructure
-	Category     *SNFOpcodeCategoryMember
-	SubCategory  *SNFOpcodeSubCategoryMember
-	Command      *SNFOpcodeCommandMember
-	Detail       *SNFOpcodeDetailMember
+type Opcode struct {
+	parentStruct *OpcodeRootStructure
+	Category     *OpcodeCategoryMember
+	SubCategory  *OpcodeSubCategoryMember
+	Command      *OpcodeCommandMember
+	Detail       *OpcodeDetailMember
 }
 
-func (o SNFOpcode) ToBytes() []byte {
+func (o Opcode) ToBytes() []byte {
 	return []byte{
 		o.Category.GetValue(),
 		o.SubCategory.GetValue(),
@@ -84,8 +84,8 @@ func (o SNFOpcode) ToBytes() []byte {
 	}
 }
 
-func (root *SNFOpcodeRootStructure) SNFOpcodeParse(data [4]byte) (*SNFOpcode, error) {
-	var op *SNFOpcode
+func (root *OpcodeRootStructure) OpcodeParse(data [4]byte) (*Opcode, error) {
+	var op *Opcode
 
 	op = root.GetOpcode(data[0], data[1], data[2], data[3])
 	if op == nil {
@@ -97,30 +97,30 @@ func (root *SNFOpcodeRootStructure) SNFOpcodeParse(data [4]byte) (*SNFOpcode, er
 	return op, nil
 }
 
-type SNFOpcodeRank int
+type OpcodeRank int
 
 // /
-type SNFOpcodeMember struct {
+type OpcodeMember struct {
 	val byte
 }
 
-func (o *SNFOpcodeMember) GetValue() byte {
+func (o *OpcodeMember) GetValue() byte {
 	return o.val
 }
-func (o *SNFOpcodeMember) SetValue(v byte) {
+func (o *OpcodeMember) SetValue(v byte) {
 	o.val = v
 }
 
-type SNFOpcodeCategoryMember struct {
-	SNFOpcodeMember
-	root          *SNFOpcodeRootStructure
-	subCategories map[byte]*SNFOpcodeSubCategoryMember
+type OpcodeCategoryMember struct {
+	OpcodeMember
+	root          *OpcodeRootStructure
+	subCategories map[byte]*OpcodeSubCategoryMember
 }
 
-func (p *SNFOpcodeCategoryMember) DefineSubCategory(code byte) *SNFOpcodeSubCategoryMember {
+func (p *OpcodeCategoryMember) DefineSubCategory(code byte) *OpcodeSubCategoryMember {
 	if _, ok := p.subCategories[code]; !ok {
-		item := SNFOpcodeSubCategoryMember{
-			commands: make(map[byte]*SNFOpcodeCommandMember),
+		item := OpcodeSubCategoryMember{
+			commands: make(map[byte]*OpcodeCommandMember),
 		}
 		item.SetValue(code)
 		item.parent = p
@@ -129,24 +129,24 @@ func (p *SNFOpcodeCategoryMember) DefineSubCategory(code byte) *SNFOpcodeSubCate
 	}
 	return nil
 }
-func (cat *SNFOpcodeCategoryMember) GetSubCategory(code byte) *SNFOpcodeSubCategoryMember {
+func (cat *OpcodeCategoryMember) GetSubCategory(code byte) *OpcodeSubCategoryMember {
 	return cat.subCategories[code]
 }
 
-type SNFOpcodeSubCategoryMember struct {
-	SNFOpcodeMember
-	parent   *SNFOpcodeCategoryMember
-	commands map[byte]*SNFOpcodeCommandMember
+type OpcodeSubCategoryMember struct {
+	OpcodeMember
+	parent   *OpcodeCategoryMember
+	commands map[byte]*OpcodeCommandMember
 }
 
-func (p *SNFOpcodeSubCategoryMember) DefineCommand(code byte, callback SNFOpcodeCommandCallback) *SNFOpcodeCommandMember {
+func (p *OpcodeSubCategoryMember) DefineCommand(code byte, callback OpcodeCommandCallback) *OpcodeCommandMember {
 	if _, ok := p.commands[code]; !ok {
-		item := SNFOpcodeCommandMember{
-			details: make(map[byte]*SNFOpcodeDetailMember),
+		item := OpcodeCommandMember{
+			details: make(map[byte]*OpcodeDetailMember),
 		}
 		item.SetValue(code)
 		item.parent = p
-		item.details[byte(0)] = &SNFOpcodeDetailMember{
+		item.details[byte(0)] = &OpcodeDetailMember{
 			parent: &item,
 		}
 		item.details[byte(0)].SetValue(byte(0))
@@ -160,20 +160,20 @@ func (p *SNFOpcodeSubCategoryMember) DefineCommand(code byte, callback SNFOpcode
 	}
 	return nil
 }
-func (p *SNFOpcodeSubCategoryMember) GetCommand(code byte) *SNFOpcodeCommandMember {
+func (p *OpcodeSubCategoryMember) GetCommand(code byte) *OpcodeCommandMember {
 	return p.commands[code]
 }
 
-type SNFOpcodeCommandMember struct {
-	SNFOpcodeMember
-	f       SNFOpcodeCommandCallback
-	parent  *SNFOpcodeSubCategoryMember
-	details map[byte]*SNFOpcodeDetailMember
+type OpcodeCommandMember struct {
+	OpcodeMember
+	f       OpcodeCommandCallback
+	parent  *OpcodeSubCategoryMember
+	details map[byte]*OpcodeDetailMember
 }
 
-func (p *SNFOpcodeCommandMember) DefineDetail(code byte) *SNFOpcodeDetailMember {
+func (p *OpcodeCommandMember) DefineDetail(code byte) *OpcodeDetailMember {
 	if _, ok := p.details[code]; !ok {
-		item := SNFOpcodeDetailMember{}
+		item := OpcodeDetailMember{}
 		item.SetValue(code)
 		item.parent = p
 		p.details[code] = &item
@@ -181,29 +181,29 @@ func (p *SNFOpcodeCommandMember) DefineDetail(code byte) *SNFOpcodeDetailMember 
 	}
 	return nil
 }
-func (o *SNFOpcodeCommandMember) SetCallback(cb SNFOpcodeCommandCallback) {
+func (o *OpcodeCommandMember) SetCallback(cb OpcodeCommandCallback) {
 	o.f = cb
 }
-func (o *SNFOpcodeCommandMember) GetCallback() SNFOpcodeCommandCallback {
+func (o *OpcodeCommandMember) GetCallback() OpcodeCommandCallback {
 	return o.f
 }
-func (p *SNFOpcodeCommandMember) GetDetail(code byte) *SNFOpcodeDetailMember {
+func (p *OpcodeCommandMember) GetDetail(code byte) *OpcodeDetailMember {
 	return p.details[code]
 }
 
-type SNFOpcodeDetailMember struct {
-	SNFOpcodeMember
-	parent *SNFOpcodeCommandMember
+type OpcodeDetailMember struct {
+	OpcodeMember
+	parent *OpcodeCommandMember
 }
 
-type SNFOpcodeCommandCallback func(Original SNFRequest, Sender interface{}) (SNFRequest, error)
+type OpcodeCommandCallback func(Original Request, Sender any) (Request, error)
 
 // var snf_opcode_ll *snfOpcodeLLItem
 // var snf_opcode_base_isinit bool = false
 
 // if already defined return nil
 // Checks if it is a Base Opcode
-func (op SNFOpcode) IsBase() bool {
+func (op Opcode) IsBase() bool {
 	if op.Category.GetValue() != SNF_OPCODE_BASE_CAT {
 		return false
 	}
@@ -212,38 +212,38 @@ func (op SNFOpcode) IsBase() bool {
 	}
 	return true
 }
-func (st *SNFOpcodeRootStructure) GetUOpcode(category byte, subCategory byte, command byte) *SNFOpcode {
+func (st *OpcodeRootStructure) GetUOpcode(category byte, subCategory byte, command byte) *Opcode {
 	return st.GetOpcode(category, subCategory, command, SNF_OPCODE_BASE_DET_UNDETAILED)
 }
 
-func (st *SNFOpcodeRootStructure) GetBaseCategory() *SNFOpcodeCategoryMember {
+func (st *OpcodeRootStructure) GetBaseCategory() *OpcodeCategoryMember {
 	return st.categories[byte(0)]
 }
 
-func (st *SNFOpcodeRootStructure) GetBaseSubCategory() *SNFOpcodeSubCategoryMember {
+func (st *OpcodeRootStructure) GetBaseSubCategory() *OpcodeSubCategoryMember {
 	return st.categories[byte(0)].subCategories[byte(0)]
 }
 
-func (st *SNFOpcodeRootStructure) GetBaseCommand(command byte) *SNFOpcodeCommandMember {
+func (st *OpcodeRootStructure) GetBaseCommand(command byte) *OpcodeCommandMember {
 	return st.categories[byte(0)].subCategories[byte(0)].commands[command]
 }
 
-func (st *SNFOpcodeRootStructure) GetBaseDetail(command byte, detail byte) *SNFOpcodeDetailMember {
+func (st *OpcodeRootStructure) GetBaseDetail(command byte, detail byte) *OpcodeDetailMember {
 	return st.categories[byte(0)].subCategories[byte(0)].commands[command].details[detail]
 }
 
-func (st *SNFOpcodeRootStructure) GetBaseOpcode(command byte, detail byte) *SNFOpcode {
+func (st *OpcodeRootStructure) GetBaseOpcode(command byte, detail byte) *Opcode {
 	return st.GetOpcode(SNF_OPCODE_BASE_CAT, SNF_OPCODE_BASE_SUBCAT, command, detail)
 }
 
-func (st *SNFOpcodeRootStructure) GetUBaseOpcode(command byte) *SNFOpcode {
+func (st *OpcodeRootStructure) GetUBaseOpcode(command byte) *Opcode {
 	return st.GetBaseOpcode(command, SNF_OPCODE_BASE_DET_UNDETAILED)
 }
 
 // Defiens a new Root Structure for OPcodes. whilst assuing base functionalities are maintained
-func SNFNewOpodeStructure(def_cb SNFOpcodeCommandCallback) *SNFOpcodeRootStructure {
-	root := &SNFOpcodeRootStructure{
-		categories: make(map[byte]*SNFOpcodeCategoryMember),
+func NewOpodeStructure(def_cb OpcodeCommandCallback) *OpcodeRootStructure {
+	root := &OpcodeRootStructure{
+		categories: make(map[byte]*OpcodeCategoryMember),
 		isInit:     true,
 		defaultCB:  def_cb,
 	}
@@ -309,7 +309,7 @@ func SNFNewOpodeStructure(def_cb SNFOpcodeCommandCallback) *SNFOpcodeRootStructu
 
 	return root
 }
-func SNFOpcodePrint(root SNFOpcodeRootStructure) string {
+func SNFOpcodePrint(root OpcodeRootStructure) string {
 	var sb strings.Builder
 	sb.WriteString("SNFOpcodeRootStructure{\n")
 	sb.WriteString(fmt.Sprintf("  isInit: %v\n", root.isInit))

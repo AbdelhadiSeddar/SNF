@@ -43,7 +43,7 @@ type SNFConnectionCallbacks struct {
 type SNFConnection struct {
 	SNFConnectionInfo
 	SNFConnectionCallbacks
-	opcodes *core.SNFOpcodeRootStructure
+	opcodes *core.OpcodeRootStructure
 	mapLock sync.RWMutex
 	mu      sync.Mutex
 }
@@ -62,12 +62,12 @@ func (r *SNFConnection) SetAddress(address string) *SNFConnection {
 	return r
 }
 
-func (r *SNFConnection) SetOpcodeStruct(op *core.SNFOpcodeRootStructure) *SNFConnection {
+func (r *SNFConnection) SetOpcodeStruct(op *core.OpcodeRootStructure) *SNFConnection {
 	r.opcodes = op
 	return r
 }
 
-func (r *SNFConnection) OPCodes() *core.SNFOpcodeRootStructure {
+func (r *SNFConnection) OPCodes() *core.OpcodeRootStructure {
   return r.opcodes
 }
 
@@ -223,7 +223,7 @@ func (r *SNFConnection) handleError(err error) {
 	r.conn.Close()
 }
 
-func (r *SNFConnection) Opcodes() *core.SNFOpcodeRootStructure {
+func (r *SNFConnection) Opcodes() *core.OpcodeRootStructure {
 	return r.opcodes
 }
 

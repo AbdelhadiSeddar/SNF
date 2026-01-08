@@ -75,22 +75,22 @@ type SNFErrorOpcodeMemberNotFound struct {
 	Command       byte
 	Detail        byte
 	NotFoundValue byte
-	NotFoundRank  SNFOpcodeRank
+	NotFoundRank  OpcodeRank
 }
 
 func (e SNFErrorOpcodeMemberNotFound) Error() string {
 	var Rank string = ""
 	var under string = ""
 	switch e.NotFoundRank {
-	case SNFOpcodeRankCategory:
+	case OpcodeRankCategory:
 		Rank = "Category"
-	case SNFOpcodeRankSubCategory:
+	case OpcodeRankSubCategory:
 		Rank = "Sub-Category"
 		under = fmt.Sprintf("Under Category [0x%02x]", e.Category)
-	case SNFOpcodeRankCommand:
+	case OpcodeRankCommand:
 		Rank = "Command"
 		under = fmt.Sprintf("Under Category [0x%02x] Sub-Category [0x%02x]", e.Category, e.SubCategory)
-	case SNFOpcodeRankDetail:
+	case OpcodeRankDetail:
 		Rank = "Detail"
 		under = fmt.Sprintf("Under Category [0x%02x] Sub-Category [0x%02x] Command [0x%02x]", e.Category, e.SubCategory, e.Command)
 	default:

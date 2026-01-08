@@ -5,19 +5,19 @@ const (
 	SNPVersion = "0.0.1"
 )
 
-type SNFVarRegistry struct {
-	vars []interface{}
+type VarRegistry struct {
+	vars []any
 }
 
-func SNFNewVarRegistry(numVars int) *SNFVarRegistry {
-	return &SNFVarRegistry{vars: make([]interface{}, numVars)}
+func NewVarRegistry(numVars int) *VarRegistry {
+	return &VarRegistry{vars: make([]any, numVars)}
 }
 
-func (r *SNFVarRegistry) Set(key int, value interface{}) {
+func (r *VarRegistry) Set(key int, value any) {
 	r.vars[key] = value
 }
 
-func (r *SNFVarRegistry) Get(key int) (interface{}, bool) {
+func (r *VarRegistry) Get(key int) (any, bool) {
 	val := r.vars[key]
 	return val, val != nil
 }

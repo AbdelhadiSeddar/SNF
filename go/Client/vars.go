@@ -10,12 +10,12 @@ const (
 	CLIENT_N_VARS
 )
 
-var ClientVars = core.SNFNewVarRegistry(int(CLIENT_N_VARS))
+var ClientVars = core.NewVarRegistry(int(CLIENT_N_VARS))
 
-func SetClientVar(key ClientVarKey, value interface{}) {
+func SetClientVar(key ClientVarKey, value any) {
 	ClientVars.Set(int(key), value)
 }
 
-func GetClientVar(key ClientVarKey) (interface{}, bool) {
+func GetClientVar(key ClientVarKey) (any, bool) {
 	return ClientVars.Get(int(key))
 }

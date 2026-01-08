@@ -23,21 +23,21 @@ const (
 	SNF_N_VARS
 )
 
-var ServerVars *core.SNFVarRegistry = nil
+var ServerVars *core.VarRegistry = nil
 
-func SetVar(key ServerVarKey, value interface{}) {
+func SetVar(key ServerVarKey, value any) {
 	ServerVars.Set(int(key), value)
 }
 
-func GetVar(key ServerVarKey) (interface{}, bool) {
+func GetVar(key ServerVarKey) (any, bool) {
 	return ServerVars.Get(int(key))
 }
 
 func snfInitServerVars() error {
 	if ServerVars == nil {
-		ServerVars = core.SNFNewVarRegistry(int(SNF_N_VARS))
+		ServerVars = core.NewVarRegistry(int(SNF_N_VARS))
 	}
-	if SNFServerVarsIsInit() {
+	if VarsIsInit() {
 		return nil
 	}
 	SetVar(SNF_VAR_THREADS, 4)
@@ -61,7 +61,7 @@ func snfInitServerVars() error {
 
 	return nil
 }
-func SNFServerVarsIsInit() bool {
+func VarsIsInit() bool {
 	if ServerVars != nil {
 		var res, ok = GetVar(SNF_VAR_INITIALIZED)
 		if ok && res.(bool) == true {

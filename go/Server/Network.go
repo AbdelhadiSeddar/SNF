@@ -17,24 +17,24 @@ const (
 
 var snfServerStatus *SNFServerStatus = nil
 
-func SNFGetStatus() SNFServerStatus {
+func GetStatus() SNFServerStatus {
 	if snfServerStatus == nil {
 		panic("ISR is not compiled.")
 	}
 	return *snfServerStatus
 }
 
-func SNFSetStatus(status SNFServerStatus) {
+func SetStatus(status SNFServerStatus) {
 	if snfServerStatus != nil {
 		return
 	}
 	snfServerStatus = &status
-	if err := SNFServerInitialRequestCompile(byte(status)); err != nil {
+	if err := InitialRequestCompile(byte(status)); err != nil {
 		panic(err.Error())
 	}
 }
-func SNFServerInit() {
-	if SNFServerVarsIsInit() {
+func Init() {
+	if VarsIsInit() {
 		return
 	}
 	if err := snfInitServerVars(); err != nil {
@@ -44,19 +44,19 @@ func SNFServerInit() {
 	if clients == nil {
 		snfClientInit()
 	}
-	SNFSetStatus(SNFServerAccepting)
+	SetStatus(SNFServerAccepting)
 }
-func SNFServerIsInit() bool {
-	return SNFServerVarsIsInit() && snfOPStruct != nil && clients != nil
+func IsInit() bool {
+	return IsInit() && snfOPStruct != nil && clients != nil
 }
-func SNFServerStart() error {
-	if err := SNFServerVarsIsInit(); err == false {
+func Start() error {
+	if err := VarsIsInit(); err == false {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Server Definitions",
 			RecommendedAction: "Call SNFServerInit() first!",
 		}.Error())
 	}
-	var tmp interface{}
+	var tmp any
 	//TODO: Add limitations if needed
 	tmp, _ = GetVar(SNF_VAR_PORT)
 	port := tmp.(int)
@@ -72,7 +72,7 @@ func SNFServerStart() error {
 	for {
 		conn, err := listener.Accept()
 		if err == nil {
-			go SNFClientHandleNew(conn)
+			go ClientHandleNew(conn)
 		}
 	}
 }

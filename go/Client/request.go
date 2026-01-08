@@ -13,7 +13,7 @@ type SNFRequestFailureCB func(*SNFRequest, error)
 var nextUID uint64 = 0
 
 type SNFRequest struct {
-	cr                core.SNFRequest
+	cr                core.Request
 	onResponse        SNFRequestResponseCB
 	onResponseFailure SNFRequestFailureCB
 }
@@ -26,10 +26,10 @@ func (r *SNFRequest) SetResponseFailureCallback(cb SNFRequestFailureCB) *SNFRequ
 	r.onResponseFailure = cb
 	return r
 }
-func (r *SNFRequest) Core() *core.SNFRequest {
+func (r *SNFRequest) Core() *core.Request {
 	return &r.cr
 }
-func (r *SNFRequest) SetCore(cr core.SNFRequest) *SNFRequest {
+func (r *SNFRequest) SetCore(cr core.Request) *SNFRequest {
 	r.cr = cr
 	return r
 }
@@ -46,7 +46,7 @@ func generateUID() [16]byte {
 
 func snfRequestParseHeader(header []byte) (*SNFRequest, [4]byte, uint32, uint32) {
 	req := &SNFRequest{
-		cr: core.SNFRequest{},
+		cr: core.Request{},
 	}
 
 	op := [4]byte(header[:4])
