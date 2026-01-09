@@ -46,7 +46,7 @@ func ClientAdd(uuid string, conn net.Conn, data any) *Client {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		})
 	}
 	if _, ok := clients.Load(uuid); ok {
@@ -61,7 +61,7 @@ func ClientGet(uuid string) (*Client, bool) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
-			RecommendedAction: "Call SNFServerInit() first!",
+      RecommendedAction: "Call Init() first!",
 		})
 	}
 
@@ -76,7 +76,7 @@ func ClientRemove(uuid string) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		})
 	}
 	clients.Delete(uuid)
@@ -88,7 +88,7 @@ func ClientHandleNew(conn net.Conn) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		})
 	}
 

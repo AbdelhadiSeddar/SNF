@@ -12,7 +12,7 @@ import (
 var snfISRRWMutex *sync.RWMutex = nil
 var snfInitialServerRequest *[]byte
 
-// SNFServerInitialRequestCompile compiles the initial server request
+// InitialRequestCompile compiles the initial server request
 //
 // Parameters:
 //
@@ -21,7 +21,7 @@ func InitialRequestCompile(Command byte) error {
 	if !IsInit() {
 		return core.SNFErrorUninitialized{
 			Component:         "\"All\"",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		}
 	}
 	switch Command {
@@ -68,7 +68,7 @@ func InitialRequestGet() ([]byte, error) {
 	if !IsInit() {
 		return nil, core.SNFErrorUninitialized{
 			Component:         "\"All\"",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		}
 	}
 	var ret []byte = make([]byte, len(*snfInitialServerRequest))

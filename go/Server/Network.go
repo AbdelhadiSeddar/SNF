@@ -19,7 +19,7 @@ var snfServerStatus *SNFServerStatus = nil
 
 func GetStatus() SNFServerStatus {
 	if snfServerStatus == nil {
-		panic("ISR is not compiled.")
+		panic("ISR is not compiled. Call Init()")
 	}
 	return *snfServerStatus
 }
@@ -47,13 +47,13 @@ func Init() {
 	SetStatus(SNFServerAccepting)
 }
 func IsInit() bool {
-	return IsInit() && snfOPStruct != nil && clients != nil
+	return VarsIsInit() && snfOPStruct != nil && clients != nil
 }
 func Start() error {
 	if err := VarsIsInit(); err == false {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Server Definitions",
-			RecommendedAction: "Call SNFServerInit() first!",
+			RecommendedAction: "Call Init() first!",
 		}.Error())
 	}
 	var tmp any
