@@ -28,9 +28,12 @@ type Client struct {
 	Mutex sync.Mutex
 }
 
+type OnConnectCallBack func(*Client) int
+type OnAcceptCallBack func(*Client)
+
 type ClientHandlers struct {
-	OnConnect func(*Client) int
-	OnAccept  func(*Client)
+	OnConnect OnConnectCallBack
+	OnAccept  OnAcceptCallBack
 }
 
 var clients *sync.Map = nil

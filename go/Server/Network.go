@@ -7,24 +7,24 @@ import (
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
 
-type SNFServerStatus int
+type Status int
 
 const (
-	SNFServerAccepting SNFServerStatus = iota
-	SNFServerTemporarlyRefusing
-	SNFServerRefusing
+	ServerAccepting Status = iota
+	ServerTemporarlyRefusing
+	ServerRefusing
 )
 
-var snfServerStatus *SNFServerStatus = nil
+var snfServerStatus *Status = nil
 
-func GetStatus() SNFServerStatus {
+func GetStatus() Status {
 	if snfServerStatus == nil {
 		panic("ISR is not compiled. Call Init()")
 	}
 	return *snfServerStatus
 }
 
-func SetStatus(status SNFServerStatus) {
+func SetStatus(status Status) {
 	if snfServerStatus != nil {
 		return
 	}
@@ -38,13 +38,12 @@ func Init() {
 		return
 	}
 	if err := snfInitServerVars(); err != nil {
-		//println(core.SNFOpcodePrint())
 		panic(err.Error())
 	}
 	if clients == nil {
 		snfClientInit()
 	}
-	SetStatus(SNFServerAccepting)
+	SetStatus(ServerAccepting)
 }
 func IsInit() bool {
 	return VarsIsInit() && snfOPStruct != nil && clients != nil
