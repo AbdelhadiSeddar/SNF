@@ -7,33 +7,33 @@ import (
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
 
-type SNFRequestResponseCB func(SNFRequest)
-type SNFRequestFailureCB func(*SNFRequest, error)
+type RequestResponseCB func(Request)
+type RequestFailureCB func(*Request, error)
 
 var nextUID uint64 = 0
 
-type SNFRequest struct {
+type Request struct {
 	cr                core.Request
-	onResponse        SNFRequestResponseCB
-	onResponseFailure SNFRequestFailureCB
+	onResponse        RequestResponseCB
+	onResponseFailure RequestFailureCB
 }
 
-func (r *SNFRequest) SetResponseCallback(cb SNFRequestResponseCB) *SNFRequest {
+func (r *Request) SetResponseCallback(cb RequestResponseCB) *Request {
 	r.onResponse = cb
 	return r
 }
-func (r *SNFRequest) SetResponseFailureCallback(cb SNFRequestFailureCB) *SNFRequest {
+func (r *Request) SetResponseFailureCallback(cb RequestFailureCB) *Request {
 	r.onResponseFailure = cb
 	return r
 }
-func (r *SNFRequest) Core() *core.Request {
+func (r *Request) Core() *core.Request {
 	return &r.cr
 }
-func (r *SNFRequest) SetCore(cr core.Request) *SNFRequest {
+func (r *Request) SetCore(cr core.Request) *Request {
 	r.cr = cr
 	return r
 }
-func (r *SNFRequest) GetArgs() []string {
+func (r *Request) GetArgs() []string {
 	return r.cr.GetArgs()
 }
 
@@ -44,8 +44,8 @@ func generateUID() [16]byte {
 	return [16]byte(uid)
 }
 
-func snfRequestParseHeader(header []byte) (*SNFRequest, [4]byte, uint32, uint32) {
-	req := &SNFRequest{
+func snfRequestParseHeader(header []byte) (*Request, [4]byte, uint32, uint32) {
+	req := &Request{
 		cr: core.Request{},
 	}
 
@@ -60,7 +60,7 @@ func snfRequestParseHeader(header []byte) (*SNFRequest, [4]byte, uint32, uint32)
 	return req, op, args_count, args_size
 }
 
-func (r *SNFRequest) snfRequestParseArguments(content []byte) uint32 {
+func (r *Request) snfRequestParseArguments(content []byte) uint32 {
 	// Split args on 0x1F separator
 	argsBytesLen := len(content)
 	start := 0

@@ -1,7 +1,7 @@
 package Core
 
 const (
-	SNFVersion = "0.0.4"
+	SNFVersion = "0.0.3"
 	SNPVersion = "0.0.1"
 )
 

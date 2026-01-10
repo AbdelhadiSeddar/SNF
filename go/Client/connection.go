@@ -12,8 +12,8 @@ import (
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
 
-var SNFConnectionDefaultTimeOut time.Duration = time.Minute
-var SNFConnectionDefaultRetries int = 0
+var DefaultTimeOut time.Duration = time.Minute
+var DefaultRetries int = 0
 
 type OnConnectCallback func()
 type OnSNFFailCallback func(error)
@@ -21,7 +21,7 @@ type OnSocketFailCallback func(error)
 type OnExceptionCallback func(error)
 type OnTimeoutCallback func()
 
-type SNFConnectionInfo struct {
+type ConnectionInfo struct {
 	once         bool
 	once_done    bool
 	conn         net.Conn
@@ -30,77 +30,85 @@ type SNFConnectionInfo struct {
 	timeOut      time.Duration
 	retries      int
 	isConnected  bool
-	requestQueue chan *SNFRequest
-	requestsSent map[[16]byte]*SNFRequest
+	requestQueue chan *Request
+	requestsSent map[[16]byte]*Request
 }
 
-type SNFConnectionCallbacks struct {
+type ConnectionCallbacks struct {
 	onConnectCallback   OnConnectCallback
 	onExceptionCallback OnExceptionCallback
 	onTimeoutCallback   OnTimeoutCallback
 }
 
-type SNFConnection struct {
-	SNFConnectionInfo
-	SNFConnectionCallbacks
+type Connection struct {
+	ConnectionInfo
+	ConnectionCallbacks
 	opcodes *core.OpcodeRootStructure
 	mapLock sync.RWMutex
 	mu      sync.Mutex
 }
 
-func SNFNewConnection() *SNFConnection {
-	ret := &SNFConnection{}
-	ret.timeOut = SNFConnectionDefaultTimeOut
-	ret.retries = SNFConnectionDefaultRetries
-	ret.requestQueue = make(chan *SNFRequest, 100)
-	ret.requestsSent = make(map[[16]byte]*SNFRequest)
+func NewConnection() *Connection {
+	ret := &Connection{}
+	ret.timeOut = DefaultTimeOut
+	ret.retries = DefaultRetries
+	ret.requestQueue = make(chan *Request, 100)
+	ret.requestsSent = make(map[[16]byte]*Request)
+	ret.SetOpcodeStruct(nil)
 	return ret
 }
 
-func (r *SNFConnection) SetAddress(address string) *SNFConnection {
+func (r *Connection) SetAddress(address string) *Connection {
 	r.address = address
 	return r
 }
 
-func (r *SNFConnection) SetOpcodeStruct(op *core.OpcodeRootStructure) *SNFConnection {
-	r.opcodes = op
+func (r *Connection) SetOpcodeStruct(op *core.OpcodeRootStructure) *Connection {
+	if op == nil {
+		r.opcodes = core.NewOpodeStructure(nil)
+	} else {
+		r.opcodes = op
+	}
 	return r
 }
 
-func (r *SNFConnection) OPCodes() *core.OpcodeRootStructure {
-  return r.opcodes
+func (r *Connection) OPCodes() *core.OpcodeRootStructure {
+	return r.opcodes
 }
 
-func (r *SNFConnection) OnConnect(cb OnConnectCallback) *SNFConnection {
+func (r *Connection) OnConnect(cb OnConnectCallback) *Connection {
 	r.onConnectCallback = cb
 	return r
 }
 
-func (r *SNFConnection) OnException(cb OnExceptionCallback) *SNFConnection {
+func (r *Connection) OnException(cb OnExceptionCallback) *Connection {
 	r.onExceptionCallback = cb
 	return r
 }
 
-func (r *SNFConnection) OnTimeout(cb OnTimeoutCallback) *SNFConnection {
+func (r *Connection) OnTimeout(cb OnTimeoutCallback) *Connection {
 	r.onTimeoutCallback = cb
 	return r
 }
 
-func (r *SNFConnection) Once(req *SNFRequest) *SNFConnection {
+func (r *Connection) Once(req *Request) *Connection {
 	r.once = true
 	r.requestQueue <- req
 	return r
 }
 
-func (r *SNFConnection) Connect() *SNFConnection {
+func (r *Connection) Connect() *Connection {
 	var err error
 	dialer := net.Dialer{
 		KeepAlive: 30 * time.Second,
 	}
+	failure := false
 	retries := r.retries
 	for {
+		failure = false
 		r.conn, err = dialer.Dial("tcp", r.address)
 		if err != nil {
+			failure = true
 			if errors.Is(err, context.DeadlineExceeded) || (errors.Is(err, net.ErrClosed) && err.Error() == "i/o timeout") {
 				if r.onTimeoutCallback != nil {
 					r.onTimeoutCallback()
@@ -117,6 +125,9 @@ func (r *SNFConnection) Connect() *SNFConnection {
 			}
 		}
 		break
+	}
+	if failure {
+		return nil
 	}
 	{
 		buf := make([]byte, 12)
@@ -216,18 +227,24 @@ func (r *SNFConnection) Connect() *SNFConnection {
 	return r
 }
 
-func (r *SNFConnection) handleError(err error) {
+func (r *Connection) handleError(err error) {
 	if r.onExceptionCallback != nil {
 		r.onExceptionCallback(err)
 	}
 	r.conn.Close()
 }
 
-func (r *SNFConnection) Opcodes() *core.OpcodeRootStructure {
+func (r *Connection) Opcodes() *core.OpcodeRootStructure {
 	return r.opcodes
 }
 
-func (r *SNFConnection) SendRequest(req *SNFRequest) bool {
+func (r *Connection) NewRequest(req *core.Request) *Request {
+	ret := Request{}
+	ret.cr = *req
+	return &ret
+}
+
+func (r *Connection) SendRequest(req *Request) bool {
 	if r.once {
 		if r.once_done {
 			return false
@@ -240,7 +257,7 @@ func (r *SNFConnection) SendRequest(req *SNFRequest) bool {
 	return true
 }
 
-func (r *SNFConnection) handleRequestsincoming() {
+func (r *Connection) handleRequestsincoming() {
 	var header_buffer [28]byte
 	for {
 		if err := r.conn.SetReadDeadline(time.Time{}); err != nil {
@@ -293,7 +310,7 @@ func (r *SNFConnection) handleRequestsincoming() {
 	}
 }
 
-func (r *SNFConnection) handleRequests() {
+func (r *Connection) handleRequests() {
 	go r.handleRequestsincoming()
 
 	for {
