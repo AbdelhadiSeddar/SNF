@@ -7,6 +7,14 @@ import (
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 )
 
+type ConnectionType int
+
+const (
+	SNF_CONN_TYPE_IP ConnectionType = iota
+	SNF_CONN_TYPE_PIPE
+	SNF_CONN_TYPES
+)
+
 type Status int
 
 const (
@@ -48,26 +56,49 @@ func Init() {
 func IsInit() bool {
 	return VarsIsInit() && snfOPStruct != nil && clients != nil
 }
+
+func getSocket() (net.Listener, error) {
+	temp, found := GetVar(SNF_VAR_CONN_TYPE)
+	T := temp.(int)
+	if !found || T >= int(SNF_CONN_TYPES) {
+		return nil, core.SNFErrorIntialization{FailedComponent: "Getting Socket, Check PIPE Name or IP Port"}
+	}
+
+	if T == int(SNF_CONN_TYPE_IP) {
+
+		var tmp any
+		//TODO: Add limitations if needed
+		tmp, _ = GetVar(SNF_VAR_CONN_IP_PORT)
+		port := tmp.(int)
+
+		addr, _ := GetVar(SNF_VAR_CONN_IP_ADDR)
+		address := addr.(string) + ":" + strconv.Itoa(port)
+
+		listener, err := net.Listen("tcp", address)
+    return listener, err
+
+	} else if T == int(SNF_CONN_TYPE_PIPE) {
+    // OS Dependant. See network_<windows/unix>.go
+    return getPipeListener() 
+  } else {
+    return nil, core.SNFErrorUnallowedValue{
+      Is: "invalid connection type in variable SNF_VAR_CONN_TYPE",
+      ShouldvBeen: "SNF_CONN_TYPE_PIPE or SNF_CONN_TYPE_IP",
+    }
+  }
+}
 func Start() error {
-	if err := VarsIsInit(); err == false {
+	if err := IsInit(); err == false {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Server Definitions",
 			RecommendedAction: "Call Init() first!",
 		}.Error())
 	}
-	var tmp any
-	//TODO: Add limitations if needed
-	tmp, _ = GetVar(SNF_VAR_PORT)
-	port := tmp.(int)
 
-	addr, _ := GetVar(SNF_VAR_ADDR)
-	address := addr.(string) + ":" + strconv.Itoa(port)
-
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
-
+  listener, err := getSocket()
+  if err != nil {
+    return err
+  }
 	for {
 		conn, err := listener.Accept()
 		if err == nil {
