@@ -15,6 +15,14 @@ import (
 var DefaultTimeOut time.Duration = time.Minute
 var DefaultRetries int = 0
 
+type ConnectionType int
+
+const (
+	SNF_CONN_TYPE_IP ConnectionType = iota
+	SNF_CONN_TYPE_PIPE
+	SNF_CONN_TYPES
+)
+
 type OnConnectCallback func()
 type OnSNFFailCallback func(error)
 type OnSocketFailCallback func(error)
@@ -32,6 +40,7 @@ type ConnectionInfo struct {
 	isConnected  bool
 	requestQueue chan *Request
 	requestsSent map[[16]byte]*Request
+	connType     ConnectionType
 }
 
 type ConnectionCallbacks struct {
@@ -52,6 +61,7 @@ func NewConnection() *Connection {
 	ret := &Connection{}
 	ret.timeOut = DefaultTimeOut
 	ret.retries = DefaultRetries
+	ret.connType = SNF_CONN_TYPE_IP
 	ret.requestQueue = make(chan *Request, 100)
 	ret.requestsSent = make(map[[16]byte]*Request)
 	ret.SetOpcodeStruct(nil)
@@ -60,6 +70,11 @@ func NewConnection() *Connection {
 
 func (r *Connection) SetAddress(address string) *Connection {
 	r.address = address
+	return r
+}
+
+func (r *Connection) SetConnectionType(connType ConnectionType) *Connection {
+	r.connType = connType
 	return r
 }
 
@@ -106,7 +121,17 @@ func (r *Connection) Connect() *Connection {
 	retries := r.retries
 	for {
 		failure = false
-		r.conn, err = dialer.Dial("tcp", r.address)
+		switch r.connType {
+		case SNF_CONN_TYPE_IP:
+			r.conn, err = dialer.Dial("tcp", r.address)
+		case SNF_CONN_TYPE_PIPE:
+			r.conn, err = dialPipe(r.address)
+		default:
+			err = core.SNFErrorUnallowedValue{
+				Is:          "invalid connection type",
+				ShouldvBeen: "SNF_CONN_TYPE_IP or SNF_CONN_TYPE_PIPE",
+			}
+		}
 		if err != nil {
 			failure = true
 			if errors.Is(err, context.DeadlineExceeded) || (errors.Is(err, net.ErrClosed) && err.Error() == "i/o timeout") {
@@ -231,7 +256,9 @@ func (r *Connection) handleError(err error) {
 	if r.onExceptionCallback != nil {
 		r.onExceptionCallback(err)
 	}
-	r.conn.Close()
+	if r.conn != nil {
+		r.conn.Close()
+	}
 }
 
 func (r *Connection) Opcodes() *core.OpcodeRootStructure {
