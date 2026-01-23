@@ -64,7 +64,7 @@ func ClientGet(uuid string) (*Client, bool) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
-      RecommendedAction: "Call Init() first!",
+			RecommendedAction: "Call Init() first!",
 		})
 	}
 
@@ -204,8 +204,10 @@ func ClientHandleNew(conn net.Conn) {
 
 func ClientHandle(client *Client) {
 	defer func(client *Client) {
-		client.Conn.Close()
-		client.Conn = nil
+		if client != nil && client.Conn != nil {
+			client.Conn.Close()
+			client.Conn = nil
+		}
 	}(client)
 	for {
 		req, err := RequestFetch(client)
