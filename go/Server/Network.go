@@ -24,6 +24,7 @@ const (
 )
 
 var snfServerStatus *Status = nil
+var snfWaitStart chan error = make(chan error)
 
 func GetStatus() Status {
 	if snfServerStatus == nil {
@@ -59,12 +60,12 @@ func IsInit() bool {
 
 func getSocket() (net.Listener, error) {
 	temp, found := GetVar(SNF_VAR_CONN_TYPE)
-	T := temp.(int)
-	if !found || T >= int(SNF_CONN_TYPES) {
+	T := temp.(ConnectionType)
+	if !found || T >= SNF_CONN_TYPES {
 		return nil, core.SNFErrorIntialization{FailedComponent: "Getting Socket, Check PIPE Name or IP Port"}
 	}
 
-	if T == int(SNF_CONN_TYPE_IP) {
+	if T == SNF_CONN_TYPE_IP {
 
 		var tmp any
 		//TODO: Add limitations if needed
@@ -75,17 +76,17 @@ func getSocket() (net.Listener, error) {
 		address := addr.(string) + ":" + strconv.Itoa(port)
 
 		listener, err := net.Listen("tcp", address)
-    return listener, err
+		return listener, err
 
-	} else if T == int(SNF_CONN_TYPE_PIPE) {
-    // OS Dependant. See network_<windows/unix>.go
-    return getPipeListener() 
-  } else {
-    return nil, core.SNFErrorUnallowedValue{
-      Is: "invalid connection type in variable SNF_VAR_CONN_TYPE",
-      ShouldvBeen: "SNF_CONN_TYPE_PIPE or SNF_CONN_TYPE_IP",
-    }
-  }
+	} else if T == SNF_CONN_TYPE_PIPE {
+		// OS Dependant. See network_<windows/unix>.go
+		return getPipeListener()
+	} else {
+		return nil, core.SNFErrorUnallowedValue{
+			Is:          "invalid connection type in variable SNF_VAR_CONN_TYPE",
+			ShouldvBeen: "SNF_CONN_TYPE_PIPE or SNF_CONN_TYPE_IP",
+		}
+	}
 }
 func Start() error {
 	if err := IsInit(); err == false {
@@ -95,16 +96,27 @@ func Start() error {
 		}.Error())
 	}
 
-  listener, err := getSocket()
-  if err != nil {
-    return err
-  }
+	listener, err := getSocket()
+	if err != nil {
+		snfWaitStart <- err
+		return err
+	}
+	snfWaitStart <- nil
 	for {
 		conn, err := listener.Accept()
 		if err == nil {
 			go ClientHandleNew(conn)
 		}
 	}
+}
+
+func Stop() error {
+	//TODO: Implement Graceful Stopping Mechanism
+	return nil
+}
+
+func WaitStart() error {
+	return <-snfWaitStart
 }
 
 // Send a message over the network connection.

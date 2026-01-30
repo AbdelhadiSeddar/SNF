@@ -19,7 +19,7 @@ const (
 )
 
 type Client struct {
-	UUID      string
+	UUID      [16]byte
 	Conn      net.Conn
 	Mode      ClientConnectionMode
 	modeLimit uint32 // 0+ For MultiShot
@@ -45,7 +45,7 @@ func snfClientInit() {
 	clients = new(sync.Map)
 }
 
-func ClientAdd(uuid string, conn net.Conn, data any) *Client {
+func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -75,7 +75,7 @@ func ClientGet(uuid string) (*Client, bool) {
 	return v.(*Client), true
 }
 
-func ClientRemove(uuid string) {
+func ClientRemove(uuid [16]byte) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -132,10 +132,10 @@ func ClientHandleNew(conn net.Conn) {
 	case core.SNF_OPCODE_BASE_CMD_CONNECT:
 		switch opcode[3] {
 		case core.SNF_OPCODE_BASE_DET_UNDETAILED:
-			client = ClientAdd(uuid.NewString(), conn, nil)
+			client = ClientAdd([16]byte(uuid.New()), conn, nil)
 			client.Mode = ClientConnectionModeRegular
 		case core.SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT:
-			client = ClientAdd(uuid.NewString(), conn, nil)
+			client = ClientAdd([16]byte(uuid.New()), conn, nil)
 			client.Mode = ClientConnectionModeMultishot
 			var reqCount uint32
 
@@ -168,9 +168,9 @@ func ClientHandleNew(conn net.Conn) {
 				core.SNF_OPCODE_BASE_CMD_CONFIRM,    /*OPC CMD*/
 				core.SNF_OPCODE_BASE_DET_UNDETAILED, /*OPC DET*/
 				0x00, 0x00, 0x00, 0x01,              /*N Args*/
-				0x00, 0x00, 0x00, 0x24, /*S Args*/
+				0x00, 0x00, 0x00, 0x10, /*S Args*/
 			}
-			snd = append(snd, client.UUID...)
+			snd = append(snd, client.UUID[:]...)
 			Send(conn, snd)
 		}
 	case core.SNF_OPCODE_BASE_CMD_RECONNECT:

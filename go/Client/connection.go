@@ -34,7 +34,7 @@ type ConnectionInfo struct {
 	once_done    bool
 	conn         net.Conn
 	address      string
-	uuid         string
+	uuid         [16]byte
 	timeOut      time.Duration
 	retries      int
 	isConnected  bool
@@ -183,7 +183,7 @@ func (r *Connection) Connect() *Connection {
 
 		args_size := binary.BigEndian.Uint32(buf[:4])
 
-		if args_amount != 1 || args_size == 0 {
+		if args_amount < 1 || args_size == 0 {
 			r.handleError(core.SNFErrorUninitialized{
 				Component:         "\"Connection\"",
 				RecommendedAction: "Communication mixup failure with the server. Verify compatibility with the Server and re-try.",
@@ -196,6 +196,8 @@ func (r *Connection) Connect() *Connection {
 			r.handleError(err)
 			return nil
 		}
+
+		//TODO: Add Version Check
 
 		var confirmConnection []byte = []byte{
 			0x00,
@@ -230,20 +232,21 @@ func (r *Connection) Connect() *Connection {
 		serverArgsCount := binary.BigEndian.Uint32(metaBuf[:4])
 		serverArgsSize := binary.BigEndian.Uint32(metaBuf[4:])
 
-		if serverArgsCount != 1 || serverArgsSize != 36 {
+		if serverArgsCount != 1 || serverArgsSize != 16 {
+			println("Received : %d \n", serverArgsSize)
 			r.handleError(core.SNFErrorUninitialized{
 				Component:         "\"Connection\"",
-				RecommendedAction: "Server protocol mismatch. Expected 1 Argument of size 36 (UUID).",
+				RecommendedAction: "Server protocol mismatch. Expected 1 Argument of size 16 (UUID).",
 			})
 			return nil
 		}
 
-		uuidBuf := make([]byte, 36)
+		uuidBuf := make([]byte, 16)
 		if _, err := io.ReadFull(r.conn, uuidBuf); err != nil {
 			r.handleError(err)
 			return nil
 		}
-		r.uuid = string(uuidBuf)
+		r.uuid = [16]byte(uuidBuf)
 		if r.onConnectCallback != nil {
 			r.onConnectCallback()
 		}
@@ -272,6 +275,9 @@ func (r *Connection) NewRequest(req *core.Request) *Request {
 }
 
 func (r *Connection) SendRequest(req *Request) bool {
+	if req == nil {
+		return false
+	}
 	if r.once {
 		if r.once_done {
 			return false
@@ -282,6 +288,10 @@ func (r *Connection) SendRequest(req *Request) bool {
 	r.requestQueue <- req
 
 	return true
+}
+
+func (r *Connection) Close() error {
+	return r.conn.Close()
 }
 
 func (r *Connection) handleRequestsincoming() {
@@ -312,17 +322,19 @@ func (r *Connection) handleRequestsincoming() {
 			}
 			continue
 		}
+		rq.cr.SetOpcode(opcode)
 		argsbuff := make([]byte, args_size)
+		if args_size > 0 {
+			_, err = io.ReadFull(r.conn, argsbuff)
+			if err != nil {
+				r.handleError(err)
+				return
+			}
 
-		_, err = io.ReadFull(r.conn, argsbuff)
-		if err != nil {
-			r.handleError(err)
-			return
-		}
-
-		true_args_amount := rq.snfRequestParseArguments(argsbuff)
-		if true_args_amount != args_amount {
-			continue
+			true_args_amount := rq.snfRequestParseArguments(argsbuff)
+			if true_args_amount != args_amount {
+				continue
+			}
 		}
 
 		r.mapLock.RLock()
@@ -342,7 +354,7 @@ func (r *Connection) handleRequests() {
 
 	for {
 		rq := <-r.requestQueue
-		ToSend := append([]byte(r.uuid), rq.cr.ToBytes()...)
+		ToSend := append(r.uuid[:], rq.cr.ToBytes()...)
 
 		if _, err := r.conn.Write(ToSend); err != nil {
 			if r.onExceptionCallback != nil {

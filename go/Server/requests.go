@@ -1,6 +1,7 @@
 package Server
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"strings"
@@ -80,13 +81,12 @@ func InitialRequestGet() ([]byte, error) {
 
 func RequestFetch(client *Client) (*core.Request, error) {
 	if client.Mode != ClientConnectionModeOneshot {
-		buf := make([]byte, 36)
+		buf := make([]byte, 16)
 		_, err := Receive(client.Conn, buf)
 		if err != nil {
 			return nil, err
 		}
-		if string(buf) != client.UUID {
-			println("Server: Received ", string(buf), " Expected ", client.UUID)
+		if !bytes.Equal(buf, client.UUID[:]) {
 			return nil, core.SNFErrorClientMismatch{
 				Conn: client.Conn,
 			}
