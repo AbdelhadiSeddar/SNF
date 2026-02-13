@@ -12,6 +12,8 @@ size_t SNF_VARS_TABLE_LENGTHS[SNF_N_VARS];
 
 void snf_var_default()
 {
+    alloc_vartable(SNF_VAR_PROGRAM_NAME, char *) = "nameless";
+    alloc_vartable(SNF_VAR_PROGRAM_VER, char *)  = "0";
     alloc_vartable(SNF_VAR_THREADS, int) = 4 ;
     alloc_vartable(SNF_VAR_THREADPOOL, SNF_thpool);
     alloc_vartable(SNF_VAR_PORT, int) = 9114;
@@ -52,34 +54,40 @@ void snf_var_set(SNF_VARS VARNAME, void *Value)
             if(!def) { def++ ; ets = xstr(SNF_VAR_EPOLL_MAXEVENTS); }
         case SNF_VAR_CLTS_INITIAL:
             if(!def) { def++ ; ets = xstr(SNF_VAR_CLTS_INITIAL); }
-            if(*(int *)Value < 0)
+            if(*(int *)Value < 0 && --def && --def)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 0 for variable %s. IGNORED!\n", *(int*)Value, ets);
             break;
         case SNF_VAR_CLTS_DATA_SIZE:
             if(!def) { def++ ; ets = xstr(SNF_VAR_CLTS_DATA_SIZE); }
         // -1 is limit
         case SNF_VAR_EPOLL_TIMEOUT:
-            if(*(int *)Value < -1)
+            if(!def) { def++ ; ets = xstr(SNF_VAR_EPOLL_TIMEOUT); }
+            if(*(int *)Value < -1 && --def && --def)
                 fprintf(stderr, "Invalid Value %d, Value must be >= -1 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_EPOLL_TIMEOUT));
             break;
         // 3 is limit
         case SNF_VAR_THREADS:
-            if(*(int *)Value < 3)
+            if(*(int *)Value < 3 && --def)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 3 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_THREADS));
             break;
         // 64 is limit
         case SNF_VAR_RQST_MAX_LENGTH:
-            if(*(int *)Value < 64)
+            if(*(int *)Value < 64 && --def)
                 fprintf(stderr, "Invalid Value %d, Value must be >= 64 for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_RQST_MAX_LENGTH));
             break;
         // 0 or 1 is limit
         case SNF_VAR_OPCODE_INIS:
-            if(*(int *)Value != 0 && *(int *)Value != 1)
+            if(*(int *)Value != 0 && *(int *)Value != 1 && --def)
                 fprintf(stderr, "Invalid Value %d, Value must be either 0(False) or 1(True) for variable %s. IGNORED!\n", *(int*)Value, xstr(SNF_VAR_OPCODE_INIS));
             break;
         default:
             break;
     }
+
+    // Make sure no errors passthrough
+    if( def < 0)
+      return;
+
     switch(VARNAME)
     {
         #pragma region Handling SNF_VAR_EPOLL_*
