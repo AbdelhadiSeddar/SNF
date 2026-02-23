@@ -65,8 +65,8 @@ func getSocket() (net.Listener, error) {
 		return nil, core.SNFErrorIntialization{FailedComponent: "Getting Socket, Check PIPE Name or IP Port"}
 	}
 
-	if T == SNF_CONN_TYPE_IP {
-
+	switch T {
+	case SNF_CONN_TYPE_IP:
 		var tmp any
 		//TODO: Add limitations if needed
 		tmp, _ = GetVar(SNF_VAR_CONN_IP_PORT)
@@ -78,10 +78,10 @@ func getSocket() (net.Listener, error) {
 		listener, err := net.Listen("tcp", address)
 		return listener, err
 
-	} else if T == SNF_CONN_TYPE_PIPE {
+	case SNF_CONN_TYPE_PIPE:
 		// OS Dependant. See network_<windows/unix>.go
 		return getPipeListener()
-	} else {
+	default:
 		return nil, core.SNFErrorUnallowedValue{
 			Is:          "invalid connection type in variable SNF_VAR_CONN_TYPE",
 			ShouldvBeen: "SNF_CONN_TYPE_PIPE or SNF_CONN_TYPE_IP",
@@ -101,9 +101,11 @@ func Start() error {
 		snfWaitStart <- err
 		return err
 	}
+
 	snfWaitStart <- nil
 	for {
 		conn, err := listener.Accept()
+
 		if err == nil {
 			go ClientHandleNew(conn)
 		}

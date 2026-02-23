@@ -36,6 +36,8 @@ type ClientHandlers struct {
 	OnAccept  OnAcceptCallBack
 }
 
+type ClientDataInitCallBack func() any
+
 var clients *sync.Map = nil
 
 func snfClientInit() {
@@ -94,6 +96,13 @@ func ClientHandleNew(conn net.Conn) {
 			RecommendedAction: "Call Init() first!",
 		})
 	}
+	hand, ok := GetVar(SNF_VAR_CLTS_HANDLERS)
+	h := hand.(ClientHandlers)
+	if ok {
+		if h.OnAccept != nil {
+			h.OnAccept(&Client{Conn: conn})
+		}
+	}
 
 	// Send the appropriate stuff
 	isr, err := InitialRequestGet()
@@ -127,15 +136,21 @@ func ClientHandleNew(conn net.Conn) {
 			return
 		}
 	}
+	clt_init, ok := GetVar(SNF_VAR_CLTS_DATA_INIT)
+	var data any = nil
+
+	if ok {
+		data = clt_init.(ClientDataInitCallBack)()
+	}
 	var client *Client = nil
 	switch opcode[2] {
 	case core.SNF_OPCODE_BASE_CMD_CONNECT:
 		switch opcode[3] {
 		case core.SNF_OPCODE_BASE_DET_UNDETAILED:
-			client = ClientAdd([16]byte(uuid.New()), conn, nil)
+			client = ClientAdd([16]byte(uuid.New()), conn, data)
 			client.Mode = ClientConnectionModeRegular
 		case core.SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT:
-			client = ClientAdd([16]byte(uuid.New()), conn, nil)
+			client = ClientAdd([16]byte(uuid.New()), conn, data)
 			client.Mode = ClientConnectionModeMultishot
 			var reqCount uint32
 
@@ -148,6 +163,7 @@ func ClientHandleNew(conn net.Conn) {
 				Conn:      conn,
 				Mode:      ClientConnectionModeOneshot,
 				modeLimit: 1,
+				Data:      data,
 			}
 		default:
 			Send(conn,
@@ -198,6 +214,9 @@ func ClientHandleNew(conn net.Conn) {
 				0x00, 0x00, 0x00, 0x00 /*S Args*/},
 		)
 		return
+	}
+	if ok && h.OnConnect != nil {
+		h.OnConnect(client)
 	}
 	ClientHandle(client)
 }
