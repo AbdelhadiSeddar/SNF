@@ -38,8 +38,8 @@ type ConnectionInfo struct {
 	timeOut      time.Duration
 	retries      int
 	isConnected  bool
-	requestQueue chan *Request
-	requestsSent map[[16]byte]*Request
+	requestQueue chan *core.Request
+	requestsSent map[[16]byte]*core.Request
 	connType     ConnectionType
 }
 
@@ -62,8 +62,8 @@ func NewConnection() *Connection {
 	ret.timeOut = DefaultTimeOut
 	ret.retries = DefaultRetries
 	ret.connType = SNF_CONN_TYPE_IP
-	ret.requestQueue = make(chan *Request, 100)
-	ret.requestsSent = make(map[[16]byte]*Request)
+	ret.requestQueue = make(chan *core.Request, 100)
+	ret.requestsSent = make(map[[16]byte]*core.Request)
 	ret.SetOpcodeStruct(nil)
 	return ret
 }
@@ -106,7 +106,7 @@ func (r *Connection) OnTimeout(cb OnTimeoutCallback) *Connection {
 	return r
 }
 
-func (r *Connection) Once(req *Request) *Connection {
+func (r *Connection) Once(req *core.Request) *Connection {
 	r.once = true
 	r.requestQueue <- req
 	return r
@@ -268,13 +268,7 @@ func (r *Connection) Opcodes() *core.OpcodeRootStructure {
 	return r.opcodes
 }
 
-func (r *Connection) NewRequest(req *core.Request) *Request {
-	ret := Request{}
-	ret.cr = *req
-	return &ret
-}
-
-func (r *Connection) SendRequest(req *Request) bool {
+func (r *Connection) SendRequest(req *core.Request) bool {
 	if req == nil {
 		return false
 	}
@@ -284,7 +278,7 @@ func (r *Connection) SendRequest(req *Request) bool {
 		}
 		r.once_done = true
 	}
-	req.cr.SetUID(generateUID())
+	req.Client()
 	r.requestQueue <- req
 
 	return true
@@ -322,7 +316,7 @@ func (r *Connection) handleRequestsincoming() {
 			}
 			continue
 		}
-		rq.cr.SetOpcode(opcode)
+		rq.SetOpcode(opcode)
 		argsbuff := make([]byte, args_size)
 		if args_size > 0 {
 			_, err = io.ReadFull(r.conn, argsbuff)
@@ -331,20 +325,35 @@ func (r *Connection) handleRequestsincoming() {
 				return
 			}
 
-			true_args_amount := rq.snfRequestParseArguments(argsbuff)
+			true_args_amount := snfRequestParseArguments(rq, argsbuff)
 			if true_args_amount != args_amount {
 				continue
 			}
 		}
+		if rq.GetUID()[15] == 0 {
+			go func() {
+				var re *core.Request
+				f := rq.GetOpcode().Command.GetCallback()
+				if f != nil {
+					ret, err := f(*rq, nil)
+					if err != nil {
+						re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL))
+					}
+					re = ret
+				} else {
+					re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE))
+				}
+				r.SendRequest(re)
+			}()
+			continue
+		}
 
 		r.mapLock.RLock()
-		item, ok := r.requestsSent[rq.cr.GetUID()]
+		item, ok := r.requestsSent[rq.GetUID()]
 		r.mapLock.RUnlock()
 
 		if ok {
-			if item.onResponse != nil {
-				go item.onResponse(*rq)
-			}
+			item.CallResponse(rq)
 		}
 	}
 }
@@ -354,7 +363,7 @@ func (r *Connection) handleRequests() {
 
 	for {
 		rq := <-r.requestQueue
-		ToSend := append(r.uuid[:], rq.cr.ToBytes()...)
+		ToSend := append(r.uuid[:], rq.ToBytes()...)
 
 		if _, err := r.conn.Write(ToSend); err != nil {
 			if r.onExceptionCallback != nil {
@@ -365,7 +374,7 @@ func (r *Connection) handleRequests() {
 		}
 
 		r.mapLock.Lock()
-		r.requestsSent[rq.cr.GetUID()] = rq
+		r.requestsSent[rq.GetUID()] = rq
 		r.mapLock.Unlock()
 	}
 }

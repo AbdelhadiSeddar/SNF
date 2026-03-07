@@ -1,22 +1,55 @@
 package Core
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+	"sync"
+)
 
-var RequestUIDNull = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+type RequestResponseCB func(Request)
+type RequestFailureCB func(*Request, error)
 
 type Request struct {
 	uid  [16]byte
 	op   *Opcode
 	args []string
+	resp RequestResponseCB
+	fail RequestFailureCB
 }
 
+var (
+	mu      sync.Mutex = sync.Mutex{}
+	current [16]byte
+)
+
+func Next() [16]byte {
+	mu.Lock()
+	defer mu.Unlock()
+
+	for i := 14; i >= 0; i-- {
+		current[i]++
+
+		if current[i] != 0 {
+			break
+		}
+	}
+
+	return current
+}
 func RequestGen() *Request {
 	return &Request{}
 }
 
-func (r *Request) SetUID(uid [16]byte) *Request {
+func (r *Request) Client() {
+	r.uid = Next()
+	r.uid[15] = 1
+}
+func (r *Request) Server() {
+	r.uid = Next()
+	r.uid[15] = 0
+}
+
+func (r *Request) SetUID(uid [16]byte) {
 	r.uid = uid
-	return r
 }
 func (r *Request) GetUID() [16]byte {
 	return r.uid
@@ -44,17 +77,28 @@ func (r *Request) GetArgs() []string {
 
 // Similair to r.SetUID(original.GetUID())
 func (r *Request) RespondsTo(original *Request) *Request {
-	if original == nil {
-		r.uid = RequestUIDNull
-	} else {
+	if original != nil {
 		r.uid = original.GetUID()
 	}
 	return r
 }
-
-// Similair to r.SetUID(SNFRequestUIDNull) or r.RespondsTo(nil)
-func (r *Request) ServerRequest() *Request {
-	return r.RespondsTo(nil)
+func (r *Request) OnResponse(resp RequestResponseCB) *Request {
+	r.resp = resp
+	return r
+}
+func (r *Request) OnFailure(fail RequestFailureCB) *Request {
+	r.fail = fail
+	return r
+}
+func (r *Request) CallResponse(Response *Request) {
+	if r.resp != nil {
+		r.resp(*Response)
+	}
+}
+func (r *Request) CallFailure(Original *Request, err error) {
+	if r.fail != nil {
+		r.fail(Original, err)
+	}
 }
 
 func (r *Request) argsToBytes() []byte {

@@ -19,13 +19,14 @@ const (
 )
 
 type Client struct {
-	UUID      [16]byte
-	Conn      net.Conn
-	Mode      ClientConnectionMode
-	modeLimit uint32 // 0+ For MultiShot
-	Data      any
+	UUID         [16]byte
+	Conn         net.Conn
+	Mode         ClientConnectionMode
+	modeLimit    uint32 // 0+ For MultiShot
+	Data         any
+	sentRequests map[[16]byte]*core.Request
 	//TODO: Redesign this
-	Mutex sync.Mutex
+	Mutex sync.RWMutex
 }
 
 type OnConnectCallBack func(*Client) int
@@ -239,6 +240,10 @@ func ClientHandle(client *Client) {
 				return
 			}
 		}
+		if req.GetUID()[15] == 0 {
+
+		}
+
 		// Calling the function
 		f := req.GetOpcode().Command.GetCallback()
 		if f == nil {
@@ -259,7 +264,7 @@ func ClientHandle(client *Client) {
 		//FIXME: This sounds so wrong!
 		res, err := f(*req, client)
 		if err != nil {
-			res = *core.RequestGen().
+			res = core.RequestGen().
 				RespondsTo(req).
 				SetOpcode(
 					snfOPStruct.GetBaseOpcode(
@@ -269,7 +274,7 @@ func ClientHandle(client *Client) {
 				)
 		}
 
-		RequestSend(client, &res)
+		RequestSend(client, res)
 		if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
 			ClientRemove(client.UUID)
 			return

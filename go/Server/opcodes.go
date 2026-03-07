@@ -8,8 +8,8 @@ import (
 
 var snfOPStruct *core.OpcodeRootStructure
 
-func snfServerDefaultCallBack(Original core.Request, Sender any) (core.Request, error) {
-	return *core.RequestGen().
+func snfServerDefaultCallBack(Original core.Request, Sender any) (*core.Request, error) {
+	return core.RequestGen().
 		RespondsTo(&Original).
 		SetOpcode(snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
@@ -17,23 +17,23 @@ func snfServerDefaultCallBack(Original core.Request, Sender any) (core.Request, 
 		)), nil
 
 }
-func snfServerInvalidProtocolCallBack(Original core.Request, Sender any) (core.Request, error) {
-	return *core.RequestGen().
+func snfServerInvalidProtocolCallBack(Original core.Request, Sender any) (*core.Request, error) {
+	return core.RequestGen().
 		RespondsTo(&Original).
 		SetOpcode(snfOPStruct.GetBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_INVALID,
 			core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
 		)), nil
 }
-func SNFServerConfirmCallBack(Original core.Request, Sender any) (core.Request, error) {
-	return *core.RequestGen().
+func SNFServerConfirmCallBack(Original core.Request, Sender any) (*core.Request, error) {
+	return core.RequestGen().
 		RespondsTo(&Original).
 		SetOpcode(snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
 		)), nil
 }
-func SNFServerRejectCallBack(Original core.Request, Sender any) (core.Request, error) {
-	return *core.RequestGen().
+func SNFServerRejectCallBack(Original core.Request, Sender any) (*core.Request, error) {
+	return core.RequestGen().
 			RespondsTo(&Original).
 			SetOpcode(snfOPStruct.GetUBaseOpcode(
 				core.SNF_OPCODE_BASE_CMD_REJECT,
@@ -173,27 +173,27 @@ func snfServerSetOpcodeCallbacks() error {
 }
 
 // snfServerCBConnect is the callback for the connect 0x00 base command
-func snfServerCBConnect(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBConnect(Original core.Request, Sender any) (*core.Request, error) {
 	result, err := snfServerInvalidProtocolCallBack(Original, Sender)
 	return result, err
 }
 
 // snfServerCBReconnect is the callback for the reconnect 0x01 base command
-func snfServerCBReconnect(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBReconnect(Original core.Request, Sender any) (*core.Request, error) {
 	result, err := SNFServerConfirmCallBack(Original, Sender)
 	return result, err
 }
 
 // snfServerCBDisonnect is the callback for the disconnect 0x02 base command
-func snfServerCBDisonnect(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBDisonnect(Original core.Request, Sender any) (*core.Request, error) {
 	result, err := snfServerInvalidProtocolCallBack(Original, Sender)
 	return result, err
 }
 
 // snfServerCBVerInfo is the callback for the verinfo 0x03 base command
-func snfServerCBVerInfo(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBVerInfo(Original core.Request, Sender any) (*core.Request, error) {
 	if Original.GetOpcode().Detail.GetValue() == core.SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL {
-		return *core.RequestGen().
+		return core.RequestGen().
 			RespondsTo(&Original).
 			SetOpcode(snfOPStruct.GetUBaseOpcode(
 				core.SNF_OPCODE_BASE_CMD_CONFIRM,
@@ -201,7 +201,7 @@ func snfServerCBVerInfo(Original core.Request, Sender any) (core.Request, error)
 			ArgAdd(core.SNPVersion), nil
 	}
 
-	return *core.RequestGen().
+	return core.RequestGen().
 		RespondsTo(&Original).
 		SetOpcode(snfOPStruct.GetUBaseOpcode(
 			core.SNF_OPCODE_BASE_CMD_CONFIRM,
@@ -210,26 +210,25 @@ func snfServerCBVerInfo(Original core.Request, Sender any) (core.Request, error)
 }
 
 // snfServerCBKick is the callback for the kick 0x04 base command
-func snfServerCBKick(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBKick(Original core.Request, Sender any) (*core.Request, error) {
 	return snfServerInvalidProtocolCallBack(Original, Sender)
 }
 
 // snfServerCBConfirm is the callback for the confirm 0x05 base command
-func snfServerCBConfirm(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBConfirm(Original core.Request, Sender any) (*core.Request, error) {
 	return snfServerInvalidProtocolCallBack(Original, Sender)
 }
 
 // snfServerCBReject is the callback for the reject 0x06 base command
-func snfServerCBReject(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBReject(Original core.Request, Sender any) (*core.Request, error) {
 	return snfServerInvalidProtocolCallBack(Original, Sender)
 }
 
 // snfServerCBInvalid is the callback for the invalid 0xFF base command
-func snfServerCBInvalid(Original core.Request, Sender any) (core.Request, error) {
+func snfServerCBInvalid(Original core.Request, Sender any) (*core.Request, error) {
 	return snfServerInvalidProtocolCallBack(Original, Sender)
 }
 
-
 func OPCodes() *core.OpcodeRootStructure {
-  return snfOPStruct
+	return snfOPStruct
 }
