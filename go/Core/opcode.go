@@ -196,7 +196,7 @@ type OpcodeDetailMember struct {
 	parent *OpcodeCommandMember
 }
 
-type OpcodeCommandCallback func(Original Request, Sender any) (Request, error)
+type OpcodeCommandCallback func(Original Request, Sender any) (*Request, error)
 
 // var snf_opcode_ll *snfOpcodeLLItem
 // var snf_opcode_base_isinit bool = false
