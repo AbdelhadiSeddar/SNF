@@ -45,6 +45,14 @@ func snfClientInit() {
 	}
 	clients = new(sync.Map)
 }
+func (c *Client) Send(req *core.Request) {
+	if req == nil {
+		return
+	}
+
+	toSend := req.ToBytes()
+	Send(c.Conn, toSend)
+}
 
 func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
 	if clients == nil {
