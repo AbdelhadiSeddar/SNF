@@ -52,8 +52,7 @@ func (c *Client) Send(req *core.Request) {
 		return
 	}
 
-	toSend := req.ToBytes()
-	Send(c.Conn, toSend)
+	RequestSend(c, req)
 }
 
 func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
