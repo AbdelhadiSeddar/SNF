@@ -98,6 +98,7 @@ func Start() error {
 
 	listener, err := getSocket()
 	if err != nil {
+		println("_+_+_+_+_+_+ ")
 		snfWaitStart <- err
 		return err
 	}
@@ -108,7 +109,12 @@ func Start() error {
 
 		if err == nil {
 			go ClientHandleNew(conn)
+		} else {
+
+			println("-=-=-=-=-=-=-=  ")
+
 		}
+
 	}
 }
 
@@ -121,8 +127,8 @@ func WaitStart() error {
 	return <-snfWaitStart
 }
 
-// Send a message over the network connection.
-func Send(conn net.Conn, data []byte) error {
+// send a message over the network connection.
+func send(conn net.Conn, data []byte) error {
 	if _, err := conn.Write(data); err != nil {
 		return err
 	}
