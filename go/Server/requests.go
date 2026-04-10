@@ -167,16 +167,25 @@ func RequestSend(client *Client, Request *core.Request) error {
 	}
 	return err
 }
+
+// Allows to send a client response
 func ResponseSend(client *Client, Request *core.Request) error {
 	return requestSend(client, Request, true)
 
 }
 func requestSend(client *Client, Request *core.Request, Response bool) error {
-	var content []byte
 
-	if !Response {
+	if Response {
+		Request.Client()
+	} else {
 		Request.Server()
 	}
+	return Send(client, Request)
+}
+
+// Allows to send a non specefied request
+func Send(client *Client, Request *core.Request) error {
+	var content []byte
 
 	content = append(content, Request.ToBytes()...)
 

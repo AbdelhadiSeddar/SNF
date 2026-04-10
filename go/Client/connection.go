@@ -293,6 +293,7 @@ func (r *Connection) SendResponse(req *core.Request) bool {
 		}
 		r.once_done = true
 	}
+	req.Server()
 	r.requestQueue <- req
 
 	return true

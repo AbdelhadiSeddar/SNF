@@ -117,7 +117,7 @@ func ClientHandleNew(conn net.Conn) {
 	if err != nil {
 		panic(err.Error())
 	}
-	Send(conn, isr)
+	send(conn, isr)
 
 	var opcode []byte = make([]byte, 4)
 
@@ -131,7 +131,7 @@ func ClientHandleNew(conn net.Conn) {
 		opcode[2] >= core.SNF_OPCODE_BASE_CMD_CONNECT &&
 		opcode[2] <= core.SNF_OPCODE_BASE_CMD_DISCONNECT) {
 		//Invalid Opcode
-		if err := Send(conn,
+		if err := send(conn,
 			[]byte{
 				0x00,                             /*OPC Cat*/
 				0x00,                             /*OPC SubCat*/
@@ -174,7 +174,7 @@ func ClientHandleNew(conn net.Conn) {
 				Data:      data,
 			}
 		default:
-			Send(conn,
+			send(conn,
 				[]byte{
 					0x00,                             /*OPC Cat*/
 					0x00,                             /*OPC SubCat*/
@@ -195,11 +195,11 @@ func ClientHandleNew(conn net.Conn) {
 				0x00, 0x00, 0x00, 0x10, /*S Args*/
 			}
 			snd = append(snd, client.UUID[:]...)
-			Send(conn, snd)
+			send(conn, snd)
 		}
 	case core.SNF_OPCODE_BASE_CMD_RECONNECT:
 		// Temporary
-		Send(conn,
+		send(conn,
 			[]byte{
 				0x00,                             /*OPC Cat*/
 				0x00,                             /*OPC SubCat*/
@@ -212,7 +212,7 @@ func ClientHandleNew(conn net.Conn) {
 	case core.SNF_OPCODE_BASE_CMD_DISCONNECT:
 	default:
 		//Temporary Different just to know they are different thatn reconnect
-		Send(conn,
+		send(conn,
 			[]byte{
 				0x00,                             /*OPC Cat*/
 				0x00,                             /*OPC SubCat*/
@@ -242,7 +242,7 @@ func ClientHandle(client *Client) {
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
 				//Error handling comes later.
-				RequestSend(client,
+				Send(client,
 					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
@@ -254,7 +254,7 @@ func ClientHandle(client *Client) {
 				return
 			default:
 				// Respond with the value of the error/ Debug only
-				RequestSend(client,
+				Send(client,
 					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
