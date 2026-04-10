@@ -154,8 +154,29 @@ func RequestFetch(client *Client) (*core.Request, error) {
 
 	return &req, nil
 }
+
+// Alows to send a server request.
 func RequestSend(client *Client, Request *core.Request) error {
+	err := requestSend(client, Request, false)
+	if err != nil {
+		client.rqstsMutex.Lock()
+		client.sentRequests[Request.GetUID()] = Request
+		client.rqstsMutex.Unlock()
+	} else {
+		Request.CallFailure(Request, err)
+	}
+	return err
+}
+func ResponseSend(client *Client, Request *core.Request) error {
+	return requestSend(client, Request, true)
+
+}
+func requestSend(client *Client, Request *core.Request, Response bool) error {
 	var content []byte
+
+	if !Response {
+		Request.Server()
+	}
 
 	content = append(content, Request.ToBytes()...)
 
