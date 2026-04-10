@@ -6,6 +6,7 @@ import (
 	"net"
 	"sync"
 
+	"github.com/AbdelhadiSeddar/SNF/go/Core"
 	core "github.com/AbdelhadiSeddar/SNF/go/Core"
 	"github.com/google/uuid"
 )
@@ -25,8 +26,7 @@ type Client struct {
 	modeLimit    uint32 // 0+ For MultiShot
 	Data         any
 	sentRequests map[[16]byte]*core.Request
-	//TODO: Redesign this
-	Mutex sync.RWMutex
+	rqstsMutex   sync.RWMutex
 }
 
 type OnConnectCallBack func(*Client) int
@@ -266,44 +266,51 @@ func ClientHandle(client *Client) {
 				return
 			}
 		}
+		var res *Core.Request
 		if req.GetUID()[15] == 0 {
+			client.rqstsMutex.RLock()
+			item, ok := client.sentRequests[req.GetUID()]
+			client.rqstsMutex.RUnlock()
+			if ok {
+				go item.CallResponse(req)
+			}
+		} else {
 
-		}
+			// Calling the function
+			f := req.GetOpcode().Command.GetCallback()
+			if f == nil {
+				err = RequestSend(client,
+					core.RequestGen().
+						RespondsTo(req).
+						SetOpcode(
+							snfOPStruct.GetBaseOpcode(
+								core.SNF_OPCODE_BASE_CMD_INVALID,
+								core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
+							)),
+				)
+				if err != nil {
+					return
+				}
+			}
 
-		// Calling the function
-		f := req.GetOpcode().Command.GetCallback()
-		if f == nil {
-			err = RequestSend(client,
-				core.RequestGen().
+			//FIXME: This sounds so wrong!
+			res, err = f(*req, client)
+			if err != nil {
+				res = core.RequestGen().
 					RespondsTo(req).
 					SetOpcode(
 						snfOPStruct.GetBaseOpcode(
 							core.SNF_OPCODE_BASE_CMD_INVALID,
-							core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE,
-						)),
-			)
-			if err != nil {
+							core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
+						),
+					)
+			}
+
+			ResponseSend(client, res)
+			if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+				ClientRemove(client.UUID)
 				return
 			}
-		}
-
-		//FIXME: This sounds so wrong!
-		res, err := f(*req, client)
-		if err != nil {
-			res = core.RequestGen().
-				RespondsTo(req).
-				SetOpcode(
-					snfOPStruct.GetBaseOpcode(
-						core.SNF_OPCODE_BASE_CMD_INVALID,
-						core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
-					),
-				)
-		}
-
-		RequestSend(client, res)
-		if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
-			ClientRemove(client.UUID)
-			return
 		}
 	}
 }

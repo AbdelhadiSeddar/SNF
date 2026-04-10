@@ -283,6 +283,20 @@ func (r *Connection) SendRequest(req *core.Request) bool {
 
 	return true
 }
+func (r *Connection) SendResponse(req *core.Request) bool {
+	if req == nil {
+		return false
+	}
+	if r.once {
+		if r.once_done {
+			return false
+		}
+		r.once_done = true
+	}
+	r.requestQueue <- req
+
+	return true
+}
 
 func (r *Connection) Close() error {
 	return r.conn.Close()
@@ -343,17 +357,18 @@ func (r *Connection) handleRequestsincoming() {
 				} else {
 					re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE))
 				}
-				r.SendRequest(re)
+				r.SendResponse(re)
 			}()
 			continue
-		}
+		} else {
 
-		r.mapLock.RLock()
-		item, ok := r.requestsSent[rq.GetUID()]
-		r.mapLock.RUnlock()
+			r.mapLock.RLock()
+			item, ok := r.requestsSent[rq.GetUID()]
+			r.mapLock.RUnlock()
 
-		if ok {
-			item.CallResponse(rq)
+			if ok {
+				go item.CallResponse(rq)
+			}
 		}
 	}
 }
