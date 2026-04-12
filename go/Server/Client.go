@@ -279,7 +279,7 @@ func ClientHandle(client *Client) {
 			// Calling the function
 			f := req.GetOpcode().Command.GetCallback()
 			if f == nil {
-				err = ResponseSend(client,
+				err = RequestSend(client,
 					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
@@ -297,6 +297,7 @@ func ClientHandle(client *Client) {
 			res, err = f(*req, client)
 			if err != nil {
 				res = core.RequestGen().
+					RespondsTo(req).
 					SetOpcode(
 						snfOPStruct.GetBaseOpcode(
 							core.SNF_OPCODE_BASE_CMD_INVALID,
@@ -304,7 +305,7 @@ func ClientHandle(client *Client) {
 						),
 					)
 			}
-			res.RespondsTo(req)
+
 			ResponseSend(client, res)
 			if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
 				ClientRemove(client.UUID)
