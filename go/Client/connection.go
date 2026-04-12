@@ -140,6 +140,7 @@ func (r *Connection) Connect() *Connection {
 				}
 			} else {
 				if r.onExceptionCallback != nil {
+					println("Connection failed, executring callback")
 					r.onExceptionCallback(err)
 				}
 			}
@@ -158,6 +159,7 @@ func (r *Connection) Connect() *Connection {
 		buf := make([]byte, 12)
 
 		if _, err := io.ReadFull(r.conn, buf); err != nil {
+			println("Failure to read SNF Header")
 			r.handleError(err)
 			return nil
 		}
@@ -193,6 +195,7 @@ func (r *Connection) Connect() *Connection {
 
 		arg := make([]byte, args_size)
 		if _, err = io.ReadFull(r.conn, arg); err != nil {
+			println("Failure to read the SNF Arguments in isrq")
 			r.handleError(err)
 			return nil
 		}
@@ -206,12 +209,14 @@ func (r *Connection) Connect() *Connection {
 			0x00,
 		}
 		if _, err := r.conn.Write(confirmConnection); err != nil {
+			println("Failure in writing an icr")
 			r.handleError(err)
 			return nil
 		}
 
 		opcodeBuf := make([]byte, 4)
 		if _, err := io.ReadFull(r.conn, opcodeBuf); err != nil {
+			println("Failure in reading the opcode for isrsp")
 			r.handleError(err)
 			return nil
 		}
@@ -225,6 +230,7 @@ func (r *Connection) Connect() *Connection {
 		}
 		metaBuf := make([]byte, 8)
 		if _, err := io.ReadFull(r.conn, metaBuf); err != nil {
+			println("Failure in reading the metadata for isrsp")
 			r.handleError(err)
 			return nil
 		}
@@ -243,11 +249,14 @@ func (r *Connection) Connect() *Connection {
 
 		uuidBuf := make([]byte, 16)
 		if _, err := io.ReadFull(r.conn, uuidBuf); err != nil {
+
+			println("Failure in reading the uuid from isrsp")
 			r.handleError(err)
 			return nil
 		}
 		r.uuid = [16]byte(uuidBuf)
 		if r.onConnectCallback != nil {
+			println("Connected.")
 			r.onConnectCallback()
 		}
 		go r.handleRequests()
@@ -306,12 +315,22 @@ func (r *Connection) handleRequestsincoming() {
 	var header_buffer [28]byte
 	for {
 		if err := r.conn.SetReadDeadline(time.Time{}); err != nil {
+
 			r.handleError(err)
 			return
 		}
 
 		_, err := io.ReadFull(r.conn, header_buffer[:])
 		if err != nil {
+			switch err {
+			case io.EOF:
+				println("Connection closed gracefully by remote side before sending data.")
+			case io.ErrUnexpectedEOF:
+				println("Connection closed after reading only afew bytes.\n")
+			default:
+				println("Read error:", err)
+			}
+			println("Reading incoming header buf")
 			r.handleError(err)
 			return
 		}
@@ -345,28 +364,33 @@ func (r *Connection) handleRequestsincoming() {
 			}
 		}
 		if rq.GetUID()[15] == 0 {
+			println("Receiving a server request")
 			go func() {
 				var re *core.Request
 				f := rq.GetOpcode().Command.GetCallback()
 				if f != nil {
 					ret, err := f(*rq, nil)
 					if err != nil {
+						println("Finding command cb but not defined")
 						re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL))
 					}
 					re = ret
 				} else {
+					println("Not Finding command cb ")
 					re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE))
 				}
+				println("Sending server response")
 				r.SendResponse(re)
 			}()
 			continue
 		} else {
-
+			println("Receiving a Server Response")
 			r.mapLock.RLock()
 			item, ok := r.requestsSent[rq.GetUID()]
 			r.mapLock.RUnlock()
 
 			if ok {
+				println("The Response is valid ")
 				go item.CallResponse(rq)
 			}
 		}
@@ -381,6 +405,8 @@ func (r *Connection) handleRequests() {
 		ToSend := append(r.uuid[:], rq.ToBytes()...)
 
 		if _, err := r.conn.Write(ToSend); err != nil {
+
+			println("Failure to write an outcomning request " + err.Error())
 			if r.onExceptionCallback != nil {
 				r.onExceptionCallback(err)
 			}
