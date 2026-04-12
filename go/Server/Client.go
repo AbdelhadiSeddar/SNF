@@ -104,9 +104,9 @@ func ClientHandleNew(conn net.Conn) {
 			RecommendedAction: "Call Init() first!",
 		})
 	}
-	hand, ok := GetVar(SNF_VAR_CLTS_HANDLERS)
+	hand, ok_hand := GetVar(SNF_VAR_CLTS_HANDLERS)
 	h := hand.(ClientHandlers)
-	if ok {
+	if ok_hand {
 		if h.OnAccept != nil {
 			h.OnAccept(&Client{Conn: conn})
 		}
@@ -223,7 +223,7 @@ func ClientHandleNew(conn net.Conn) {
 		)
 		return
 	}
-	if ok && h.OnConnect != nil {
+	if ok_hand && h.OnConnect != nil {
 		h.OnConnect(client)
 	}
 	ClientHandle(client)
