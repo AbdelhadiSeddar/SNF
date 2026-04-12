@@ -52,7 +52,7 @@ func (c *Client) Send(req *core.Request) {
 		return
 	}
 
-	RequestSend(c, req)
+	ResponseSend(c, req)
 }
 
 func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
@@ -65,7 +65,7 @@ func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
 	if _, ok := clients.Load(uuid); ok {
 		return nil
 	}
-	client := &Client{UUID: uuid, Conn: conn, Data: data}
+	client := &Client{UUID: uuid, Conn: conn, Data: data, sentRequests: make(map[[16]byte]*core.Request)}
 	clients.Store(uuid, client)
 	return client
 }
@@ -251,7 +251,7 @@ func ClientHandle(client *Client) {
 								core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
 							)),
 				)
-				return
+				continue
 			default:
 				// Respond with the value of the error/ Debug only
 				Send(client,
@@ -263,7 +263,7 @@ func ClientHandle(client *Client) {
 								core.SNF_OPCODE_BASE_DET_UNDETAILED,
 							)),
 				)
-				return
+				continue
 			}
 		}
 		var res *Core.Request
@@ -291,25 +291,28 @@ func ClientHandle(client *Client) {
 				if err != nil {
 					return
 				}
+				continue
 			}
-
-			//FIXME: This sounds so wrong!
-			res, err = f(*req, client)
-			if err != nil {
-				res = core.RequestGen().
-					SetOpcode(
-						snfOPStruct.GetBaseOpcode(
-							core.SNF_OPCODE_BASE_CMD_INVALID,
-							core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
-						),
-					)
-			}
-			res.RespondsTo(req)
-			ResponseSend(client, res)
-			if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
-				ClientRemove(client.UUID)
-				return
-			}
+			go func() {
+				//Note: so woinder it sounded wrong, it will block until this function is called and stuff and all
+				// it will be handled, but will keep reading the client's requests, who knows how long the db calls are
+				res, err = f(*req, client)
+				if err != nil {
+					res = core.RequestGen().
+						SetOpcode(
+							snfOPStruct.GetBaseOpcode(
+								core.SNF_OPCODE_BASE_CMD_INVALID,
+								core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL,
+							),
+						)
+				}
+				res.RespondsTo(req)
+				ResponseSend(client, res)
+				if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+					ClientRemove(client.UUID)
+					return
+				}
+			}()
 		}
 	}
 }
