@@ -98,7 +98,6 @@ func Start() error {
 
 	listener, err := getSocket()
 	if err != nil {
-		println("_+_+_+_+_+_+ ")
 		snfWaitStart <- err
 		return err
 	}
@@ -109,12 +108,7 @@ func Start() error {
 
 		if err == nil {
 			go ClientHandleNew(conn)
-		} else {
-
-			println("-=-=-=-=-=-=-=  ")
-
 		}
-
 	}
 }
 
