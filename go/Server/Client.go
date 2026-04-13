@@ -115,7 +115,7 @@ func ClientHandleNew(conn net.Conn) {
 	// Send the appropriate stuff
 	isr, err := InitialRequestGet()
 	if err != nil {
-		panic(err.Error())
+		return
 	}
 	send(conn, isr)
 
@@ -294,7 +294,7 @@ func ClientHandle(client *Client) {
 				continue
 			}
 			go func() {
-				//Note: so woinder it sounded wrong, it will block until this function is called and stuff and all
+				//Note: so wonder it sounded wrong, it will block until this function is called and stuff and all
 				// it will be handled, but will keep reading the client's requests, who knows how long the db calls are
 				res, err = f(*req, client)
 				if err != nil {
@@ -309,7 +309,9 @@ func ClientHandle(client *Client) {
 				res.RespondsTo(req)
 				ResponseSend(client, res)
 				if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
+					client.Conn.Close()
 					ClientRemove(client.UUID)
+
 					return
 				}
 			}()

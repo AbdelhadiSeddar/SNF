@@ -159,7 +159,7 @@ func RequestFetch(client *Client) (*core.Request, error) {
 func RequestSend(client *Client, Request *core.Request) error {
 	Request.Server()
 	err := Send(client, Request)
-	if err != nil {
+	if err == nil {
 		client.rqstsMutex.Lock()
 		client.sentRequests[Request.GetUID()] = Request
 		client.rqstsMutex.Unlock()
