@@ -22,6 +22,8 @@ const (
 type Client struct {
 	UUID         [16]byte
 	Conn         net.Conn
+	connRMutex   sync.Mutex
+	connWMutex   sync.Mutex
 	Mode         ClientConnectionMode
 	modeLimit    uint32 // 0+ For MultiShot
 	Data         any
@@ -52,7 +54,7 @@ func (c *Client) Send(req *core.Request) {
 		return
 	}
 
-	ResponseSend(c, req)
+	RequestSend(c, req)
 }
 
 func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
@@ -65,7 +67,14 @@ func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
 	if _, ok := clients.Load(uuid); ok {
 		return nil
 	}
-	client := &Client{UUID: uuid, Conn: conn, Data: data, sentRequests: make(map[[16]byte]*core.Request)}
+	client := &Client{
+		UUID:         uuid,
+		Conn:         conn,
+		Data:         data,
+		sentRequests: make(map[[16]byte]*core.Request),
+		rqstsMutex:   sync.RWMutex{},
+	}
+
 	clients.Store(uuid, client)
 	return client
 }
@@ -104,9 +113,9 @@ func ClientHandleNew(conn net.Conn) {
 			RecommendedAction: "Call Init() first!",
 		})
 	}
-	hand, ok_hand := GetVar(SNF_VAR_CLTS_HANDLERS)
+	hand, ok := GetVar(SNF_VAR_CLTS_HANDLERS)
 	h := hand.(ClientHandlers)
-	if ok_hand {
+	if ok {
 		if h.OnAccept != nil {
 			h.OnAccept(&Client{Conn: conn})
 		}
@@ -115,7 +124,7 @@ func ClientHandleNew(conn net.Conn) {
 	// Send the appropriate stuff
 	isr, err := InitialRequestGet()
 	if err != nil {
-		return
+		panic(err.Error())
 	}
 	send(conn, isr)
 
@@ -124,6 +133,7 @@ func ClientHandleNew(conn net.Conn) {
 	n, err := conn.Read(opcode)
 
 	if err != nil || n < 4 {
+
 		return
 	}
 	if !(opcode[0] == opcode[1] &&
@@ -223,7 +233,7 @@ func ClientHandleNew(conn net.Conn) {
 		)
 		return
 	}
-	if ok_hand && h.OnConnect != nil {
+	if ok && h.OnConnect != nil {
 		h.OnConnect(client)
 	}
 	ClientHandle(client)
@@ -237,7 +247,11 @@ func ClientHandle(client *Client) {
 		}
 	}(client)
 	for {
+		// NOTE: although it might seem useless but it is written so that when the client handling becomes
+		// multithreaded it will be handy
+		client.connRMutex.Lock()
 		req, err := RequestFetch(client)
+		client.connRMutex.Unlock()
 		if err != nil {
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
@@ -251,35 +265,40 @@ func ClientHandle(client *Client) {
 								core.SNF_OPCODE_BASE_DET_INVALID_UNREGISTRED_OPCODE,
 							)),
 				)
-				continue
+				return
 			default:
 				// Respond with the value of the error/ Debug only
+				r := core.RequestGen().
+					RespondsTo(req).
+					SetOpcode(
+						snfOPStruct.GetBaseOpcode(
+							core.SNF_OPCODE_BASE_CMD_INVALID,
+							core.SNF_OPCODE_BASE_DET_UNDETAILED,
+						))
+				r.ArgAdd(err.Error())
 				Send(client,
-					core.RequestGen().
-						RespondsTo(req).
-						SetOpcode(
-							snfOPStruct.GetBaseOpcode(
-								core.SNF_OPCODE_BASE_CMD_INVALID,
-								core.SNF_OPCODE_BASE_DET_UNDETAILED,
-							)),
+					r,
 				)
-				continue
+				return
 			}
 		}
 		var res *Core.Request
 		if req.GetUID()[15] == 0 {
+
 			client.rqstsMutex.RLock()
 			item, ok := client.sentRequests[req.GetUID()]
 			client.rqstsMutex.RUnlock()
 			if ok {
 				go item.CallResponse(req)
+			} else {
+				println("No callback.")
 			}
 		} else {
 
 			// Calling the function
 			f := req.GetOpcode().Command.GetCallback()
 			if f == nil {
-				err = ResponseSend(client,
+				err = RequestSend(client,
 					core.RequestGen().
 						RespondsTo(req).
 						SetOpcode(
@@ -291,7 +310,6 @@ func ClientHandle(client *Client) {
 				if err != nil {
 					return
 				}
-				continue
 			}
 			go func() {
 				//Note: so wonder it sounded wrong, it will block until this function is called and stuff and all
@@ -307,13 +325,18 @@ func ClientHandle(client *Client) {
 						)
 				}
 				res.RespondsTo(req)
-				ResponseSend(client, res)
+				client.connWMutex.Lock()
+				err := Send(client, res)
+
+				if err != nil {
+					return
+				}
 				if req.GetOpcode().IsBase() && req.GetOpcode().Command.GetValue() == core.SNF_OPCODE_BASE_CMD_DISCONNECT {
 					client.Conn.Close()
 					ClientRemove(client.UUID)
-
 					return
 				}
+				client.connWMutex.Unlock()
 			}()
 		}
 	}
