@@ -157,8 +157,7 @@ func RequestFetch(client *Client) (*core.Request, error) {
 
 // Alows to send a server request.
 func RequestSend(client *Client, Request *core.Request) error {
-	Request.Server()
-	err := Send(client, Request)
+	err := requestSend(client, Request, false)
 	if err == nil {
 		client.rqstsMutex.Lock()
 		client.sentRequests[Request.GetUID()] = Request
@@ -171,8 +170,15 @@ func RequestSend(client *Client, Request *core.Request) error {
 
 // Allows to send a client response
 func ResponseSend(client *Client, Request *core.Request) error {
-	return Send(client, Request)
+	return requestSend(client, Request, true)
 
+}
+func requestSend(client *Client, Request *core.Request, Response bool) error {
+
+	if !Response {
+		Request.Server()
+	}
+	return Send(client, Request)
 }
 
 // Allows to send a non specefied request
