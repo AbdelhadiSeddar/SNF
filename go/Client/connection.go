@@ -91,6 +91,9 @@ func (r *Connection) SetOpcodeStruct(op *core.OpcodeRootStructure) *Connection {
 func (r *Connection) OPCodes() *core.OpcodeRootStructure {
 	return r.opcodes
 }
+func (r *Connection) GetUUID() []byte {
+	return r.uuid[:]
+}
 
 func (r *Connection) OnConnect(cb OnConnectCallback) *Connection {
 	r.onConnectCallback = cb
@@ -328,6 +331,10 @@ func (r *Connection) handleRequestsincoming() {
 			if args_size > 0 {
 				io.CopyN(io.Discard, r.conn, int64(args_size))
 			}
+			println("Warning: Received unregistered opcode ", op[0], ",",
+				op[1], ",",
+				op[2], ",",
+				op[3], ".")
 			continue
 		}
 		rq.SetOpcode(opcode)
@@ -341,6 +348,7 @@ func (r *Connection) handleRequestsincoming() {
 
 			true_args_amount := snfRequestParseArguments(rq, argsbuff)
 			if true_args_amount != args_amount {
+				println("Warning: Unmatched argument amount ")
 				continue
 			}
 		}
@@ -350,14 +358,21 @@ func (r *Connection) handleRequestsincoming() {
 				f := rq.GetOpcode().Command.GetCallback()
 				println("Is a server request - client")
 				if f != nil {
+					println("is there a function.")
 					ret, err := f(*rq, nil)
+					println("is there a function. - called")
 					if err != nil {
 						re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL))
+						re.ArgAdd(err.Error())
+					} else {
+						re = ret
 					}
-					re = ret
+					re.RespondsTo(rq)
 				} else {
+					println("isnt there a function.")
 					re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE))
 				}
+				println("is there a reesponse send.")
 				r.SendResponse(re)
 			}()
 			continue
@@ -380,18 +395,35 @@ func (r *Connection) handleRequests() {
 
 	for {
 		rq := <-r.requestQueue
+		op := rq.GetOpcode().ToBytes()
+		println("received a request ", op[0], ",",
+			op[1], ",",
+			op[2], ",",
+			op[3], ".", "with ", len(rq.GetArgs()), " arguments  called ", rq.GetUID()[14])
 		ToSend := append(r.uuid[:], rq.ToBytes()...)
-
+		clt := rq.GetUID()
+		if clt[15] == 1 {
+			println("received a request - for the client itself ")
+			r.mapLock.Lock()
+			r.requestsSent[clt] = rq
+			r.mapLock.Unlock()
+		} else {
+			println("received a request - for the server's reponse ")
+		}
 		if _, err := r.conn.Write(ToSend); err != nil {
+
+			println("error Sending ")
 			if r.onExceptionCallback != nil {
 				r.onExceptionCallback(err)
+			}
+			if clt[15] == 1 {
+				r.mapLock.Lock()
+				delete(r.requestsSent, clt)
+				r.mapLock.Unlock()
 			}
 			r.conn.Close()
 			return
 		}
-
-		r.mapLock.Lock()
-		r.requestsSent[rq.GetUID()] = rq
-		r.mapLock.Unlock()
+		println("Sent")
 	}
 }
