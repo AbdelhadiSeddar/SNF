@@ -79,7 +79,7 @@ func ClientAdd(uuid [16]byte, conn net.Conn, data any) *Client {
 	return client
 }
 
-func ClientGet(uuid string) (*Client, bool) {
+func ClientGet(uuid [16]byte) (*Client, bool) {
 	if clients == nil {
 		panic(core.SNFErrorUninitialized{
 			Component:         "Core Client Definitions",
@@ -234,7 +234,7 @@ func ClientHandleNew(conn net.Conn) {
 		return
 	}
 	if ok && h.OnConnect != nil {
-		h.OnConnect(client)
+		go h.OnConnect(client)
 	}
 	ClientHandle(client)
 }
@@ -253,6 +253,7 @@ func ClientHandle(client *Client) {
 		req, err := RequestFetch(client)
 		client.connRMutex.Unlock()
 		if err != nil {
+			println("wtf")
 			switch {
 			case errors.Is(err, core.SNFErrorOpcodeInvalid{}):
 				//Error handling comes later.
@@ -283,21 +284,35 @@ func ClientHandle(client *Client) {
 			}
 		}
 		var res *Core.Request
+		op := req.GetOpcode().ToBytes()
+		// Response
 		if req.GetUID()[15] == 0 {
 
 			client.rqstsMutex.RLock()
 			item, ok := client.sentRequests[req.GetUID()]
 			client.rqstsMutex.RUnlock()
 			if ok {
+				println("callback for ", op[0], ",",
+					op[1], ",",
+					op[2], ",",
+					op[3], ".", "with ", len(req.GetArgs()), " arguments  called ", req.GetUID()[14])
 				go item.CallResponse(req)
 			} else {
-				println("No callback.")
+				println("No callback.", op[0], ",",
+					op[1], ",",
+					op[2], ",",
+					op[3], ".", "with ", len(req.GetArgs()), " arguments  called ", req.GetUID()[14])
 			}
+			// Request
 		} else {
 
 			// Calling the function
 			f := req.GetOpcode().Command.GetCallback()
 			if f == nil {
+				println("undefined cb for ", op[0], ",",
+					op[1], ",",
+					op[2], ",",
+					op[3], ".", "with ", len(req.GetArgs()), " arguments  called ", req.GetUID()[14])
 				err = RequestSend(client,
 					core.RequestGen().
 						RespondsTo(req).
@@ -324,10 +339,9 @@ func ClientHandle(client *Client) {
 							),
 						)
 				}
+				println("ppp", res.GetOpcode().Command.GetValue())
 				res.RespondsTo(req)
-				client.connWMutex.Lock()
 				err := Send(client, res)
-
 				if err != nil {
 					return
 				}
@@ -336,7 +350,6 @@ func ClientHandle(client *Client) {
 					ClientRemove(client.UUID)
 					return
 				}
-				client.connWMutex.Unlock()
 			}()
 		}
 	}
