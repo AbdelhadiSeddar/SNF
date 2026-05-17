@@ -1,4 +1,5 @@
 #include "SNF/opcode.h"
+#include <SNF/clt.h>
 
 SNF_opcode_LL_item *SNF_opcode_LL = NULL;
 int SNF_opcode_base_isinit = 0;
@@ -24,6 +25,21 @@ int snf_opcode_define_base()
             "Used when client is attempting to connect",
             snf_cmd_invalid_error_protocol) < 0)
         return -1;
+    if (snf_opcode_define_detail(
+            SNF_OPCODE_BASE_CAT,
+            SNF_OPCODE_BASE_SUBCAT,
+            SNF_OPCODE_BASE_CMD_CONNECT,
+            SNF_OPCODE_BASE_DET_CONNECT_ONESHOT,
+            "Used when client is attempting to connect in oneshot Mode") < 0)
+        return -1;
+    if (snf_opcode_define_detail(
+            SNF_OPCODE_BASE_CAT,
+            SNF_OPCODE_BASE_SUBCAT,
+            SNF_OPCODE_BASE_CMD_CONNECT,
+            SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT,
+            "Used when client is attempting to connect in multishot Mode") < 0)
+        return -1;
+
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
@@ -38,13 +54,23 @@ int snf_opcode_define_base()
             "Used when client is attempting to disconnect",
             snf_cmd_invalid_error_protocol) < 0)
         return -1;
+
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,
-            SNF_OPCODE_BASE_CMD_SNF_VER,
-            "When client requests SNF version of the Server.",
-            snf_cmd_snf_ver) < 0)
+            SNF_OPCODE_BASE_CMD_VER_INF,
+            "When client requests protocol's version of the Server.",
+            snf_cmd_ver) < 0)
         return -1;
+    if (snf_opcode_define_detail(
+            SNF_OPCODE_BASE_CAT,
+            SNF_OPCODE_BASE_SUBCAT,
+            SNF_OPCODE_BASE_CMD_VER_INF,
+            SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL,
+            "When client requests implementation(snf)'s version of the Server.") < 0)
+        return -1;
+
+
     if (snf_opcode_define_command(
             SNF_OPCODE_BASE_CAT,
             SNF_OPCODE_BASE_SUBCAT,

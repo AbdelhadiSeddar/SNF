@@ -1,0 +1,46 @@
+name: Server-C-x64
+
+on:
+  push:
+    branches:
+      - main
+      - snp-0.0.1
+  pull_request:
+    branches:
+      - main
+      - snp-0.0.1
+
+jobs:
+  build:
+    runs-on: linux-self-x64-1
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Build dependencies
+      run: sudo apt-get install -y clang cmake 
+
+    - name: Build project
+      run: |
+        cd Server/C
+        ./build.sh -fb -cc
+
+  test:
+    needs: build
+    runs-on: linux-self-x64-1
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Install Clang
+      run: sudo apt-get install -y clang
+
+    - name: Run tests
+      run: |
+        cd Server/C
+        for test in $(ls tests/*.c); do
+          testname=$(basename $test .c)
+          ./build.sh -fb -cc -t $testname
+        done

@@ -1,4 +1,7 @@
 #include "SNF/network.h"
+#include "SNF/opcode.h"
+#include "SNF/request.h"
+#include <stdint.h>
 typedef struct epoll_event ev;
 
 _Atomic uint64_t SNF_Total_Data_Rcv = 0;
@@ -15,7 +18,9 @@ void snf_network_init()
 {
     checkerr((snf_var_get(SNF_VAR_INITIALIZED, int) != NULL) - 1 , "Variables Undefined\n");
     checkerr((SNF_SERVER_SOCKET = socket(AF_INET, SOCK_STREAM, 0)), "Unable to create Socket. ");
-
+    const int enable = 1;
+    if (setsockopt(SNF_SERVER_SOCKET, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+      fprintf(stderr, "Unable to set SO_REUSEADDR on Server Socket\n");
     bzero(&SNF_SERVER_ADDR, sizeof(struct sockaddr_in));
 
     SNF_SERVER_ADDR.sin_family = AF_INET;
@@ -28,7 +33,7 @@ void snf_network_init()
     snf_epoll_init();
     snf_clt_init(snf_var_getv(SNF_VAR_CLTS_INITIAL, int));
     snf_opcode_init();
-
+    snf_request_initial_init();    
     if (snf_thpool_inis(
             snf_var_geta(SNF_VAR_THREADPOOL, SNF_thpool),
             snf_var_getv(SNF_VAR_THREADS, int),
@@ -64,7 +69,7 @@ void *Network_Worker(void *arg)
             }
             else
             {
-                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle, (void *)snf_clt_new(sock));
+                snf_thpool_addwork(snf_var_get(SNF_VAR_THREADPOOL, SNF_thpool), snf_clt_handle, (void *)(&(uint64_t){sock}));
             }
         }
     }
@@ -73,7 +78,7 @@ void *Network_Worker(void *arg)
 
 int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size)
 {
-    int DataSnt;
+    int DataSnt = 0;
 
     if (_Size < 0)
     {
@@ -87,6 +92,10 @@ int snf_snd(SNF_CLT *Client, const char *Buffer, int _Size)
         DataSnt = send(Client->sock, Buffer, _Size, 0);
     }
 
+    if(DataSnt < _Size)
+    {
+        fprintf(stderr, "Error : %d", errno);
+    }
     if (DataSnt == -1)
         if (errno == EPIPE)
             snf_clt_disconnect(Client);

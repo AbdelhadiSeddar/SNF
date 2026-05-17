@@ -29,4 +29,11 @@ extern SNF_RQST *snf_cmd_invalid_unimplemented(SNF_RQST *);
 /// @brief Called when the client requests the server's version
 /// @param  SNF_RQST Client's Original Request
 /// @return The Request to be Sent
-extern SNF_RQST *snf_cmd_snf_ver(SNF_RQST *);
+extern SNF_RQST *snf_cmd_ver(SNF_RQST *);
+
+/// @brief Called when the client wants to be disconnected
+/// Though is just a placeholder
+///
+/// @param SNF_RQST Client's Original Request
+/// @return The Requesy to be Sent
+extern SNF_RQST *snf_cmd_disconnect(SNF_RQST *);

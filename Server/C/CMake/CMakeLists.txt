@@ -61,6 +61,9 @@ target_link_libraries(snf
     m
     pthread
 )
+if( "$ENV{TESTING}" STREQUAL true OR "$ENV{DEBUG}" STREQUAL true )
+  target_compile_options(snf PUBLIC "-g")
+endif()
 ##
 ## Included a CMake File that sets up Tests
 include(

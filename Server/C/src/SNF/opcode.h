@@ -79,6 +79,8 @@ struct SNF_opcode_LL_item_t
 extern SNF_opcode_LL_item *SNF_opcode_LL;
 /// @brief used to check if SNF's base opcodes are initialized
 extern int SNF_opcode_base_isinit;
+
+
 /// @brief Initializes the SNF's opcodes
 /// @return The possible results :
 ///         * **-1** On fail (Shall fail if calloc fails, check errno depending on calloc error codes)
@@ -232,18 +234,30 @@ extern int snf_opcode_isbase(
 /// @note This will always be added by default to every Command
 #define SNF_OPCODE_BASE_DET_UNDETAILED (SNF_opcode_mmbr_t)0x00
 
+#pragma region[Base Command: Connect]
 /// @brief  When client attemps to connect.
 /// @warning Do not add anything under this Command
 #define SNF_OPCODE_BASE_CMD_CONNECT (SNF_opcode_mmbr_t)0x00
+
+#define SNF_OPCODE_BASE_DET_CONNECT_ONESHOT   (SNF_opcode_mmbr_t)0x01
+#define SNF_OPCODE_BASE_DET_CONNECT_MULTISHOT (SNF_opcode_mmbr_t)0x02
+#pragma endregion
+
 /// @brief  When client attemps to reconnect - or forced to.
 /// @warning Do not add anything under this Command
 #define SNF_OPCODE_BASE_CMD_RECONNECT (SNF_opcode_mmbr_t)0x01
 /// @brief  When client attemps to disconnect.
 /// @warning Do not add anything under this Command
 #define SNF_OPCODE_BASE_CMD_DISCONNECT (SNF_opcode_mmbr_t)0x02
-/// @brief  When client requests SNF version of the Server.
+
+#pragma region[Base Command: VER_INF]
+/// @brief  When client requests The Protocol's version of the Server.
 /// @warning Do not add anything under this Command
-#define SNF_OPCODE_BASE_CMD_SNF_VER (SNF_opcode_mmbr_t)0x03
+#define SNF_OPCODE_BASE_CMD_VER_INF (SNF_opcode_mmbr_t)0x03
+
+#define SNF_OPCODE_BASE_DET_VER_INF_VER_IMPL  (SNF_opcode_mmbr_t)0x01
+#pragma endregion
+
 /// @brief  When client was forced to disconnect ( Kicked ).
 /// @warning Do not add anything under this Command
 #define SNF_OPCODE_BASE_CMD_KICK (SNF_opcode_mmbr_t)0x04

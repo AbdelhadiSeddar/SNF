@@ -22,6 +22,8 @@
 /// @brief This Enum saved the identifiers for variables available as of this version
 /// @note If you set a value lower than the **Minimum Value** or that value is not in the **Allowed Values** an error will be printed and the value will not be changed!
 typedef enum SNF_VARS_e {
+    SNF_VAR_PROGRAM_NAME,
+    SNF_VAR_PROGRAM_VER,
     /// @brief Variable for threads used by SNF 
     /// @line 
     /// 
