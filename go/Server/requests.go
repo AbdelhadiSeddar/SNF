@@ -102,7 +102,6 @@ func RequestFetch(client *Client) (*core.Request, error) {
 		}
 		op, err := snfOPStruct.OpcodeParse([4]byte(buf))
 		if err != nil {
-			println("err opcode inv")
 			errs = append(errs, err)
 		}
 		req.SetOpcode(op)
@@ -126,12 +125,9 @@ func RequestFetch(client *Client) (*core.Request, error) {
 		if err := binary.Read(client.Conn, binary.BigEndian, &reqArgsSize); err != nil {
 			errs = append(errs, err)
 		}
-		if (reqArgsCount == 0 || reqArgsSize == 0) && (reqArgsCount+reqArgsSize) != 0 {
-
-			errs = append(errs, core.SNFErrorUnallowedValue{
-				Is:          "of either Amount or Size of Argument is 0",
-				ShouldvBeen: "both 0 or neither",
-			})
+		if reqArgsSize == 0 {
+			//TODO:SAME HERE
+			reqArgsCount = 0
 		}
 		// Arg Handling
 		if len(errs) == 0 {
@@ -144,11 +140,10 @@ func RequestFetch(client *Client) (*core.Request, error) {
 
 				args_s := string(args)
 				args_s_split := strings.Split(args_s, "\x1F")
-				if len(args_s_split) != int(reqArgsCount) {
-					return nil, core.SNFErrorUnallowedValue{
-						Is:          fmt.Sprintf("of the number of arguments in Request %x is %d", req.GetUID(), len(args_s_split)),
-						ShouldvBeen: fmt.Sprintf("%d", reqArgsCount),
-					}
+				true_args_s := len(args_s_split)
+				if true_args_s != int(reqArgsCount) {
+					// TODO: handle it better.
+					true_args_s = int(reqArgsCount)
 				}
 
 				req.ArgsAdd(args_s_split)
@@ -157,11 +152,9 @@ func RequestFetch(client *Client) (*core.Request, error) {
 		} else {
 
 			io.CopyN(io.Discard, client.Conn, int64(reqArgsSize))
-			return nil, errs
+			return nil, errs[0]
 		}
 	}
-
-	return &req, nil
 }
 
 // Alows to send a server request.
@@ -189,7 +182,6 @@ func requestSend(client *Client, Request *core.Request, Response bool) error {
 		Request.Server()
 		client.rqstsMutex.Lock()
 		req := Request.GetUID()
-		println("Saving request ", req[14])
 		client.sentRequests[req] = Request
 		client.rqstsMutex.Unlock()
 	}
