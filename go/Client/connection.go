@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -67,6 +68,9 @@ func NewConnection() *Connection {
 	ret.requestsSent = make(map[[16]byte]*core.Request)
 	ret.SetOpcodeStruct(nil)
 	return ret
+}
+func (r *Connection) IsConnected() bool {
+	return r.isConnected
 }
 
 func (r *Connection) SetAddress(address string) *Connection {
@@ -320,7 +324,6 @@ func (r *Connection) handleRequestsincoming() {
 		}
 
 		rq, op, args_amount, args_size := snfRequestParseHeader(header_buffer[:])
-
 		opcode := r.Opcodes().GetOpcode(
 			op[0],
 			op[1],
@@ -348,7 +351,8 @@ func (r *Connection) handleRequestsincoming() {
 
 			true_args_amount := snfRequestParseArguments(rq, argsbuff)
 			if true_args_amount != args_amount {
-				println("Warning: Unmatched argument amount ")
+				println("Warning: Unmatched argument amount so changing to correct arg amount.")
+				args_amount = true_args_amount
 				continue
 			}
 		}
@@ -356,11 +360,8 @@ func (r *Connection) handleRequestsincoming() {
 			go func() {
 				var re *core.Request
 				f := rq.GetOpcode().Command.GetCallback()
-				println("Is a server request - client")
 				if f != nil {
-					println("is there a function.")
 					ret, err := f(*rq, nil)
-					println("is there a function. - called")
 					if err != nil {
 						re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_ERROR_PROTOCOL))
 						re.ArgAdd(err.Error())
@@ -369,16 +370,12 @@ func (r *Connection) handleRequestsincoming() {
 					}
 					re.RespondsTo(rq)
 				} else {
-					println("isnt there a function.")
 					re = core.RequestGen().RespondsTo(rq).SetOpcode(r.opcodes.GetBaseOpcode(core.SNF_OPCODE_BASE_CMD_INVALID, core.SNF_OPCODE_BASE_DET_INVALID_UNIMPLEMENTED_OPCODE))
 				}
-				println("is there a reesponse send.")
 				r.SendResponse(re)
 			}()
 			continue
 		} else {
-			println("Is a server response - client")
-
 			r.mapLock.RLock()
 			item, ok := r.requestsSent[rq.GetUID()]
 			r.mapLock.RUnlock()
@@ -394,25 +391,22 @@ func (r *Connection) handleRequests() {
 	go r.handleRequestsincoming()
 
 	for {
-		rq := <-r.requestQueue
-		op := rq.GetOpcode().ToBytes()
-		println("received a request ", op[0], ",",
-			op[1], ",",
-			op[2], ",",
-			op[3], ".", "with ", len(rq.GetArgs()), " arguments  called ", rq.GetUID()[14])
+		rq, ok := <-r.requestQueue
+		if !ok {
+			println("FATAL: error handler queue was closed")
+			os.Exit(1)
+		} else if rq == nil {
+			continue
+		}
 		ToSend := append(r.uuid[:], rq.ToBytes()...)
 		clt := rq.GetUID()
 		if clt[15] == 1 {
-			println("received a request - for the client itself ")
 			r.mapLock.Lock()
 			r.requestsSent[clt] = rq
 			r.mapLock.Unlock()
-		} else {
-			println("received a request - for the server's reponse ")
 		}
-		if _, err := r.conn.Write(ToSend); err != nil {
 
-			println("error Sending ")
+		if _, err := r.conn.Write(ToSend); err != nil {
 			if r.onExceptionCallback != nil {
 				r.onExceptionCallback(err)
 			}
@@ -424,6 +418,5 @@ func (r *Connection) handleRequests() {
 			r.conn.Close()
 			return
 		}
-		println("Sent")
 	}
 }
